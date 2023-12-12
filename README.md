@@ -1,5 +1,9 @@
-# MeRF - *M*ilo *E*xtensions for *R*epRap*F*irmware.
+# MillenniumOS (MOS) - An "Operations System" for RepRapFirmware.
 Cheap and easy manual and automatic work-piece probing, toolsetting and more!
+
+This is an "operations system" rather than an "operating system" in the traditional sense.
+
+We build _on top of_ RepRapFirmware, providing operators of the Millennium Machines Milo V1.5 with a new-machinist-friendly workflow for work piece and tool probing, and safe, effective tool changes.
 
 ## Features
   - Canned probing cycles usable directly from gcode or via Duet Web Control as named macros.
@@ -9,12 +13,12 @@ Cheap and easy manual and automatic work-piece probing, toolsetting and more!
   - Compatible with Millennium Machines Milo GCode Dialect.
 
 ## Implemented G- and M- codes
-See [GCODE.md](GCODE.md) for a description of all MeRF implemented G- and M- codes.
+See [GCODE.md](GCODE.md) for a description of all MOS implemented G- and M- codes.
 
 ## Post-processor
-MeRF is designed to work with a specific gcode dialect, designed for the Millennium Machines Milo. It does not support any other gcode dialects.
+MOS is designed to work with a specific gcode dialect, designed for the Millennium Machines Milo. It does not support any other gcode dialects.
 
-The following is an example preamble that MeRF is designed to understand:
+The following is an example preamble that MOS is designed to understand:
 
 ```gcode
 (Exported by Fusion360)
@@ -66,12 +70,12 @@ G0 Z15.0
 ## Usage
   - Download the ZIP file of a release.
   - Copy the folder structure to the root of your SD card.
-  - Add `M98 P"merf.g"` to the bottom of your `config.g` file.
-  - Configure your settings in `merf-vars.g`
+  - Add `M98 P"mos.g"` to the bottom of your `config.g` file.
+  - Configure your settings in `mos-vars.g`
 
 ## Notes
-  - You _must_ be using RRF `v3.5.0-rc.1` or above. MeRF uses many 'meta gcode' features that do not exist in earlier versions.
-  - MeRF includes its own `daemon.g` file to implement repetitive tasks, such as VSSC. If you already have a `daemon.g` file, you will need to rename it and include it into the MeRF `daemon.g`. This will require modifying your existing code to work smoothly with the MeRF `daemon.g`.
+  - You _must_ be using RRF `v3.5.0-rc.1` or above. MOS uses many 'meta gcode' features that do not exist in earlier versions.
+  - MOS includes its own `daemon.g` file to implement repetitive tasks, such as VSSC. If you already have a `daemon.g` file, you will need to rename it and include it into the MOS `daemon.g`. This will require modifying your existing code to work smoothly with the MOS `daemon.g`.
 
 ## Bugs, Issues, Support
 If you find any bugs or issues, please report them on this repository. Best-effort support is available via our Discord.
