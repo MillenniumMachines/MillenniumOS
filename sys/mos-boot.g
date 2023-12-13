@@ -20,8 +20,13 @@ if { global.featureTouchProbe && global.featureToolSetter }
 
 ; If we have a toolsetter, make sure the co-ordinates are set
 if { global.featureToolSetter }
+    if { !exists(sensors.probes[global.toolSetterProbeID]) }
+        abort { "global.toolSetterProbeID must contain the ID of the toolsetter probe. Configure it using 'M558 K<probe-id>...' in config.g before loading MillenniumOS!" }
     if { !exists(global.toolSetterCoords) }
         abort { "global.toolSetterCoords must contain X and Y machine co-ordinates of the center of the toolsetter surface!" }
+if { global.featureTouchProbe }
+    if { !exists(sensors.probes[global.touchProbeID]) }
+        abort { "global.touchProbeID must contain the ID of the touch probe. Configure it using 'M558 K<probe-id>...' in config.g before loading MillenniumOS!" }
 
 ; TODO: Make sure if we have a toolsetter but no touch probe, we can still compensate for tool length.
 
