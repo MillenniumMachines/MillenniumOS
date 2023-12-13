@@ -5,6 +5,9 @@
 ; above and below the requested spindle speed
 ; to avoid creating resonances at a constant speed.
 
+if { !exists(global.mosLoaded) || !global.mosLoaded }
+    M99
+
 ; This file will be run for every loop of daemon.g.
 
 ; We need to calculate the time since the previous
