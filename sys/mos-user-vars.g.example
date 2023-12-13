@@ -1,0 +1,31 @@
+; mos-user-vars.g
+;
+; This file contains user variables for MillenniumOS. You must change
+; these values to match your machine configuration.
+
+; MillenniumOS uses the concept of features to enable or disable groups
+; of functionality that rely on optional systems that may or may not
+; be present on your machine. The following features are available:
+; featureToolSetter - Controls the toolsetter feature
+; featureTouchProbe - Controls the touch probe feature
+; featureVSSC       - Controls the VSSC feature (enabled by default
+;                     as it requires no extra hardware). Disable if
+;                     you notice performance issues.
+
+; Enable toolsetter and touch probe
+set global.featureToolSetter=true
+set global.featureTouchProbe=true
+
+; Set Toolsetter trigger height, and X/Y coordinates
+global toolSetterCoords={0, 113}
+global toolSetterTriggerHeight=42.5 ; Height in mm from reference
+                                    ; surface when toolsetter triggers.
+
+; Set Toolsetter probe ID
+global toolSetterProbeID=98
+
+; Set Touchprobe probe ID
+global touchProbeProbeID=99
+
+; Set reference surface coordinates
+global referenceSurfaceCoords={0, 65}

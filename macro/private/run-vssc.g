@@ -1,4 +1,4 @@
-; update-vssc.g
+; run-vssc.g
 ; Implements Variable Spindle Speed Control.
 ; The intention here is to periodically vary the
 ; spindle speed by a user-configured variance
