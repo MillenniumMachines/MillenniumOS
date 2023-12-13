@@ -7,6 +7,10 @@ global featureToolSetter=false
 global featureTouchProbe=false
 global featureVSSC=true
 
+; Expert mode skips descriptor steps during tool changes and probing operations. It does not skip
+; safety checks, but assumes the operator knows how the probing operation they are performing works.
+global expertMode=false ; Disable expert mode.
+
 ; Define variables that are used internally by MOS macros.
 ; These can be overridden in mos-user-vars.g if necessary (but almost certainly do not need to be).
 
