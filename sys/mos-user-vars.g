@@ -7,9 +7,13 @@
 set global.featureToolSetter=true
 set global.featureTouchProbe=true
 
-; Set Toolsetter height and coordinates
+; Set Toolsetter height, coordinates and probe ID
 global toolSetterCoords={0, 113}
 global toolSetterHeight=42.5
+global toolSetterProbeID=98
+
+; Set Touchprobe probe ID
+global touchProbeProbeID=99
 
 ; Set reference surface coordinates
 global referenceSurfaceCoords={0, 65}
