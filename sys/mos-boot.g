@@ -1,8 +1,7 @@
 ; mos-boot.g
 ;
 ; Load MillenniumOS.
-; This generally just involves sanity checking variables and reporting to the
-; operator that everything looks OK.
+; This involves sanity checking variables and aborting if they are not set.
 
 echo { "MillenniumOS v" ^ global.millenniumOSVersion ^ " loading..." }
 
@@ -25,3 +24,6 @@ if { global.featureToolSetter }
         abort { "global.toolSetterCoords must contain X and Y machine co-ordinates of the center of the toolsetter surface!" }
 
 ; TODO: Make sure if we have a toolsetter but no touch probe, we can still compensate for tool length.
+
+; Allow MOS macros to run.
+global.mosLoaded = true
