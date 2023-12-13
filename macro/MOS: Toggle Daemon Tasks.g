@@ -4,4 +4,4 @@
 ; can be controlled via DWC.
 set global.daemonEnable = !global.daemonEnable
 
-echo {"Daemon Status: " ^ global.daemonEnable}
+echo {"Daemon Status: " ^ global.daemonEnable ? "Enabled" : "Disabled"}
