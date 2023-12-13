@@ -21,7 +21,10 @@ global originAll={"Front Left","Front Right","Rear Right","Rear Left","Centre"}
 ; Define names for work offsets. The work offset ID is the index into these arrays, plus 1.
 global workOffsetCodes={"G54","G55","G56","G57","G58","G59","G59.1","G59.2","G59.3"}
 
-; Define probing movement speeds in mm/min
+; Define empty tool table
+global toolTable={vector(50,{"Unknown Tool", 0})}
+
+
 global probeRoughSpeed=150 ; Speed used for initial probe movement
 global probeSpeed=25       ; Speed used for subsequent probe movements to increase accuracy
 
