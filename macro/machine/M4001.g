@@ -5,13 +5,11 @@
 if { !exists(param.I) }
     abort "Must provide tool number (I...) to remove from tool list!"
 
-var toolID = param.I
-
-if { var.toolID > #global.toolTable }
+if { param.I > #global.toolTable }
     abort { "Tool index must be less than or equal to " ^  #global.toolTable ^ "!" }
 
 ; Store tool description in zero-indexed
 ; Array.
-set global.toolTable[var.toolID-1] = {"", 0}
+set global.toolTable[param.I-1] = {"", 0}
 
-M118 P0 L2 S{"Removed tool #" ^ var.toolID}
+echo {"Removed tool #" ^ param.I}
