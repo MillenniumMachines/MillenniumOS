@@ -2,19 +2,23 @@
 ;
 ; Defines a tool by index.
 
-; These tool identifiers are tracked globally, and are used during
-; tool changes to guide the user.
+; We create an RRF tool and link it to the managed spindle.
 
-; We also track a tool radius, which can be used to offset-probe tools
-; that have a radius larger than the toolsetter.
+; Given that RRF tracks limited information about tools, we store our own global variable
+; containing tool information that may be useful in future (tool radius, coordinate offsets
+; for automatic tool-changing etc)
 
-if { !exists(param.I) || !exists(param.R) || !exists(param.S) }
-    abort "Must provide tool number (I...), radius (R...) and description (S\"..."\) to register tool!"
+if { !exists(param.P) || !exists(param.R) || !exists(param.S) }
+    abort "Must provide tool number (P...), radius (R...) and description (S\"..."\) to register tool!"
 
-if { param.I > #global.mosToolTable }
-    abort { "Tool index must be less than or equal to " ^  #global.mosToolTable ^ "!" }
+if { param.P >= limits.tools || param.P < 1 }
+    abort { "Tool index must be between 1 and " ^  limits.tools-1 ^ "!" }
+
+; Define RRF tool against spindle.
+; RRF Tools are zero-indexed so we can store 1 less than RRF.
+M563 P{param.P} S{param.S} R{global.mosSpindleID}
 
 ; Store tool description in zero-indexed array.
-set global.mosToolTable[param.I-1] = {param.N, param.R, false, {0, 0}}
+set global.mosToolTable[param.P] = {param.R, false, {0, 0}}
 
-echo {"Stored tool #" ^ param.I ^ ": " ^ param.R ^ " R=" ^ param.R }
+echo {"Stored tool #" ^ param.P ^ ": " ^ param.S ^ " R=" ^ param.R }
