@@ -1,16 +1,20 @@
-; M4000.g
+; M4000.g: DEFINE TOOL
+;
 ; Defines a tool by index.
 
-; In combination with T<N> M6, we can prompt users to change using
-; a user-friendly process.
+; These tool identifiers are tracked globally, and are used during
+; tool changes to guide the user.
 
-if { !exists(param.I) || !exists(param.R) || !exists(param.N) }
-    abort "Must provide tool number (I...), radius (R...) and name (N\"..."\) to register tool!"
+; We also track a tool radius, which can be used to offset-probe tools
+; that have a radius larger than the toolsetter.
 
-if { param.I > #global.toolTable }
-    abort { "Tool index must be less than or equal to " ^  #global.toolTable ^ "!" }
+if { !exists(param.I) || !exists(param.R) || !exists(param.S) }
+    abort "Must provide tool number (I...), radius (R...) and description (S\"..."\) to register tool!"
+
+if { param.I > #global.mosToolTable }
+    abort { "Tool index must be less than or equal to " ^  #global.mosToolTable ^ "!" }
 
 ; Store tool description in zero-indexed array.
-set global.toolTable[param.I-1] = {param.R, param.N}
+set global.mosToolTable[param.I-1] = {param.N, param.R, false, {0, 0}}
 
-echo {"Stored tool #" ^ param.I ^ ": " ^ param.N ^ " R=" ^ param.R }
+echo {"Stored tool #" ^ param.I ^ ": " ^ param.R ^ " R=" ^ param.R }

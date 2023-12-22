@@ -1,4 +1,5 @@
-; M7000.g
+; M7000.g: ENABLE VSSC
+;
 ; Enable and configure Variable Spindle Speed Control
 ;
 ; USAGE: "M7000 P<period-in-ms> V<variance>"
@@ -10,16 +11,16 @@ if { !exists(param.P) }
 if { !exists(param.V) }
     abort { "Must specify variance (V..) in rpm of spindle speed adjustments" }
 
-if { param.P < global.daemonUpdateRate }
-    abort { "Period cannot be less than daemonUpdateRate (" ^ global.daemonUpdateRate ^ "ms)" }
+if { param.P < global.mosDaemonUpdateRate }
+    abort { "Period cannot be less than daemonUpdateRate (" ^ global.mosDaemonUpdateRate ^ "ms)" }
 
-if { mod(param.P, global.daemonUpdateRate) > 0 }
-    abort { "Period must be a multiple of daemonUpdateRate (" ^ global.daemonUpdateRate ^ ")ms" }
+if { mod(param.P, global.mosDaemonUpdateRate) > 0 }
+    abort { "Period must be a multiple of daemonUpdateRate (" ^ global.mosDaemonUpdateRate ^ ")ms" }
 
-set global.vsscPeriod             = param.P
-set global.vsscVariance           = param.V
-set global.vsscEnabled            = true
-set global.vsscSpeedWarningIssued = false
+set global.mosVsscPeriod             = param.P
+set global.mosVsscVariance           = param.V
+set global.mosVsscEnabled            = true
+set global.mosVsscSpeedWarningIssued = false
 
-if { global.vsscDebug }
+if { global.mosVsscDebug }
     echo {"[VSSC] State: Enabled Period: " ^ param.P ^ "ms Variance: " ^ param.V ^ "RPM" }

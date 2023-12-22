@@ -13,19 +13,22 @@
 ;                     you notice performance issues.
 
 ; Enable toolsetter and touch probe
-set global.featureToolSetter=true
-set global.featureTouchProbe=true
+set global.mosFeatureToolSetter=true
+set global.mosFeatureTouchProbe=true
 
 ; Set Toolsetter trigger height, and X/Y coordinates
-global toolSetterCoords={0, 113}
-global toolSetterTriggerHeight=42.5 ; Height in mm from reference
-                                    ; surface when toolsetter triggers.
+set global.mosToolSetterCoords={0, 113}
+;set global.mosToolSetterHeight=42.5 ; Height in mm from reference
+                                  ; surface when toolsetter triggers.
 
 ; Set Toolsetter probe ID
-global toolSetterProbeID=98
+set global.mosToolSetterID=1
 
 ; Set Touchprobe probe ID
-global touchProbeProbeID=99
+set global.mosTouchProbeID=2
+
+; Set Spindle ID
+set global.mosSpindleID=1
 
 ; Set reference surface coordinates
-global referenceSurfaceCoords={0, 65}
+set global.mosReferenceSurfaceCoords={0, 65}
