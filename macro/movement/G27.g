@@ -1,4 +1,5 @@
-; G27.g
+; G27.g: PARK
+;
 ; Park spindle, and center the work area in an accessible location.
 ;
 ; USAGE: "G27"

@@ -10,9 +10,9 @@ if { !exists(global.mosLoaded) || !global.mosLoaded }
     echo "MillenniumOS not loaded!"
     M99
 
-while global.daemonEnable
-    G4 P{global.daemonUpdateRate} ; Minimum interval between daemon runs
+while {global.mosDaemonEnable}
+    G4 P{global.mosDaemonUpdateRate} ; Minimum interval between daemon runs
 
     ; Only run VSSC when feature is enabled and VSSC has been activated
-    if { exists(global.featureVSSC) && global.featureVSSC == true && global.vsscEnabled }
-        M98 P"macro/daemon/mos-run-vssc.g" ; Update active spindle speed based on timings
+    if { exists(global.mosFeatureVSSC) && global.mosFeatureVSSC == true && global.mosVsscEnabled && global.mosVsscOverrideEnabled }
+        M98 P"mos/run-vssc.g" ; Update active spindle speed based on timings
