@@ -21,17 +21,6 @@ global mosOriginAll={"Front Left","Front Right","Rear Right","Rear Left","Centre
 ; Define names for work offsets. The work offset ID is the index into these arrays, plus 1.
 global mosWorkOffsetCodes={"G54","G55","G56","G57","G58","G59","G59.1","G59.2","G59.3"}
 
-global mosProbeRoughSpeed=150    ; Speed used for initial probe movement
-
-global mosProbeSpeed=25          ; Speed used for subsequent probe movements to increase accuracy
-
-global mosProbeBackoffDistance=2 ; NOTE: You cannot probe any negative features (bores, pockets etc)
-                                ; with a length in any axis less than this value, as the probe or tool will collide
-                                ; with the opposite face when backing off. Most cheap touch-probes have a tip
-                                ; radius of 1mm, so this value should be at least 2mm. Override this if you
-                                ; have a smaller probe tip (or tool, for manual probing) and you want to be able
-                                ; to probe very small features.
-
 ; Coordinates returned by the most recent probing operation.
 ; Depending on the op, not all of these will be set.
 global mosProbeCoordinate=0
@@ -67,6 +56,7 @@ global mosN                 = {"X","Y","Z"}
 
 ; Define constants for probe types
 global mosReferenceSurfaceCoords=null
+global mosReferenceSurfaceZ=null
 global mosToolSetterCoords=null
 global mosToolSetterHeight=null
 global mosToolSetterID=null

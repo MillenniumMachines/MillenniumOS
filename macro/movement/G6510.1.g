@@ -40,20 +40,6 @@ if { !exists(param.Z) }
 
 var sZ = { param.Z }
 
-; Check if probe direction and distance is the same as the starting position
-var xEqual = { param.J == global.mosIX && param.D == var.sX }
-var yEqual = { param.J == global.mosIY && param.D == var.sY }
-var zEqual = { param.J == global.mosIZ && param.D == var.sZ }
-var posEqual = { var.xEqual || var.yEqual || var.zEqual }
-
-if { var.posEqual }
-    abort { "Probe direction and distance (D+-..) cannot be the same as the starting position in !" }
-
-var posMoveX = { param.J == global.mosIX && param.D > var.sX }
-var posMoveY = { param.J == global.mosIY && param.D > var.sY }
-var posMoveZ = { param.J == global.mosIZ && param.D > var.sZ }
-var posMove  = { var.posMoveX || var.posMoveY || var.posMoveZ }
-
 ; NOTE: We assume the _current_ height of the probe (when macro is called) is safe for lateral moves.
 var safeZ = { move.axes[global.mosIZ].machinePosition }
 
@@ -63,7 +49,6 @@ var safeZ = { move.axes[global.mosIZ].machinePosition }
 ; and divide it by 5 to get the fine speed.
 ; This is generally a safe default although
 
-var oneSpeed     = false
 var roughSpeed   = sensors.probes[param.K].speeds[0]
 var fineSpeed    = sensors.probes[param.K].speeds[1]
 var roughDivider = 5
@@ -79,6 +64,8 @@ if { var.roughSpeed == var.fineSpeed }
 ; retries, we stop probing.
 var minProbes   = 3
 
+var targetPos   = 0
+
 var roughHeight = sensors.probes[param.K].diveHeights[0]
 var fineHeight  = sensors.probes[param.K].diveHeights[1]
 var retries     = sensors.probes[param.K].maxProbeCount
@@ -90,7 +77,7 @@ var travelSpeed = sensors.probes[param.K].travelSpeed
 ; If moving in a positive direction (e.g. towards X-max), we need to
 ; back off in the negative direction (e.g. towards X-min) before
 ; subsequent probes. We need to invert the back-off distances.
-if { var.posMove }
+if { param.D > 0 }
     set var.roughHeight = -var.roughHeight
     set var.fineHeight  = -var.fineHeight
 
@@ -129,19 +116,25 @@ while { iterations <= var.retries }
     G90
     G21
 
+    set var.targetPos = move.axes[param.J].machinePosition + param.D
     ; Probe towards surface
     if { param.J == global.mosIX }
-        G53 G38.2 X{param.D} K{global.mosTouchProbeID}
+        G53 G38.2 X{var.targetPos} K{global.mosTouchProbeID}
     elif { param.J == global.mosIY }
-        G53 G38.2 Y{param.D} K{global.mosTouchProbeID}
+        G53 G38.2 Y{var.targetPos} K{global.mosTouchProbeID}
     elif { param.J == global.mosIZ }
-        G53 G38.2 Z{param.D} K{global.mosTouchProbeID}
+        G53 G38.2 Z{var.targetPos} K{global.mosTouchProbeID}
 
     ; Abort if an error was encountered
     if { result != 0 }
         ; Reset probing speed limits
         M558 K{param.K} F{var.roughSpeed, var.fineSpeed}
+
+        ; Park. This is a safety precaution to prevent subsequent X/Y moves from
+        ; crashing the probe.
+        G27
         abort { "MillenniumOS: Probe " ^ param.K ^ " experienced an error, aborting!" }
+
 
     ; Drop to fine probing speed
     M558 K{param.K} F{var.fineSpeed}
@@ -166,9 +159,6 @@ while { iterations <= var.retries }
 
         ; Calculate per-probe variance
         set var.variance = { var.nS / (iterations - 1) }
-
-        if { !global.mosExpertMode }
-            echo { "MillenniumOS: Probe " ^ param.K ^ ":  " ^ iterations ^ "/" ^ var.retries ^ " avg(" ^ global.mosN[param.J] ^ ")=" ^ var.nM ^ "mm, var(" ^ global.mosN[param.J] ^ ")=" ^ (isnan(var.variance)? 0.0 : var.variance ) ^ "mm" }
 
     ; Apply correct back-off distance
     var backoffDist = { iterations == 0 ? var.roughHeight : var.fineHeight }
@@ -208,4 +198,5 @@ G53 G0 Z{var.safeZ}
 ; Calculate average position and set probe output variables
 set global.mosProbeCoordinate={ var.nM }
 
-echo { "MillenniumOS: Probe " ^ param.K ^ ": " ^ global.mosN[param.J] ^ "=" ^ global.mosProbeCoordinate }
+if { !global.mosExpertMode }
+    echo { "MillenniumOS: Probe " ^ param.K ^ ": avg(" ^ global.mosN[param.J] ^ ")=" ^ var.nM ^ "mm, var(" ^ global.mosN[param.J] ^ ")=" ^ (isnan(var.variance)? 0.0 : var.variance ) ^ "mm" }

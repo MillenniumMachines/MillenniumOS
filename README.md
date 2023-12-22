@@ -69,9 +69,9 @@ G0 Z15.0
 
 ## Usage
   - Download the ZIP file of a release.
-  - Copy the folder structure to the root of your SD card.
+  - Extract the ZIP file onto the root of your SD card, or upload it to DWC.
   - Add `M98 P"mos.g"` to the bottom of your `config.g` file.
-  - Configure your settings in `mos-user-vars.g`
+  - Copy `mos-user-vars.g.example to `mos-user-vars.g` and configure your settings.
 
 ## Notes
   - You _must_ be using RRF `v3.5.0-rc.1` or above. MOS uses many 'meta gcode' features that do not exist in earlier versions.
