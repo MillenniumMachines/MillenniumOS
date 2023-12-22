@@ -34,6 +34,7 @@ global mosProbeBackoffDistance=2 ; NOTE: You cannot probe any negative features 
 
 ; Coordinates returned by the most recent probing operation.
 ; Depending on the op, not all of these will be set.
+global mosProbeCoordinate=0
 global mosProbeCoordinateX=0
 global mosProbeCoordinateY=0
 global mosProbeCoordinateZ=0
@@ -61,9 +62,8 @@ global mosVsscPreviousAdjustmentRPM=0.0
 global mosIX                = 0
 global mosIY                = 1
 global mosIZ                = 2
-global mosNX                = "X"
-global mosNY                = "Y"
-global mosNZ                = "Z"
+global mosN                 = {"X","Y","Z"}
+
 
 ; Define constants for probe types
 global mosReferenceSurfaceCoords=null

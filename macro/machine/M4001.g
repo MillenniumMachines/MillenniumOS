@@ -3,13 +3,16 @@
 ; Removes a tool by index
 
 ; Read tool number to remove
-if { !exists(param.I) }
-    abort "Must provide tool number (I...) to remove from tool list!"
+if { !exists(param.P) }
+    abort "Must provide tool number (P...) to remove from tool list!"
 
-if { param.I > #global.mosToolTable }
-    abort { "Tool index must be less than or equal to " ^  #global.mosToolTable ^ "!" }
+if { param.P >= limits.tools || param.P < 1 }
+    abort { "Tool index must be between 1 and " ^  limits.tools-1 ^ "!" }
+
+; Reset RRF Tool
+M563 P{param.P} R-1
 
 ; Reset tool description in zero-indexed array
-set global.mosToolTable[param.I-1] = {"Unknown Tool", 0.0, false, {0, 0}}
+set global.mosToolTable[param.P] = {0.0, false, {0, 0}}
 
-echo {"Removed tool #" ^ param.I}
+echo {"Removed tool #" ^ param.P}
