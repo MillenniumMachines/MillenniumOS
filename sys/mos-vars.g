@@ -22,11 +22,44 @@ global mosOriginAll={"Front Left","Front Right","Rear Right","Rear Left","Centre
 global mosWorkOffsetCodes={"G54","G55","G56","G57","G58","G59","G59.1","G59.2","G59.3"}
 
 ; Coordinates returned by the most recent probing operation.
-; Depending on the op, not all of these will be set.
-global mosProbeCoordinate=0
-global mosProbeCoordinateX=0
-global mosProbeCoordinateY=0
-global mosProbeCoordinateZ=0
+global mosProbeCoordinate={ null, null, null }
+
+
+global mosBoreRadius=null
+global mosBoreCenterPos={null, null}
+
+; These are the X and Y coordinates of the center
+; of the most recent rectangular pocket probe.
+global mosRectanglePocketCenterPos={null, null}
+global mosRectanglePocketDimensions={null, null}
+
+; These are the X and Y coordinates of the center
+; of the most recent rectangle block probe.
+global mosRectangleBlockCenterPos={null, null}
+
+; These are the calculated dimensions, in mm, of the
+; most recent rectangle block probe.
+global mosRectangleBlockDimensions={null, null}
+
+; When probing an outside corner, move inwards by
+; this distance in mm for the initial probe.
+global mosOutsideCornerDefaultDistance=10.0
+
+; This is the corner number that was picked by the
+; operator for the most recent outside corner probe
+global mosOutsideCornerNum=null
+
+; These are the X and Y coordinates of the most recent
+; outside corner probe.
+global mosOutsideCornerPos={null, null}
+
+; This is the corner number that was picked by the
+; operator for the most recent inside corner probe
+global mosInsideCornerNum=null
+
+; These are the X and Y coordinates of the most recent
+; inside corner probe.
+global mosInsideCornerPos={null, null}
 
 ; Daemon settings
 ; Required for regular task updates (e.g. VSSC)

@@ -1,5 +1,11 @@
 # Millennium Machines GCode Flavour
 
+## RRF Useful Codes
+G30
+G38.2...
+M675
+M585
+
 ## Misc
 
 #### `G27` - PARK
@@ -9,12 +15,23 @@ Parking is used widely throughout probing and tool changing to move the spindle 
 When using multiple milling tools, we must compensate for length differences between the tools. G37 can be used to (re-)calculate the length of the current tool in relation to a reference surface. `G37` is used widely by CNC mills to probe tool lengths but is not implemented by RRF, so again we implement our own.
 
 #### `M7500` - PROMPT TOUCHPROBE INSERTION
+Ask the user to install the touch probe into the spindle and plug it in. Most cheap 3D touch probes are normally open, which means we cannot detect programmatically if the touch probe is installed.
+
+`M7500` prompts the user with a modal that they should dismiss when they are ready to continue the probing process.
 
 #### `M7501` - PROMPT TOUCHPROBE REMOVAL
+Ask the user to remove the touch probe from the spindle. This confirms that we will not spin up the touch probe by making sure a user has to dismiss a modal after removing the touch probe.
 
 ---
 
 ## Probing
+
+### META
+
+#### `G6600` - PROBE WORKPIECE
+Called by the post-processor to indicate that workpiece should be probed to set WCS origin.
+
+If the post knows what _type_ of workpiece probe should be executed, it can call the specific probing operation directly (e.g. `G6500`, `G6501` etc). Calling `G6600` will prompt the operator to select a probing methodology based on their knowledge of the work piece.
 
 ### Two Axis
 
@@ -43,6 +60,7 @@ When using multiple milling tools, we must compensate for length differences bet
 #### `G6510` - SINGLE SURFACE
 
 #### `G6511` - PROBE REFERENCE SURFACE
+  - Calls `G6510.1`, probing from z-max towards z-min
 
 ### Three Axis
 
@@ -64,10 +82,16 @@ When using multiple milling tools, we must compensate for length differences bet
 
 ---
 
-## Variable Spindle Speed Control
+## Spindle Control
+
+### Variable Spindle Speed Control
 
 #### `M7000` - ENABLE VSSC
 
 #### `M7001` - DISABLE VSSC
 
+---
 
+## Variable Control
+
+#### `M7500` - OUTPUT ALL KNOWN VARIABLES
