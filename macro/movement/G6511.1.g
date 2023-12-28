@@ -12,14 +12,24 @@
 ; reference surface should be a measurable value that _does not change_.
 
 ; This macro uses G6510.1 to perform the actual probing.
-var zMin = { move.axes[global.mosIZ].min }
-var zMax = { move.axes[global.mosIZ].max }
 
-G6510.1 K{global.mosTouchProbeID} J{global.mosIZ} D{var.zMin} X{global.mosReferenceSurfaceCoords[global.mosIX]} Y{global.mosReferenceSurfaceCoords[global.mosIY]} Z{var.zMax}
+; Start point in X/Y is directly above the reference surface.
+var sX = { global.mosReferenceSurfaceCoords[global.mosIX] }
+var sY = { global.mosReferenceSurfaceCoords[global.mosIY] }
+
+; Start point in Z is the maximum height of the Axis (usually 0)
+var sZ = { move.axes[global.mosIZ].max }
+
+; Target point is the minimum height of the Axis (usually -120)
+var tZ = { move.axes[global.mosIZ].min }
+
+; Using the touch probe, probe downwards until the probe is triggered.
+G6510.1 I{global.mosTouchProbeID} J{var.sX} K{var.sY} L{var.sZ} Z{var.tZ}
 
 if { result != 0 }
     abort { "Reference surface probing failed." }
 
-set global.mosReferenceSurfaceZ = { global.mosProbeCoordinate }
+; Extract the Z-height of the reference surface from the probe result.
+set global.mosReferenceSurfaceZ = { global.mosProbeCoordinate[global.mosIZ] }
 
 echo { "MillenniumOS: Reference surface Z=" ^ global.mosReferenceSurfaceZ}
