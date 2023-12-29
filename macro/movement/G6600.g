@@ -16,8 +16,8 @@ var workOffset = { (exists(param.W) ? param.W : null ) }
 
 var probeNames = {
     "Vise Corner",
-    "Bore",
-    "Boss",
+    "Circular Bore",
+    "Circular Boss",
     "Rectangle Pocket",
     "Outside Corner",
     "Single Surface",
