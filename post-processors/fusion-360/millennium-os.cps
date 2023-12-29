@@ -21,6 +21,10 @@
 // Add some useful functions not available in Fusion360
 Object.values = Object.values || function(o){return Object.keys(o).map(function(k){return o[k]})};
 
+Array.prototype.extend = function (a) {
+    this.push.apply(this, a);
+}
+
 String.prototype.supplant = function (o) {
     return this.replace(/{([^{}]*)}/g,
         function (a, b) {
@@ -197,10 +201,18 @@ var zVar = createOutputVariable({ prefix: "Z" }, axesFmt); // TODO: Investigate 
 // Output Feed variable when set
 var fVar = createOutputVariable({ prefix:"F" }, feedFmt);
 
-// Output I, J and K variables
+// Output I, J and K variables (for arc moves)
 var iVar = createOutputVariable({ prefix: "I", control: CONTROL_NONZERO }, axesFmt);
 var jVar = createOutputVariable({ prefix: "J", control: CONTROL_NONZERO }, axesFmt);
 var kVar = createOutputVariable({ prefix: "K", control: CONTROL_NONZERO }, axesFmt);
+
+// Probing variables
+var xPVar = createOutputVariable({ prefix: "X" }, axesFmt);
+var yPVar = createOutputVariable({ prefix: "Y" }, axesFmt);
+var zPVar = createOutputVariable({ prefix: "Z" }, axesFmt);
+var jPVar = createOutputVariable({ prefix: "J" }, axesFmt);
+var kPVar = createOutputVariable({ prefix: "K" }, axesFmt);
+var lPVar = createOutputVariable({ prefix: "L" }, axesFmt);
 
 // Output R (radius) variables
 var rVar = createOutputVariable({ prefix: "R", control: CONTROL_NONZERO }, radiusFmt);
@@ -217,11 +229,27 @@ var G_PARK         = 27;
 var G_HOME         = 28;
 var G_PROBE_TOOL   = 37;
 
-var G_PROBE_OPERATOR         = 6600;
-var G_PROBE_BORE             = 6500;
-var G_PROBE_BOSS             = 6501;
-var G_PROBE_RECTANGLE_POCKET = 6502;
-var G_PROBE_REF_SURFACE      = 6511;
+var G_PROBE = {
+  OPERATOR: 6600,
+  BORE: 6500.1,
+  BOSS: 6501.1,
+  RECTANGLE_POCKET: 6502.1,
+  SINGLE_SURFACE: 6510.1,
+  REF_SURFACE: 6511.1
+}
+
+var PROBING_CYCLES = {
+  'probing-x': G_PROBE.SINGLE_SURFACE,
+  'probing-y': G_PROBE.SINGLE_SURFACE,
+  'probing-z': G_PROBE.SINGLE_SURFACE,
+  'probing-xy-circular-boss': G_PROBE.BOSS,
+  'probing-xy-circular-hole': G_PROBE.BORE,
+  //'probing-xy-rectangular-boss': G_PROBE.RECTANGLE_BOSS,
+  'probing-xy-rectangular-hole': G_PROBE.RECTANGLE_POCKET,
+  //'probing-xy-inner-corner': G_PROBE.INNER_CORNER,
+  //'probing-xy-outer-corner': G_PROBE.OUTER_CORNER
+};
+
 // TODO: Add more probing codes
 
 // Define M code constants for non-standard codes.
@@ -656,27 +684,79 @@ function onSectionEnd() {
   writeln("");
 }
 
-/* function onCyclePoint() {
+// Change sign of value based on
+// approach direction.
+function approach(sign, value) {
+  if(sign == "positive") {
+    return value;
+  }
+  if(sign == "negative") {
+    return -value;
+  }
+  error("Invalid probing approach.");
+}
+
+function onCyclePoint() {
+  // We only support canned cycles for probing
+  if(!isProbeOperation()) {
+    return;
+  }
+  writeComment("Probing cycle: {type}".supplant({type: cycleType}));
+
+  var probeVars = [];
   switch(cycleType) {
     case CYCLE_PROBING_X:
+      probeVars.extend([
+        gCodesF.format(G_PROBE.SINGLE_SURFACE),
+          jPVar.format(x),
+          kPVar.format(y),
+          lPVar.format(z - cycle.depth),
+          xPVar.format(x + approach(cycle.approach1, cycle.probeClearance)),
+      ]);
+    break;
     case CYCLE_PROBING_Y:
+      probeVars.extend([
+        gCodesF.format(G_PROBE.SINGLE_SURFACE),
+          jPVar.format(x),
+          kPVar.format(y),
+          lPVar.format(z - cycle.depth),
+          yPVar.format(y + approach(cycle.approach1, cycle.probeClearance)),
+      ]);
     case CYCLE_PROBING_Z:
-    case CYCLE_PROBING_XY_CIRCULAR_BOSS:
-    case CYCLE_PROBING_XY_CIRCULAR_HOLE:
-    case CYCLE_PROBING_XY_RECTANGULAR_BOSS:
-    case CYCLE_PROBING_XY_RECTANGULAR_HOLE:
-    case CYCLE_PROBING_XY_INNER_CORNER:
+      probeVars.extend([
+        gCodesF.format(G_PROBE.SINGLE_SURFACE),
+          jPVar.format(x),
+          kPVar.format(y),
+          lPVar.format(Math.min(z - cycle.depth + cycle.probeClearance, cycle.retract)),
+          zPVar.format(z - cycle.depth),
+      ]);
     case CYCLE_PROBING_XY_OUTER_CORNER:
+      probeVars.extend([
+        gCodesF.format(G_PROBE.OUTER_CORNER),
+          jPVar.format(x),
+          kPVar.format(y),
+          lPVar.format(z - cycle.depth),
+          xPVar.format(x + approach(cycle.approach1, cycle.probeClearance)),
+          yPVar.format(y + approach(cycle.approach2, cycle.probeClearance)),
+      ]);
+      // Add P and Q variables if probespacing is defined, which
+      // will perform an extra probe along each axis and can calculate
+      // the angle of the probed corner.
+      if(cycle.probeSpacing !== undefined) {
+        probeVars.push("P{xS} Q{yS}".supplant({xS: cycle.probeSpacing, yS: cycle.probeSpacing}))
+      }
     default:
-      error("Unsupported probing cycle type: {type}".supplant({type: cycleType}));
+      return error("Unsupported probing cycle type: {type}".supplant({type: cycleType}));
   }
-} */
+
+  writeBlock(probeVars);
+}
 
 // Called when a spindle speed change is requested
-// function onSpindleSpeed(rpm) {
-  // writeComment("Spindle speed changed");
-  // writeBlock(mCodes.format(3), sVar.format(rpm));
-// }
+function onSpindleSpeed(rpm) {
+  writeComment("Spindle speed changed");
+  writeBlock(mCodes.format(3), sVar.format(rpm));
+}
 
 // Called when a rapid linear move is requested
 function onRapid(x, y, z) {
