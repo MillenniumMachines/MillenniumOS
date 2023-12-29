@@ -54,7 +54,7 @@ To work on multiple work pieces in a single plane, you can select `At Start`, wh
 
 The final setting is `None (Expert Mode)`, which will assume that all used work offsets are already configured.
 
-In this mode, no work piece probing code will be generated automatically - but you can still use Fusion360's "probing" functionality to create probing operations where and when you need them.
+In this mode, no work piece probing code will be generated automatically - but you can still use Fusion360's Inspection -> Probing functionality to create probing operations where and when you need them. Please note the Probing functionality requires a paid Fusion360 license.
 
 You can set individual output settings to `No` to disable some of the default functionality (e.g. "Home Before Start" can be turned off, amongst others), or you can disable all the pre-configuration commands by setting "Output job setup commands" to `No`.
 
