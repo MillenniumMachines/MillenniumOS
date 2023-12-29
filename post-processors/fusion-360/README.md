@@ -11,11 +11,9 @@ By default, a program will follow roughly these steps:
   2. Home machine in X, Y and Z using G28
   3. Configure movement options
   4. Probe reference surface using touch probe if using more than 1 tool
-  5. Enable vssc
-  6. Run operations
-  7. Park the spindle (this also triggers a spindle stop)
-  8. Disable vssc
-  9. End program
+  5. Run operations
+  6. Park the spindle (this also triggers a spindle stop)
+  7. End program
 
 For each of your operations, the following steps will be taken:
   1. If the new work offset is not the current work offset:
@@ -27,11 +25,13 @@ For each of your operations, the following steps will be taken:
      2. Run tool change process (M6)
      3. Tool change process prompts operator to install right tool, and
      4. Runs G37 to probe the new tool's offset.
-  4. Start spindle at requested RPM
-  5. Wait for spindle to reach target RPM
-  6. Move to operation starting position in Z
-  7. Move to operation starting position in X and Y
-  8. Run cutting moves
+  5. Enable VSSC if requested
+  6. Start spindle at requested RPM
+  7. Wait for spindle to reach target RPM
+  8. Move to operation starting position in Z
+  9. Move to operation starting position in X and Y
+  10. Run cutting moves
+  11. Disable VSSC if it was enabled
 
 ## Probing
 When the operator is prompted to probe the work piece, our default behaviour is to run `G6600` which is a "meta macro" that collects information from the operator before running the actual probing macros to find the work piece.

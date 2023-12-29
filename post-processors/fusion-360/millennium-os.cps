@@ -1,5 +1,5 @@
 /**
- * Millenium Machines Milo v1.5 Postprocessor for Fusion360.
+ * MillenniumOS v1.0 Postprocessor for Fusion360.
  *
  * This postprocessor assumes that most complex functionality like
  * tool changes and work coordinate setting is handled in the machine firmware.
@@ -18,11 +18,24 @@
  * - It is the responsibility of your macros and firmware to run any safety checks.
  */
 
-// Set display configuration of Postprocessor as displayed in Fusion360
-description = "Milo v1.5";
-longDescription = "Millennium Machines Milo v1.5 Post Processor for MillenniumOS.";
+// Add some useful functions not available in Fusion360
+Object.values = Object.values || function(o){return Object.keys(o).map(function(k){return o[k]})};
+
+String.prototype.supplant = function (o) {
+    return this.replace(/{([^{}]*)}/g,
+        function (a, b) {
+            var r = o[b];
+            return typeof r === 'string' || typeof r === 'number' ? r : a;
+        }
+    );
+};
+
+
+// Set display configuration of Postprocessor in Fusion360
+description = "MillenniumOS v1.0 for Milo v1.5";
+longDescription = "MillenniumOS v1.0 Post Processor for Milo v1.5.";
 vendor = "Millennium Machines";
-vendorUrl = "https://www.millenniummachines.com/";
+vendorUrl = "https://www.millennium-machines.com/";
 legal = "Copyright (C) 2012-2018 by Autodesk, Inc. 2022-2023 Millenium Machines";
 
 // Postprocessor engine settings
@@ -43,25 +56,25 @@ minimumCircularRadius = spatial(0.1, MM);  // Minimum radius of circular moves t
 maximumCircularRadius = spatial(1000, MM); // Maximum radius of circular moves that can be interpolated
 minimumCircularSweep  = toRad(0.1);        // Minimum angular sweep of circular moves
 maximumCircularSweep  = toRad(90);         // Maximum angular sweep of circular moves, set to 90 as we use Radius output for arcs
-
 allowHelicalMoves     = true;              // Output helical moves as arcs
 allowSpiralMoves      = false;             // Linearize spirals (circular moves with a different starting and ending radius)
 allowedCircularPlanes = undefined;         // Allow arcs on all planes
 
+// Define WCS probing modes
 var wcsProbeMode = {
-  'NONE': 0,
-  'ATSTART': 1,
-  'ONCHANGE': 2
-};
+  NONE: "NONE",
+  ATSTART: "AT_START",
+  ONCHANGE: "ON_CHANGE"
+}
 
-var wcsProbeModeNames = {
-  [wcsProbeMode['NONE']]: "None (Expert Mode)",
-  [wcsProbeMode['ATSTART']]: "At Start",
-  [wcsProbeMode['ONCHANGE']]: "On Change"
-};
+var wcsProbeModeProperty = [
+  { title: "None (Expert Mode)", id: wcsProbeMode.NONE },
+  { title: "At Start", id: wcsProbeMode.ATSTART },
+  { title: "On Change", id: wcsProbeMode.ONCHANGE }
+];
 
 // Property groups for user-configurable properties
-var groupDefinitions = {
+groupDefinitions = {
   spindle: {
     title: "Spindle Setup",
     description: "Spindle configuration",
@@ -70,48 +83,39 @@ var groupDefinitions = {
   }
 };
 
-var properties = {
-  outputMachine: true,
-  outputTools: true,
-  outputVersion: true,
-  outputJobSetup: true,
-  jobHomeBeforeStart: true,
-  jobWCSProbeMode: wcsProbeMode.ONCHANGE,
-  waitForSpindle: 20,
-  variableSpindleSpeedControlEnabled: true,
-  variableSpindleSpeedControlPeriod: 2000,
-  variableSpindleSpeedControlVariance: 100
-};
-
-// Properties configurable by the user when configuring the post-processor
-var propertyDefinitions = {
+// Properties configurable by the user
+properties = {
   outputMachine: {
     title: "Output machine details",
     description: "Output machine settings header.",
-    group: "configuration",
+    group: "formats",
+    scope: "post",
     type: "boolean",
-    values: ["Yes", "No"]
-  },
-  outputTools: {
-    title: "Output tools",
-    description: "Output tool details. Disabling this will make tool changes much harder!",
-    group: "configuration",
-    type: "boolean",
-    values: ["Yes", "No"]
+    value: true,
   },
   outputVersion: {
     title: "Output version details",
     description: "Output version details header.",
-    group: "configuration",
+    group: "formats",
+    scope: "post",
     type: "boolean",
-    values: ["Yes", "No"]
+    value: true
+  },
+  outputTools: {
+    title: "Output tools",
+    description: "Output tool details. If disabled, the firmware will not be pre-configured with tool details - you must configure them manually with the correct tool numbers before running the job.",
+    group: "formats",
+    scope: "post",
+    type: "boolean",
+    value: true,
   },
   outputJobSetup: {
     title: "Output job setup commands",
     description: "When enabled, the post-processor will output supplemental commands to make sure the machine is properly configured before starting a job. These commands include homing the machine and probing and Zeroing any used WCSs. Individual supplemental commands can be enabled, disabled and configured separately but disabling this allows advanced operators to setup the machine for the job using their own workflow, while still outputting known-good operation gcode from this post.",
     group: "configuration",
+    scope: "post",
     type: "boolean",
-    values: ["Yes", "No"]
+    value: true
   },
   jobHomeBeforeStart: {
     title: "Home before start",
@@ -119,59 +123,49 @@ var propertyDefinitions = {
     group: "homePositions",
     scope: "machine",
     type: "boolean",
-    values: ["Yes", "No"]
+    value: true
   },
   jobWCSProbeMode: {
     title: "WCS Origin Probing Mode",
     description: "Select how and when to probe and set WCS origins. Selecting 'At Start' will run a probing operation for all used WCS origins before executing any operations in the Program. This is useful if working on multiple objects in the same Program, where each object has its own origin. Selecting 'On Change' will probe each WCS origin just prior to switching into it for the first time. This is useful if you're working on a single object per Program but in multiple planes, where a WCS change can coincide with the part being reoriented manually. Selecting 'None (Expert Mode)' means no automatic WCS origin probing will be output. Either your WCS origins are pre-configured before running this Program, or you have configured Probing operations manually in the program exactly where you need them.",
     group: "probing",
     type: "enum",
-    values: [
-      { title: wcsProbeModeNames[probeWCSMode['NONE']], value: probeWCSMode['NONE'] },
-      { title: wcsProbeModeNames[probeWCSMode['ATSTART']], value: probeWCSMode['ATSTART'] },
-      { title: wcsProbeModeNames[probeWCSMode['ONCHANGE']], value: probeWCSMode['ONCHANGE'] }
-    ]
-  },
-  variableSpindleSpeedControlEnabled: {
-    title: "Enable Variable Spindle Speed Control",
-    description: "When enabled, spindle speed is varied between an upper and lower limit surrounding the requested RPM which helps to avoid harmonic resonance between tool and work piece.",
-    group: "spindle",
-    scope: "operation",
-    type: "boolean",
-    values: ["Yes", "No"]
+    values: wcsProbeModeProperty,
+    value: wcsProbeModeProperty[2].id
   },
   waitForSpindle: {
     title: "Dwell time in seconds to wait for spindle to reach target RPM",
     description: "When set, machine will wait (dwell) for this number of seconds after starting or stopping the spindle to allow it to accelerate or decelerate to the target speed.",
     group: "spindle",
     scope: "machine",
-    type: "integer"
+    type: "integer",
+    value: 20
   },
-  variableSpindleSpeedControlVariance: {
+  vsscEnabled: {
+    title: "Enable Variable Spindle Speed Control",
+    description: "When enabled, spindle speed is varied between an upper and lower limit surrounding the requested RPM which helps to avoid harmonic resonance between tool and work piece.",
+    group: "spindle",
+    scope: "operation",
+    type: "boolean",
+    value: true,
+  },
+  vsscVariance: {
     title: "Variable Spindle Speed Control Variance",
     description: "Variance above and below target RPM to vary Spindle speed when VSSC is enabled, in RPM.",
     group: "spindle",
     scope: "operation",
-    type: "integer"
+    type: "integer",
+    value: 100
   },
-  variableSpindleSpeedControlPeriod: {
+  vsscPeriod: {
     title: "Variable Spindle Speed Control Period",
     description: "Period over which RPM is varied up and down when VSSC is enabled, in milliseconds.",
     group: "spindle",
     scope: "operation",
-    type: "integer"
+    type: "integer",
+    value: 2000
   }
 };
-
-String.prototype.supplant = function (o) {
-    return this.replace(/{([^{}]*)}/g,
-        function (a, b) {
-            var r = o[b];
-            return typeof r === 'string' || typeof r === 'number' ? r : a;
-        }
-    );
-};
-
 
 // Configure command formatting functions
 var gFmt = createFormat({ prefix: "G", decimals: 1 }); // Create formatting command for G codes
@@ -187,11 +181,8 @@ var radiusFmt = axesFmt;
 // Create formatting output for feed variable.
 var feedFmt   = createFormat({decimals:(unit == MM ? 1 : 2), type: FORMAT_REAL, minDigitsRight: 1 });
 
-// Create formatting output for spindle RPM, integer only
-var rpmFmt = createFormat({ type: FORMAT_INTEGER });
-
-// Create formatting output for seconds, used for delays, integer only.
-var secFmt = createFormat({ type: FORMAT_INTEGER });
+// Used for integer output - RPM, seconds, tool properties etc
+var intFmt = createFormat({ type: FORMAT_INTEGER });
 
 // Force output of G, M and T commands when executed
 var gCmd = createOutputVariable({ control: CONTROL_FORCE }, gFmt );
@@ -215,11 +206,11 @@ var kVar = createOutputVariable({ prefix: "K", control: CONTROL_NONZERO }, axesF
 var rVar = createOutputVariable({ prefix: "R", control: CONTROL_NONZERO }, radiusFmt);
 
 // Output RPM whenever set, as we may need to start spindle back up after a tool change.
-var sVar = createOutputVariable({ prefix: "S", control: CONTROL_FORCE }, rpmFmt);
+var sVar = createOutputVariable({ prefix: "S", control: CONTROL_FORCE }, intFmt);
 
 // Output dwell whenever set.
 // Note: this uses same prefix as sVar but is passed to G4 rather than M commands.
-var dVar = createOutputVariable({ prefix: "S", control: CONTROL_FORCE }, secFmt);
+var dVar = createOutputVariable({ prefix: "S", control: CONTROL_FORCE }, intFmt);
 
 // Define G code constants for non-standard codes.
 var G_PARK         = 27;
@@ -386,20 +377,21 @@ function onOpen() {
     writeComment("Pass tool details to firmware");
     for(var i = 0; i < nTools; i++) {
       var tool = tools.getTool(i);
-      writeBlock('{cmd} I{index} D"{desc} F={f} L={l} CR={cr}"'.supplant({
+      writeBlock('{cmd} P{index} R{radius} S"{desc} F={f} L={l} CR={cr}"'.supplant({
         cmd: mCodes.format(M_ADD_TOOL),
-        index: tool.number,
+        index: intFmt.format(tool.number),
+        radius: axesFmt.format(tool.diameter/2),
         desc: tool.description,
         l: axesFmt.format(tool.fluteLength),
         cr: axesFmt.format(tool.cornerRadius),
-        f: tool.numberOfFlutes
+        f: intFmt.format(tool.numberOfFlutes)
       }));
     }
     writeln("");
   }
 
   // Output job setup commands if necessary
-  if(properties.outputJobSetup)
+  if(properties.outputJobSetup) {
     // If homeBeforeStart enabled, output G_HOME
     if(properties.homeBeforeStart) {
       writeComment("Home before start");
@@ -413,25 +405,26 @@ function onOpen() {
       writeln("");
     }
 
-    writeComment("WCS Probing Mode: {mode}".supplant({mode: wcsProbeModeNames[properties.jobWCSProbeMode]}));
+    writeComment("WCS Probing Mode: {mode}".supplant({mode: getProperty("jobWCSProbeMode")}));
 
-    if(properties.jobWCSProbeMode === wcsProbeMode.ATSTART) {
+    if(getProperty("jobWCSProbeMode") === wcsProbeMode.ATSTART) {
       for(var i = 0; i < seenWCS.length; i++) {
         var wcs = seenWCS[i];
         writeComment("Probe origin and save in WCS {wcs}".supplant({wcs: wcs}));
         writeBlock(gCodesF.format(G_PROBE_OPERATOR), "W{wcs}".supplant({wcs: wcs}));
         writeln("");
       }
-    }
-
-    if(properties.variableSpindleSpeedControlEnabled) {
-      writeComment("Enable Variable Spindle Speed Control");
-      writeBlock(mCodes.format(M_VSSC_ENABLE), "P{period} V{variance}".supplant({
-        period: properties.variableSpindleSpeedControlPeriod,
-        variance: properties.variableSpindleSpeedControlVariance
-      }));
+      // If probe mode is ONCHANGE, then onSection() deals with prompting the operator
+      // to insert and remove the touch probe. If we probe all used WCS here, then we can
+      // safely prompt the operator to remove the touch probe here and proceed with
+      // the operations.
+      writeComment("Prompt operator to remove touch probe before continuing");
+      writeBlock(mCodes.format(M_PROBE_REMOVE));
+      writeln("");
+    } else {
       writeln("");
     }
+
   }
 
   // Output movement configuration - absolute moves, mm or inches, arcs in X/Y.
@@ -449,9 +442,8 @@ function onOpen() {
   // All feeds in mm/min
   writeBlock(gCodes.format(94));
 
-  writeln("");
-
-}
+    writeln("");
+};
 
 // Track parameter values required for the current operation.
 var curOp = {
@@ -570,7 +562,7 @@ function onSection() {
   // If WCS requires changing
   if(wcsChanging) {
     // Only probe on WCS change if probe mode is set to ONCHANGE
-    var doProbe = properties.jobWCSProbeMode === wcsProbeMode['ONCHANGE'] && !isProbeOperation();
+    var doProbe = getProperty("jobWCSProbeMode") === wcsProbeMode.ONCHANGE && !isProbeOperation();
 
     var wcsO = { wcs: curWCS };
 
@@ -605,12 +597,20 @@ function onSection() {
     writeln("");
   }
 
+  if(getProperty("vsscEnabled")) {
+    writeComment("Enable Variable Spindle Speed Control");
+    writeBlock(mCodes.format(M_VSSC_ENABLE), "P{period} V{variance}".supplant({
+      period: getProperty("vsscPeriod"),
+      variance: getProperty("vsscVariance")
+    }));
+    writeln("");
+  }
   // If RPM has changed, output updated M3 command
   // We do this regardless of tool-change, because
   // operations may have different RPMs set on the
   // same tool.
   var s = sVar.format(curTool['rpm']);
-  if(s && curOp['tool_type'] !== TOOL_PROBE) {
+  if(s && curTool['type'] !== TOOL_PROBE) {
     writeComment("Start spindle at requested RPM");
     writeBlock(mCodes.format(3), s);
     if(properties.waitForSpindle > 0) {
@@ -644,13 +644,19 @@ function onSectionEnd() {
     writeBlock(gCodesF.format(M_PROBE_REMOVE));
   }
 
+  if(getProperty("vsscEnabled")) {
+    writeComment("Disable Variable Spindle Speed Control");
+    writeBlock(mCodes.format(M_VSSC_DISABLE));
+    writeln("");
+  }
+
   // Reset all variable outputs ready for the next section
   resetAll();
   // Write a newline to delineate
   writeln("");
 }
 
-function onCyclePoint() {
+/* function onCyclePoint() {
   switch(cycleType) {
     case CYCLE_PROBING_X:
     case CYCLE_PROBING_Y:
@@ -664,7 +670,7 @@ function onCyclePoint() {
     default:
       error("Unsupported probing cycle type: {type}".supplant({type: cycleType}));
   }
-}
+} */
 
 // Called when a spindle speed change is requested
 // function onSpindleSpeed(rpm) {
@@ -859,15 +865,10 @@ function onClose() {
   writeBlock(gCodesF.format(G_PARK));
   writeln("");
 
-  if(properties.variableSpindleSpeedControlEnabled) {
-    writeComment("Disable Variable Spindle Speed Control");
-    writeBlock(mCodes.format(M_VSSC_DISABLE));
-    writeln("");
-  }
-
   writeComment("Double-check spindle is stopped!");
   writeBlock(mCodes.format(5));
   writeln("");
   writeComment("End Program");
   writeBlock(mCodes.format(0));
 }
+
