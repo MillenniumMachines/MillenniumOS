@@ -75,7 +75,7 @@ var pM2 = { -1 / var.sM2 }
 var cX = { (var.pM2 * var.m2X - var.pM1 * var.m1X + var.m1Y - var.m2Y) / (var.pM2 - var.pM1) }
 var cY = { var.pM1 * (var.cX - var.m1X) + var.m1Y }
 
-; Calculate the distances radii from the circumcenter to each of the probed points
+; Calculate the radii from the circumcenter to each of the probed points
 var r1 = { sqrt(pow((var.pXY[0][0] - var.cX), 2) + pow((var.pXY[0][1] - var.cY), 2)) }
 var r2 = { sqrt(pow((var.pXY[1][0] - var.cX), 2) + pow((var.pXY[1][1] - var.cY), 2)) }
 var r3 = { sqrt(pow((var.pXY[2][0] - var.cX), 2) + pow((var.pXY[2][1] - var.cY), 2)) }

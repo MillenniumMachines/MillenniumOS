@@ -23,7 +23,9 @@ global mosWorkOffsetCodes={"G54","G55","G56","G57","G58","G59","G59.1","G59.2","
 
 ; Coordinates returned by the most recent probing operation.
 global mosProbeCoordinate={ null, null, null }
+global mosProbeVariance={ null, null, null }
 
+global mosProbeOvertravel=2.0 ; Overtravel distance in mm
 
 global mosBoreRadius=null
 global mosBoreCenterPos={null, null}

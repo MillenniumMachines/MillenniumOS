@@ -78,6 +78,14 @@ var targetPos = {
     exists(param.Z) ? param.Z : var.sZ
 }
 
+var tPX = { targetPos[global.mosIX] < move.axes[global.mosIX].min || targetPos[global.mosIX] > move.axes[global.mosIX].max }
+var tPY = { targetPos[global.mosIY] < move.axes[global.mosIY].min || targetPos[global.mosIY] > move.axes[global.mosIY].max }
+var tPZ = { targetPos[global.mosIZ] < move.axes[global.mosIZ].min || targetPos[global.mosIZ] > move.axes[global.mosIZ].max }
+
+; Check if target position is within machine limits
+if { tPX || tPY || tPZ }
+    abort { "Target probe position is outside machine limits. Reduce overtravel if probing away, or clearance if probing towards, the center of the table" }
+
 ; NOTE: We assume the _current_ height of the probe (when macro is called) is safe for lateral moves.
 var safeZ = { move.axes[global.mosIZ].machinePosition }
 
@@ -108,7 +116,6 @@ var retries     = sensors.probes[param.I].maxProbeCount
 var recovery    = sensors.probes[param.I].recoveryTime
 var tolerance   = sensors.probes[param.I].tolerance
 var travelSpeed = sensors.probes[param.I].travelSpeed
-
 
 
 ; Calculate a multiplier for the backoff direction
@@ -160,19 +167,19 @@ var oS          = { 0.0, 0.0, 0.0 }
 var nD          = { 0,0,0 }
 var nM          = { 0,0,0 }
 var nS          = { 0,0,0 }
-var variance    = { 0,0,0 }
+var pV          = { 0,0,0 }
 
 ; Probe until we hit a retry limit.
 ; We may also abort early if we reach the requested tolerance
 while { iterations <= var.retries }
     ; Probe towards surface
     ; NOTE: This has potential to move in all 3 axes!
-    G53 G38.2 X{var.targetPos[global.mosIX]} Y{var.targetPos[global.mosIY]} Z{var.targetPos[global.mosIZ]} K{global.mosTouchProbeID}
+    G53 G38.2 K{ param.I } X{ var.targetPos[global.mosIX] } Y{ var.targetPos[global.mosIY] } Z{ var.targetPos[global.mosIZ] }
 
     ; Abort if an error was encountered
     if { result != 0 }
         ; Reset probing speed limits
-        M558 K{param.I} F{var.roughSpeed, var.fineSpeed}
+        M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
 
         ; Park. This is a safety precaution to prevent subsequent X/Y moves from
         ; crashing the probe.
@@ -181,7 +188,7 @@ while { iterations <= var.retries }
 
 
     ; Drop to fine probing speed
-    M558 K{param.I} F{var.fineSpeed}
+    M558 K{ param.I } F{ var.fineSpeed }
 
     ; Record current position into local variable
     set var.curPos = { move.axes[global.mosIX].machinePosition, move.axes[global.mosIY].machinePosition, move.axes[global.mosIZ].machinePosition }
@@ -212,9 +219,9 @@ while { iterations <= var.retries }
             set var.oS = var.nS
 
         ; Calculate per-probe variance on each axis
-        set var.variance[global.mosIX] = { var.nS[global.mosIX] / (iterations - 1) }
-        set var.variance[global.mosIY] = { var.nS[global.mosIY] / (iterations - 1) }
-        set var.variance[global.mosIZ] = { var.nS[global.mosIZ] / (iterations - 1) }
+        set var.pV[global.mosIX] = { var.nS[global.mosIX] / (iterations - 1) }
+        set var.pV[global.mosIY] = { var.nS[global.mosIY] / (iterations - 1) }
+        set var.pV[global.mosIZ] = { var.nS[global.mosIZ] / (iterations - 1) }
 
 
     ; Apply correct back-off distance
@@ -223,36 +230,47 @@ while { iterations <= var.retries }
 
     ; Only back-off in directions where we actually moved
     G53 G1
-        X{var.curPos[global.mosIX] + (var.movementAxes[global.mosIX] * var.backoffDist)}
-        Y{var.curPos[global.mosIY] + (var.movementAxes[global.mosIY] * var.backoffDist)}
-        Z{var.curPos[global.mosIZ] + (var.movementAxes[global.mosIZ] * var.backoffDist)}
+        X{ var.curPos[global.mosIX] + (var.movementAxes[global.mosIX] * var.backoffDist) }
+        Y{ var.curPos[global.mosIY] + (var.movementAxes[global.mosIY] * var.backoffDist) }
+        Z{ var.curPos[global.mosIZ] + (var.movementAxes[global.mosIZ] * var.backoffDist) }
 
-    ; If we've reached the requested tolerance and a minimum number of probes, stop probing
-    ; TODO: Test if max() actually works on arrays.
-    ; If not, we'll need to check each member of variance individually.
-    if { max(var.variance) < var.tolerance && iterations >= var.minProbes }
+    ; If axis has moved, check if we're within tolerance on that axis.
+    ; We can only abort early if we're within tolerance on all moved (probed) axes.
+    var tR = true
+    if { var.movementAxes[global.mosIX] != 0 }
+        set var.tR = { var.tR && var.pV[global.mosIX] <= var.tolerance }
+    if { var.movementAxes[global.mosIY] != 0 }
+        set var.tR = { var.tR && var.pV[global.mosIY] <= var.tolerance }
+    if { var.movementAxes[global.mosIZ] != 0 }
+        set var.tR = { var.tR && var.pV[global.mosIZ] <= var.tolerance }
+
+    ; If we're within tolerance on all axes, we can stop probing
+    ; and report the result.
+    if { var.tR && iterations >= var.minProbes }
         if { !global.mosExpertMode }
             echo { "MillenniumOS: Probe " ^ param.I ^ ": Reached requested tolerance " ^ var.tolerance ^ "mm after " ^ iterations ^ "/" ^ var.retries ^ " probes" }
         break
 
     if { var.recovery > 0.0 }
         ; Dwell so machine can settle
-        G4 P{ceil(var.recovery*1000)}
+        G4 P{ ceil(var.recovery*1000) }
 
 
 ; Reset probing speed limits
-M558 K{param.I} F{var.roughSpeed, var.fineSpeed}
+M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
 
 ; Move to safe height
-G53 G1 Z{var.safeZ}
+G53 G1 Z{ var.safeZ }
 
 ; Set probe output variable X, Y and Z
 ; Only set output variables for axes we actually moved in.
 ; This means we can chain multiple G6510.1 calls and only
 ; read the output variables for the axes we're interested in.
 if { var.movementAxes[global.mosIX] != 0 }
-    set global.mosProbeCoordinate[global.mosIX]=var.nM[global.mosIX]
+    set global.mosProbeCoordinate[global.mosIX] = { var.nM[global.mosIX] }
 if { var.movementAxes[global.mosIY] != 0 }
-    set global.mosProbeCoordinate[global.mosIY]=var.nM[global.mosIY]
+    set global.mosProbeCoordinate[global.mosIY] = { var.nM[global.mosIY] }
 if { var.movementAxes[global.mosIZ] != 0 }
-    set global.mosProbeCoordinate[global.mosIZ]=var.nM[global.mosIZ]
+    set global.mosProbeCoordinate[global.mosIZ] = { var.nM[global.mosIZ] }
+
+set global.mosProbeVariance = { var.pV }

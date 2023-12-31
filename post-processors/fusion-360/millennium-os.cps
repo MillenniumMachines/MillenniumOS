@@ -21,10 +21,6 @@
 // Add some useful functions not available in Fusion360
 Object.values = Object.values || function(o){return Object.keys(o).map(function(k){return o[k]})};
 
-Array.prototype.extend = function (a) {
-    this.push.apply(this, a);
-}
-
 String.prototype.supplant = function (o) {
     return this.replace(/{([^{}]*)}/g,
         function (a, b) {
@@ -33,7 +29,6 @@ String.prototype.supplant = function (o) {
         }
     );
 };
-
 
 // Set display configuration of Postprocessor in Fusion360
 description = "MillenniumOS v1.0 for Milo v1.5";
@@ -69,12 +64,24 @@ var wcsProbeMode = {
   NONE: "NONE",
   ATSTART: "AT_START",
   ONCHANGE: "ON_CHANGE"
-}
+};
 
 var wcsProbeModeProperty = [
   { title: "None (Expert Mode)", id: wcsProbeMode.NONE },
   { title: "At Start", id: wcsProbeMode.ATSTART },
   { title: "On Change", id: wcsProbeMode.ONCHANGE }
+];
+
+var warpSpeedMode = {
+  NONE: "NONE",
+  CLEARANCE: "CLEARANCE",
+  RETRACT: "RETRACT",
+}
+
+var warpSpeedModeProperty = [
+  { title: "None", id: warpSpeedMode.NONE },
+  { title: "Clearance", id: warpSpeedMode.CLEARANCE },
+  { title: "Retract", id: warpSpeedMode.RETRACT },
 ];
 
 // Property groups for user-configurable properties
@@ -95,7 +102,7 @@ properties = {
     group: "formats",
     scope: "post",
     type: "boolean",
-    value: true,
+    value: true
   },
   outputVersion: {
     title: "Output version details",
@@ -111,7 +118,16 @@ properties = {
     group: "formats",
     scope: "post",
     type: "boolean",
-    value: true,
+    value: true
+  },
+  warpSpeedMode: {
+    title: "Restore rapid moves at and above the selected height",
+    description: "The operation height above which G0 moves will be restored. Only vertical OR lateral moves are considered.",
+    group: "formats",
+    scope: "post",
+    type: "enum",
+    values: warpSpeedModeProperty,
+    value: warpSpeedMode.NONE
   },
   outputJobSetup: {
     title: "Output job setup commands",
@@ -151,7 +167,7 @@ properties = {
     group: "spindle",
     scope: "operation",
     type: "boolean",
-    value: true,
+    value: true
   },
   vsscVariance: {
     title: "Variable Spindle Speed Control Variance",
@@ -199,7 +215,7 @@ var yVar = createOutputVariable({ prefix: "Y" }, axesFmt);
 var zVar = createOutputVariable({ prefix: "Z" }, axesFmt); // TODO: Investigate safe retracts using parking location
 
 // Output Feed variable when set
-var fVar = createOutputVariable({ prefix:"F" }, feedFmt);
+var fVar = createOutputVariable({ prefix:"F"}, feedFmt);
 
 // Output I, J and K variables (for arc moves)
 var iVar = createOutputVariable({ prefix: "I", control: CONTROL_NONZERO }, axesFmt);
@@ -207,12 +223,12 @@ var jVar = createOutputVariable({ prefix: "J", control: CONTROL_NONZERO }, axesF
 var kVar = createOutputVariable({ prefix: "K", control: CONTROL_NONZERO }, axesFmt);
 
 // Probing variables
+var jPVar = createOutputVariable({ prefix: "J", control: CONTROL_NONZERO }, axesFmt);
+var kPVar = createOutputVariable({ prefix: "K", control: CONTROL_NONZERO }, axesFmt);
+var lPVar = createOutputVariable({ prefix: "L", control: CONTROL_NONZERO }, axesFmt);
 var xPVar = createOutputVariable({ prefix: "X" }, axesFmt);
 var yPVar = createOutputVariable({ prefix: "Y" }, axesFmt);
 var zPVar = createOutputVariable({ prefix: "Z" }, axesFmt);
-var jPVar = createOutputVariable({ prefix: "J" }, axesFmt);
-var kPVar = createOutputVariable({ prefix: "K" }, axesFmt);
-var lPVar = createOutputVariable({ prefix: "L" }, axesFmt);
 
 // Output R (radius) variables
 var rVar = createOutputVariable({ prefix: "R", control: CONTROL_NONZERO }, radiusFmt);
@@ -225,49 +241,40 @@ var sVar = createOutputVariable({ prefix: "S", control: CONTROL_FORCE }, intFmt)
 var dVar = createOutputVariable({ prefix: "S", control: CONTROL_FORCE }, intFmt);
 
 // Define G code constants for non-standard codes.
-var G_PARK         = 27;
-var G_HOME         = 28;
-var G_PROBE_TOOL   = 37;
 
-var G_PROBE = {
-  OPERATOR: 6600,
-  BORE: 6500.1,
-  BOSS: 6501.1,
-  RECTANGLE_POCKET: 6502.1,
-  SINGLE_SURFACE: 6510.1,
-  REF_SURFACE: 6511.1
-}
-
-var PROBING_CYCLES = {
-  'probing-x': G_PROBE.SINGLE_SURFACE,
-  'probing-y': G_PROBE.SINGLE_SURFACE,
-  'probing-z': G_PROBE.SINGLE_SURFACE,
-  'probing-xy-circular-boss': G_PROBE.BOSS,
-  'probing-xy-circular-hole': G_PROBE.BORE,
-  //'probing-xy-rectangular-boss': G_PROBE.RECTANGLE_BOSS,
-  'probing-xy-rectangular-hole': G_PROBE.RECTANGLE_POCKET,
-  //'probing-xy-inner-corner': G_PROBE.INNER_CORNER,
-  //'probing-xy-outer-corner': G_PROBE.OUTER_CORNER
+var G = {
+  PARK: 27,
+  HOME: 28,
+  TOOL: 37,
+  PROBE_OPERATOR: 6600,
+  PROBE_BORE: 6500.1,
+  PROBE_BOSS: 6501.1,
+  PROBE_RECTANGLE_POCKET: 6502.1,
+  PROBE_SINGLE_SURFACE: 6510.1,
+  PROBE_REF_SURFACE: 6511.1
 };
 
 // TODO: Add more probing codes
 
 // Define M code constants for non-standard codes.
-var M_ADD_TOOL     = 4000;
-var M_VSSC_ENABLE  = 7000;
-var M_VSSC_DISABLE = 7001;
-var M_PROBE_REMOVE = 7003;
+var M = {
+  ADD_TOOL: 4000,
+  VSSC_ENABLE: 7000,
+  VSSC_DISABLE: 7001,
+  PROBE_REMOVE: 7003,
+};
 
-// Define canned-cycle probing identifiers
-var CYCLE_PROBING_X                   = 'probing-x';
-var CYCLE_PROBING_Y                   = 'probing-y';
-var CYCLE_PROBING_Z                   = 'probing-z';
-var CYCLE_PROBING_XY_CIRCULAR_BOSS    = 'probing-xy-circular-boss';
-var CYCLE_PROBING_XY_CIRCULAR_HOLE    = 'probing-xy-circular-hole';
-var CYCLE_PROBING_XY_RECTANGULAR_BOSS = 'probing-xy-rectangular-boss';
-var CYCLE_PROBING_XY_RECTANGULAR_HOLE = 'probing-xy-rectangular-hole';
-var CYCLE_PROBING_XY_INNER_CORNER     = 'probing-xy-inner-corner';
-var CYCLE_PROBING_XY_OUTER_CORNER     = 'probing-xy-outer-corner';
+var CYCLE = {
+  PROBING_X: 'probing-x',
+  PROBING_Y: 'probing-y',
+  PROBING_Z: 'probing-z',
+  PROBING_XY_CIRCULAR_BOSS: 'probing-xy-circular-boss',
+  PROBING_XY_CIRCULAR_HOLE: 'probing-xy-circular-hole',
+  PROBING_XY_RECTANGULAR_BOSS: 'probing-xy-rectangular-boss',
+  PROBING_XY_RECTANGULAR_HOLE: 'probing-xy-rectangular-hole',
+  PROBING_XY_INNER_CORNER: 'probing-xy-inner-corner',
+  PROBING_XY_OUTER_CORNER: 'probing-xy-outer-corner'
+};
 
 // Create modal groups
 var gCodes = createModalGroup(
@@ -288,14 +295,14 @@ var gCodesF = createModalGroup(
   [
       [0, 1, 2, 3],                               // Motion codes
       [4],                                        // Dwell codes
-      [G_PARK, G_HOME],                           // Other positioning codes
+      [G.PARK, G.HOME],                           // Other positioning codes
       [
-        G_PROBE_TOOL,
-        G_PROBE_OPERATOR,
-        G_PROBE_BORE,
-        G_PROBE_BOSS,
-        G_PROBE_RECTANGLE_POCKET,
-        G_PROBE_REF_SURFACE,
+        G.PROBE_TOOL,
+        G.PROBE_OPERATOR,
+        G.PROBE_BORE,
+        G.PROBE_BOSS,
+        G.PROBE_RECTANGLE_POCKET,
+        G.PROBE_REF_SURFACE
       ] // Probe codes
   ],
   gFmt);
@@ -307,9 +314,9 @@ var mCodes = createModalGroup(
     [0, 2],                          // Program codes
     [3, 4, 5],                       // Spindle codes
     [6],                             // Tool change codes
-    [M_ADD_TOOL],                    // Tool data codes
-    [M_VSSC_ENABLE, M_VSSC_DISABLE], // VSSC codes
-    [M_PROBE_REMOVE]                 // Probe codes
+    [M.ADD_TOOL],                    // Tool data codes
+    [M.VSSC_ENABLE, M.VSSC_DISABLE], // VSSC codes
+    [M.PROBE_REMOVE]                 // Probe codes
   ],
   mFmt);
 
@@ -405,31 +412,23 @@ function onOpen() {
     writeComment("Pass tool details to firmware");
     for(var i = 0; i < nTools; i++) {
       var tool = tools.getTool(i);
-      writeBlock('{cmd} P{index} R{radius} S"{desc} F={f} L={l} CR={cr}"'.supplant({
-        cmd: mCodes.format(M_ADD_TOOL),
-        index: intFmt.format(tool.number),
-        radius: axesFmt.format(tool.diameter/2),
-        desc: tool.description,
-        l: axesFmt.format(tool.fluteLength),
-        cr: axesFmt.format(tool.cornerRadius),
-        f: intFmt.format(tool.numberOfFlutes)
-      }));
+
     }
     writeln("");
   }
 
   // Output job setup commands if necessary
   if(properties.outputJobSetup) {
-    // If homeBeforeStart enabled, output G_HOME
+    // If homeBeforeStart enabled, output G.HOME
     if(properties.homeBeforeStart) {
       writeComment("Home before start");
-      writeBlock(gCodesF.format(G_HOME));
+      writeBlock(gCodesF.format(G.HOME));
       writeln("");
     }
 
     if(nTools > 0) {
       writeComment("Probe reference surface prior to tool changes");
-      writeBlock(gCodesF.format(G_PROBE_REF_SURFACE));
+      writeBlock(gCodesF.format(G.PROBE_REF_SURFACE));
       writeln("");
     }
 
@@ -439,7 +438,7 @@ function onOpen() {
       for(var i = 0; i < seenWCS.length; i++) {
         var wcs = seenWCS[i];
         writeComment("Probe origin and save in WCS {wcs}".supplant({wcs: wcs}));
-        writeBlock(gCodesF.format(G_PROBE_OPERATOR), "W{wcs}".supplant({wcs: wcs}));
+        writeBlock(gCodesF.format(G.PROBE_OPERATOR), "W{wcs}".supplant({wcs: wcs}));
         writeln("");
       }
       // If probe mode is ONCHANGE, then onSection() deals with prompting the operator
@@ -447,7 +446,7 @@ function onOpen() {
       // safely prompt the operator to remove the touch probe here and proceed with
       // the operations.
       writeComment("Prompt operator to remove touch probe before continuing");
-      writeBlock(mCodes.format(M_PROBE_REMOVE));
+      writeBlock(mCodes.format(M.PROBE_REMOVE));
       writeln("");
     } else {
       writeln("");
@@ -479,7 +478,9 @@ var curOp = {
   strat: "unknown",
   comment: "",
   probe_work_offset: 1,
-  tool_desc: "unknown"
+  tool_desc: "unknown",
+  clearance: Number.MAX_SAFE_INTEGER,
+  retract: Number.MAX_SAFE_INTEGER
 };
 
 // Track parameter values containing details about the current tool.
@@ -558,6 +559,14 @@ function onParameter(param, value) {
       }
     break;
 
+    // Track feed height and clearance height
+    case 'operation:zClearance':
+      curOp['clearance'] = value;
+    break;
+    case 'operation:zRetract':
+      curOp['retract'] = value;
+    break;
+
     // DEBUG: Uncomment this to write comments for all unhandled parameters.
     // default:
     //  writeComment("{p}: {v}".supplant({p: param, v: value}));
@@ -585,8 +594,6 @@ function onSection() {
     error("Extended Work Co-ordinate Systems (G59.1..9) are not supported on Milo!")
   }
 
-
-
   // If WCS requires changing
   if(wcsChanging) {
     // Only probe on WCS change if probe mode is set to ONCHANGE
@@ -601,13 +608,13 @@ function onSection() {
     // before continuing.
     if(doProbe) {
       writeComment("Park ready for WCS change");
-      writeBlock(gCodesF.format(G_PARK));
+      writeBlock(gCodesF.format(G.PARK));
       writeln("");
       writeComment("Probe origin corner and save in WCS {wcs}".supplant(wcsO));
-      writeBlock(gCodesF.format(G_PROBE_OPERATOR), "W{wcs}".supplant(wcsO));
+      writeBlock(gCodesF.format(G.PROBE_OPERATOR), "W{wcs}".supplant(wcsO));
       writeln("");
       writeComment("Prompt operator to remove touch probe before continuing");
-      writeBlock(mCodes.format(M_PROBE_REMOVE));
+      writeBlock(mCodes.format(M.PROBE_REMOVE));
       writeln("");
     }
     writeComment("Switch to WCS {wcs}".supplant(wcsO));
@@ -627,12 +634,13 @@ function onSection() {
 
   if(getProperty("vsscEnabled")) {
     writeComment("Enable Variable Spindle Speed Control");
-    writeBlock(mCodes.format(M_VSSC_ENABLE), "P{period} V{variance}".supplant({
+    writeBlock(mCodes.format(M.VSSC_ENABLE), "P{period} V{variance}".supplant({
       period: getProperty("vsscPeriod"),
       variance: getProperty("vsscVariance")
     }));
     writeln("");
   }
+
   // If RPM has changed, output updated M3 command
   // We do this regardless of tool-change, because
   // operations may have different RPMs set on the
@@ -669,12 +677,12 @@ function onSection() {
 // At the end of every section
 function onSectionEnd() {
   if(isProbeOperation()) {
-    writeBlock(gCodesF.format(M_PROBE_REMOVE));
+    writeBlock(gCodesF.format(M.PROBE_REMOVE));
   }
 
   if(getProperty("vsscEnabled")) {
     writeComment("Disable Variable Spindle Speed Control");
-    writeBlock(mCodes.format(M_VSSC_DISABLE));
+    writeBlock(mCodes.format(M.VSSC_DISABLE));
     writeln("");
   }
 
@@ -693,7 +701,7 @@ function approach(sign, value) {
   if(sign == "negative") {
     return -value;
   }
-  error("Invalid probing approach.");
+  return error("Invalid probing approach.");
 }
 
 function onCyclePoint() {
@@ -705,34 +713,36 @@ function onCyclePoint() {
 
   var probeVars = [];
   switch(cycleType) {
-    case CYCLE_PROBING_X:
-      probeVars.extend([
-        gCodesF.format(G_PROBE.SINGLE_SURFACE),
+    case CYCLE.PROBING_X:
+      probeVars.concat([
+        gCodesF.format(G.PROBE_SINGLE_SURFACE),
           jPVar.format(x),
           kPVar.format(y),
           lPVar.format(z - cycle.depth),
           xPVar.format(x + approach(cycle.approach1, cycle.probeClearance)),
       ]);
     break;
-    case CYCLE_PROBING_Y:
-      probeVars.extend([
-        gCodesF.format(G_PROBE.SINGLE_SURFACE),
+    case CYCLE.PROBING_Y:
+      probeVars.concat([
+        gCodesF.format(G.PROBE_SINGLE_SURFACE),
           jPVar.format(x),
           kPVar.format(y),
           lPVar.format(z - cycle.depth),
           yPVar.format(y + approach(cycle.approach1, cycle.probeClearance)),
       ]);
-    case CYCLE_PROBING_Z:
-      probeVars.extend([
-        gCodesF.format(G_PROBE.SINGLE_SURFACE),
+    break;
+    case CYCLE.PROBING_Z:
+      probeVars.concat([
+        gCodesF.format(G.PROBE_SINGLE_SURFACE),
           jPVar.format(x),
           kPVar.format(y),
           lPVar.format(Math.min(z - cycle.depth + cycle.probeClearance, cycle.retract)),
           zPVar.format(z - cycle.depth),
       ]);
-    case CYCLE_PROBING_XY_OUTER_CORNER:
-      probeVars.extend([
-        gCodesF.format(G_PROBE.OUTER_CORNER),
+    break;
+    case CYCLE.PROBING_XY_OUTER_CORNER:
+      probeVars.concat([
+        gCodesF.format(G.PROBE_OUTER_CORNER),
           jPVar.format(x),
           kPVar.format(y),
           lPVar.format(z - cycle.depth),
@@ -746,7 +756,7 @@ function onCyclePoint() {
         probeVars.push("P{xS} Q{yS}".supplant({xS: cycle.probeSpacing, yS: cycle.probeSpacing}))
       }
     default:
-      return error("Unsupported probing cycle type: {type}".supplant({type: cycleType}));
+      error("Unsupported probing cycle type: {type}".supplant({type: cycleType}));
   }
 
   writeBlock(probeVars);
@@ -760,6 +770,7 @@ function onSpindleSpeed(rpm) {
 
 // Called when a rapid linear move is requested
 function onRapid(x, y, z) {
+
   var a1 = xVar.format(x);
   var a2 = yVar.format(y);
   var a3 = zVar.format(z);
@@ -779,9 +790,36 @@ function onLinear(x, y, z, f) {
   var a3 = zVar.format(z);
   var a4 = fVar.format(f);
 
-  // If any co-ordinates are changing, output G1 move.
-  if (a1 || a2 || a3) {
+  var warpMode = getProperty("warpSpeedMode");
+  var zWarp = Number.MAX_SAFE_INTEGER;
+
+  switch(warpMode) {
+    case warpSpeedMode.CLEARANCE:
+      zWarp = curOp['clearance'];
+    break;
+    case warpSpeedMode.RETRACT:
+      zWarp = curOp['retract'];
+    break;
+    case warpSpeedMode.ZERO:
+      zWarp = 0;
+    break;
+    default:
+      zWarp = Number.MAX_SAFE_INTEGER;
+  }
+
+  // Warp if we can. We will not warp if moving in all 3 axes
+  // even if the target is above the warp height, for safety
+  // purposes.
+  var isHorizontal = (a1 || a2) && !a3;
+  var isVertical = !a1 && !a2 && a3;
+  if ((isHorizontal || isVertical) && z >= zWarp) {
+      writeComment("Warp move");
+      writeBlock(gCodesF.format(0), a1, a2, a3);
+      fVar.reset();
+  // Otherwise output normal linear move
+  } else if (a1 || a2 || a3) {
     writeBlock(gCodesF.format(1), a1, a2, a3, a4);
+  // Otherwise output just feed change if necessary
   } else if(a4) {
     // Try not to output feed changes on their own unless
     // the next record is not a motion command.
@@ -793,6 +831,7 @@ function onLinear(x, y, z, f) {
       fVar.reset();
     }
   }
+
 }
 
 // Generate the correct arc variables based on the selected plane.
@@ -942,7 +981,7 @@ function onClose() {
   // Spindle is assumed to be above work piece at this point.
   // Parking will trigger an M5 within the firmware.
   writeComment("Park at user-defined location");
-  writeBlock(gCodesF.format(G_PARK));
+  writeBlock(gCodesF.format(G.PARK));
   writeln("");
 
   writeComment("Double-check spindle is stopped!");
