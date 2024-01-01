@@ -412,7 +412,15 @@ function onOpen() {
     writeComment("Pass tool details to firmware");
     for(var i = 0; i < nTools; i++) {
       var tool = tools.getTool(i);
-
+      writeBlock('{cmd} P{index} R{radius} S"{desc} F={f} L={l} CR={cr}"'.supplant({
+        cmd: mCodes.format(M.ADD_TOOL),
+        index: intFmt.format(tool.number),
+        radius: axesFmt.format(tool.diameter/2),
+        desc: tool.description,
+        l: axesFmt.format(tool.fluteLength),
+        cr: axesFmt.format(tool.cornerRadius),
+        f: intFmt.format(tool.numberOfFlutes)
+      }));
     }
     writeln("");
   }
@@ -568,7 +576,7 @@ function onParameter(param, value) {
     break;
 
     // DEBUG: Uncomment this to write comments for all unhandled parameters.
-    // default:
+    //default:
     //  writeComment("{p}: {v}".supplant({p: param, v: value}));
   }
 }
@@ -791,7 +799,7 @@ function onLinear(x, y, z, f) {
   var a4 = fVar.format(f);
 
   var warpMode = getProperty("warpSpeedMode");
-  var zWarp = Number.MAX_SAFE_INTEGER;
+  var zWarp;
 
   switch(warpMode) {
     case warpSpeedMode.CLEARANCE:
@@ -799,9 +807,6 @@ function onLinear(x, y, z, f) {
     break;
     case warpSpeedMode.RETRACT:
       zWarp = curOp['retract'];
-    break;
-    case warpSpeedMode.ZERO:
-      zWarp = 0;
     break;
     default:
       zWarp = Number.MAX_SAFE_INTEGER;
