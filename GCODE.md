@@ -66,6 +66,12 @@ If the post knows what _type_ of workpiece probe should be executed, it can call
 
 #### `G6520` - VISE CORNER (CUBOID)
 
+### Misc
+
+#### `G6550` - PROTECTED MOVE
+Uses `G38.3` internally to perform a protected move against a given probe ID.
+The machine will move at the given probe's travel speed.
+
 
 
 ---

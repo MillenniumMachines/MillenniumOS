@@ -56,8 +56,8 @@ if { !exists(param.I) || sensors.probes[param.I].type != 8 }
     abort { "Must provide a valid probe ID (I..)!" }
 
 ; Default to current machine position for unset X/Y starting locations
-var sX = { exists(param.J) ? param.J : move.axes[global.mosIX].machinePosition }
-var sY = { exists(param.K) ? param.J : move.axes[global.mosIY].machinePosition }
+var sX = { (exists(param.J)) ? param.J : move.axes[global.mosIX].machinePosition }
+var sY = { (exists(param.K)) ? param.K : move.axes[global.mosIY].machinePosition }
 
 if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
     abort { "Must provide a valid target position in one or more axes (X.. Y.. Z..)!" }
@@ -67,23 +67,28 @@ if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
 if { !exists(param.L) }
     abort { "Must provide Z height to begin probing at (L..)!" }
 
+; If D is passed, we will not return to safe height after probing.
+; This is useful for chaining multiple probing moves at the same
+; Z-height together, for example when probing a bore.
+var dangerWillRobinson = { exists(param.D) ? true : false }
+
 var sZ = { param.L }
 
 ; Set target positions - if not provided, use start positions.
 ; The machine will not move in one or more axes if the target
 ; and start positions are the same.
-var targetPos = {
-    exists(param.X) ? param.X : var.sX,
-    exists(param.Y) ? param.Y : var.sY,
-    exists(param.Z) ? param.Z : var.sZ
-}
 
-var tPX = { targetPos[global.mosIX] < move.axes[global.mosIX].min || targetPos[global.mosIX] > move.axes[global.mosIX].max }
-var tPY = { targetPos[global.mosIY] < move.axes[global.mosIY].min || targetPos[global.mosIY] > move.axes[global.mosIY].max }
-var tPZ = { targetPos[global.mosIZ] < move.axes[global.mosIZ].min || targetPos[global.mosIZ] > move.axes[global.mosIZ].max }
+var tPX = { exists(param.X)? param.X : var.sX }
+var tPY = { exists(param.Y)? param.Y : var.sY }
+var tPZ = { exists(param.Z)? param.Z : var.sZ }
 
 ; Check if target position is within machine limits
-if { tPX || tPY || tPZ }
+var mLX = { var.tPX < move.axes[global.mosIX].min || var.tPX > move.axes[global.mosIX].max }
+var mLY = { var.tPY < move.axes[global.mosIY].min || var.tPY > move.axes[global.mosIY].max }
+var mLZ = { var.tPZ < move.axes[global.mosIZ].min || var.tPZ > move.axes[global.mosIZ].max }
+
+; Check if target position is within machine limits
+if { var.mLX || var.mLY || var.mLZ }
     abort { "Target probe position is outside machine limits. Reduce overtravel if probing away, or clearance if probing towards, the center of the table" }
 
 ; NOTE: We assume the _current_ height of the probe (when macro is called) is safe for lateral moves.
@@ -95,12 +100,12 @@ var safeZ = { move.axes[global.mosIZ].machinePosition }
 ; and divide it by 5 to get the fine speed.
 ; This is generally a safe default although
 
-var roughSpeed   = sensors.probes[param.I].speeds[0]
-var fineSpeed    = sensors.probes[param.I].speeds[1]
+var roughSpeed   = { sensors.probes[param.I].speeds[0] }
+var fineSpeed    = { sensors.probes[param.I].speeds[1] }
 var roughDivider = 5
 
 if { var.roughSpeed == var.fineSpeed }
-    set var.fineSpeed = var.roughSpeed / var.roughDivider
+    set var.fineSpeed = { var.roughSpeed / var.roughDivider }
     if { !global.mosExpertMode }
         echo { "MillenniumOS: Probe " ^ param.I ^ " is configured with a single feed rate, which will be used for the initial probe. Subsequent probes will run at " ^ var.fineSpeed ^ "mm/min." }
         echo { "MillenniumOS: Please use M558 K" ^ param.I ^ " F" ^ var.roughSpeed ^ ":" ^ var.fineSpeed ^ " to silence this warning." }
@@ -123,39 +128,30 @@ var travelSpeed = sensors.probes[param.I].travelSpeed
 ; This gives us -1, 0 or 1 for each axis which is multiplied
 ; by the backoff distance to give us the correct backoff direction
 ; and distance.
-var movementAxes = {
-    (param.X > var.sX) ? 1 : (param.X < var.sX ? -1 : 0),
-    (param.Y > var.sY) ? 1 : (param.Y < var.sY ? -1 : 0),
-    (param.Z > var.sZ) ? 1 : (param.Z < var.sZ ? -1 : 0)
-}
+var movementX = { (var.tPX > var.sX) ? -1 : (var.tPX < var.sX ? 1 : 0) }
+var movementY = { (var.tPY > var.sY) ? -1 : (var.tPY < var.sY ? 1 : 0) }
+var movementZ = { (var.tPZ > var.sZ) ? -1 : (var.tPZ < var.sZ ? 1 : 0) }
 
 ; Use absolute positions in mm
 G90
 G21
 
-; TODO: Can we perform all non-probing moves using G38.2 as well?
-; This would allow us to move to our starting position
-; while also observing the probe status. If we accidentally
-; collide with something else on the way to our probing point,
-; we can abort the probe and return an error.
-; e.g. M558 K{param.I} F{var.travelSpeed}
-;      G38.2 K{param.I} Z{var.safeZ}
-;      G38.2 K{param.I} X{var.sX} Y{var.sY}
+; Use protected moves to approach start position
 
-; Set travel speed
-G53 G1 F{var.travelSpeed}
-
-; Just confirm we're at safe height in Z
-G53 G1 Z{var.safeZ}
+; If starting probe height is above safe height (current Z),
+; then move to the starting probe height first.
+if { var.sZ > var.safeZ }
+    G6550.1 I{ param.I } Z{ var.sZ }
 
 ; Move to starting position
-G53 G1 X{var.sX} Y{var.sY}
+G6550.1 I{ param.I } X{ var.sX } Y{ var.sY }
 
-; Move down to probe height
-G53 G1 Z{var.sZ}
+
+; Move to probe height.
+G6550.1 I{ param.I } Z{ var.sZ }
 
 ; Set rough probe speed
-M558 K{param.I} F{var.roughSpeed}
+M558 K{ param.I } F{ var.roughSpeed }
 
 ; These variables are used within the probing loop to calculate
 ; average positions and variances of the probed points.
@@ -174,7 +170,7 @@ var pV          = { 0,0,0 }
 while { iterations <= var.retries }
     ; Probe towards surface
     ; NOTE: This has potential to move in all 3 axes!
-    G53 G38.2 K{ param.I } X{ var.targetPos[global.mosIX] } Y{ var.targetPos[global.mosIY] } Z{ var.targetPos[global.mosIZ] }
+    G53 G38.2 K{ param.I } X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
     ; Abort if an error was encountered
     if { result != 0 }
@@ -226,22 +222,34 @@ while { iterations <= var.retries }
 
     ; Apply correct back-off distance
     var backoffDist = { iterations == 0 ? var.roughHeight : var.fineHeight }
-    ; Move away from the trigger point.
 
-    ; Only back-off in directions where we actually moved
-    G53 G1
-        X{ var.curPos[global.mosIX] + (var.movementAxes[global.mosIX] * var.backoffDist) }
-        Y{ var.curPos[global.mosIY] + (var.movementAxes[global.mosIY] * var.backoffDist) }
-        Z{ var.curPos[global.mosIZ] + (var.movementAxes[global.mosIZ] * var.backoffDist) }
+    ; Calculate distance between start and current position
+    var dX = { var.sX - var.curPos[global.mosIX] }
+    var dY = { var.sY - var.curPos[global.mosIY] }
+    var dZ = { var.sZ - var.curPos[global.mosIZ] }
+
+    ; Calculate back-off normal
+    var bN = { sqrt(pow(var.dX,2) + pow(var.dY,2) + pow(var.dZ,2)) }
+
+    ; Calculate normalized direction and backoff
+    var backoffX = { var.dX / var.bN * var.backoffDist }
+    var backoffY = { var.dY / var.bN * var.backoffDist }
+    var backoffZ = { var.dZ / var.bN * var.backoffDist }
+
+    ; Back off until the probe is no longer triggered
+    G6550.2 I{ param.I } X{ var.curPos[global.mosIX] + var.backoffX } Y{ var.curPos[global.mosIY] + var.backoffY } Z{ var.curPos[global.mosIZ] + var.backoffZ }
+
+    ; Protected move back to the back-off position
+    G6550.1 I{ param.I } X{ var.curPos[global.mosIX] + var.backoffX } Y{ var.curPos[global.mosIY] + var.backoffY } Z{ var.curPos[global.mosIZ] + var.backoffZ }
 
     ; If axis has moved, check if we're within tolerance on that axis.
     ; We can only abort early if we're within tolerance on all moved (probed) axes.
     var tR = true
-    if { var.movementAxes[global.mosIX] != 0 }
+    if { var.movementX != 0 }
         set var.tR = { var.tR && var.pV[global.mosIX] <= var.tolerance }
-    if { var.movementAxes[global.mosIY] != 0 }
+    if { var.movementY != 0 }
         set var.tR = { var.tR && var.pV[global.mosIY] <= var.tolerance }
-    if { var.movementAxes[global.mosIZ] != 0 }
+    if { var.movementZ != 0 }
         set var.tR = { var.tR && var.pV[global.mosIZ] <= var.tolerance }
 
     ; If we're within tolerance on all axes, we can stop probing
@@ -260,17 +268,18 @@ while { iterations <= var.retries }
 M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
 
 ; Move to safe height
-G53 G1 Z{ var.safeZ }
+; If probing move is called with D parameter,
+; we stay at the same height. This allows other
+; macros to chain multiple probing moves together
+if { ! var.dangerWillRobinson }
+    G6550.1 I{ param.I } Z{ var.safeZ }
 
 ; Set probe output variable X, Y and Z
 ; Only set output variables for axes we actually moved in.
 ; This means we can chain multiple G6510.1 calls and only
 ; read the output variables for the axes we're interested in.
-if { var.movementAxes[global.mosIX] != 0 }
-    set global.mosProbeCoordinate[global.mosIX] = { var.nM[global.mosIX] }
-if { var.movementAxes[global.mosIY] != 0 }
-    set global.mosProbeCoordinate[global.mosIY] = { var.nM[global.mosIY] }
-if { var.movementAxes[global.mosIZ] != 0 }
-    set global.mosProbeCoordinate[global.mosIZ] = { var.nM[global.mosIZ] }
+set global.mosProbeCoordinate[global.mosIX] = { var.nM[global.mosIX] }
+set global.mosProbeCoordinate[global.mosIY] = { var.nM[global.mosIY] }
+set global.mosProbeCoordinate[global.mosIZ] = { var.nM[global.mosIZ] }
 
 set global.mosProbeVariance = { var.pV }

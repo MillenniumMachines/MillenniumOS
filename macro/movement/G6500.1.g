@@ -12,8 +12,10 @@
 ; If W is specified, the WCS origin will be set
 ; to the center of the bore.
 
-var maxWCS = #global.mosWorkOffsetCodes1
-if { exists(param.W) && param.W != -1 (param.W < 1 || param.W > var.maxWCS) }
+echo { "G6500.1 Work Offset: " ^ param.W}
+
+var maxWCS = #global.mosWorkOffsetCodes
+if { exists(param.W) && param.W != null && (param.W < 1 || param.W > var.maxWCS) }
     abort { "WCS number (W..) must be between 1 and " ^ var.maxWCS ^ "!" }
 
 if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
@@ -23,6 +25,13 @@ if { !exists(param.H) }
     abort { "Must provide an approximate bore diameter using the H parameter!" }
 
 var overTravel = {(exists(param.O) ? param.O : global.mosProbeOvertravel)}
+
+; Validate minimum bore diameter that we can probe.
+;var dH = sensors.probes[global.mosTouchProbeID].diveHeights
+;var minDiameter = { max(var.dH[0], var.dH[1]) * 2 }
+
+;if { param.H < var.minDiameter }
+;    abort { "Bore diameter must be at least " ^ var.minDiameter ^ "mm otherwise we might collide when backing off between probes. Reduce the dive height on your probe to probe smaller bores!" }
 
 ; We add the overtravel to the bore radius to give the user
 ; some leeway. If their estimate of the bore diameter is too
@@ -40,21 +49,20 @@ var sY   = { param.K }
 var sZ   = { param.L }
 
 ; Calculate probing directions using approximate bore radius
-var angle = 120 ; Probe angle in degrees
+; Angle is in degrees
+var angle = 120
 
-var dirXY = {
-    { var.sX + var.bR, var.sY},
-    { var.sX + var.bR * cos(radians(angle)), var.sY + var.bR * sin(radians(angle)) },
-    { var.sX + var.bR * cos(radians(2 * angle)), var.sY + var.bR * sin(radians(2 * angle)) },
-}
+var dirXY = { { var.sX + var.bR, var.sY}, { var.sX + var.bR * cos(radians(var.angle)), var.sY + var.bR * sin(radians(var.angle)) }, { var.sX + var.bR * cos(radians(2 * var.angle)), var.sY + var.bR * sin(radians(2 * var.angle)) } }
 
 ; Bore edge co-ordinates for 3 probed points
 var pXY  = { null, null, null }
 
+var safeZ = { move.axes[global.mosIZ].machinePosition }
+
 ; Probe each of the 3 points
-while { iterations < #dirXY }
+while { iterations < #var.dirXY }
     ; Perform a probe operation
-    G6510.1 K{global.mosTouchProbeID} J{var.sX} K{var.sY} L{var.sZ} X{dirXY[iterations][0]} Y{dirXY[iterations][1]}
+    G6510.1 D1 I{global.mosTouchProbeID} J{var.sX} K{var.sY} L{var.sZ} X{var.dirXY[iterations][0]} Y{var.dirXY[iterations][1]}
 
     ; Save the probed co-ordinates
     set var.pXY[iterations] = { global.mosProbeCoordinate[global.mosIX], global.mosProbeCoordinate[global.mosIY] }
@@ -87,6 +95,9 @@ var avgR = { (var.r1 + var.r2 + var.r3) / 3 }
 set global.mosBoreCenterPos = { var.cX, var.cY }
 set global.mosBoreRadius = { var.avgR }
 
+; Move to the calculated center of the bore
+G53 G0 X{var.cX} Y{var.cY}
+
 if { !global.mosExpertMode }
     echo { "Bore - Center X,Y:" ^ global.mosBoreCenterPos ^ " Radius :" ^ global.mosBoreRadius }
 else
@@ -94,6 +105,6 @@ else
     echo { "global.mosBoreRadius=" ^ global.mosBoreRadius }
 
 ; Set WCS origin to the probed corner, if requested
-if { exists(param.W) }
+if { exists(param.W) && param.W != null }
     echo { "Setting WCS " ^ param.W ^ " X,Y origin to center of bore" }
     G10 L2 P{param.W} X{var.cX} Y{var.cY}

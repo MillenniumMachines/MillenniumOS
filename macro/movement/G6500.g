@@ -8,13 +8,15 @@
 ; and hit OK, at which point the bore probe cycle will
 ; be executed.
 
-if { !global.expertMode }
-    M291 P"This operation finds the center of a circular bore by probing outwards in 3 directions. You will be asked to enter a bore diameter, an overtravel distance and to jog the touch probe into the bore, below the top surface." R"Probe: BORE" J1 T0 S3
+echo { "G6500 Work Offset: " ^ param.W}
+
+if { !global.mosExpertMode }
+    M291 P"This operation finds the center of a circular bore by probing outwards in 3 directions. You will be asked to enter a bore diameter, an overtravel distance, a probing depth and to jog the touch probe over the bore." R"Probe: BORE" J1 T0 S3
     if { result != 0 }
         abort { "Bore probe aborted!" }
 
 ; Prompt for bore diameter
-M291 P"Please enter approximate bore diameter. This is used to set our probing distance." R"Probe: BORE" J1 T0 S6 F6.0
+M291 P"Please enter approximate bore diameter in mm. This is used to set our probing distance." R"Probe: BORE" J1 T0 S6 F6.0
 if { result != 0 }
     abort { "Bore probe aborted!" }
 else
@@ -26,9 +28,14 @@ else
         abort { "Bore probe aborted!" }
     else
         var overTravel = { input }
-        M291 P"Please jog the probe into the bore, below the top surface and press OK." R"Probe: BORE" X1 Y1 Z1 J1 T0 S3
+        M291 P"Please jog the probe OVER the bore and press OK." R"Probe: BORE" X1 Y1 Z1 J1 T0 S3
         if { result != 0 }
             abort { "Bore probe aborted!" }
         else
-            ; Run the bore probe cycle
-            G6500.1 W{param.W} H{var.boreDiameter} O{var.overTravel} J{move.axes[global.mosIX].machinePosition} K{move.axes[global.mosIY].machinePosition} L{move.axes[global.mosIZ].machinePosition}
+            M291 P"Please enter probing depth in mm (positive only!). This is how far the probe will move down from the current location to probe the bore." R"Probe: BORE" J1 T0 S6 F{global.mosProbeOvertravel}
+            if { result != 0 }
+                abort { "Bore probe aborted!" }
+            else
+                var probingDepth = { input }
+                ; Run the bore probe cycle
+                G6500.1 W{param.W} H{var.boreDiameter} O{var.overTravel} J{move.axes[global.mosIX].machinePosition} K{move.axes[global.mosIY].machinePosition} L{move.axes[global.mosIZ].machinePosition - var.probingDepth}
