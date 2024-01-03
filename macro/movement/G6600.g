@@ -11,39 +11,52 @@
 ;    prompt the user for the probe parameters. The meta macro will then
 ;    call the appropriate probing macro.
 
-; Default to null work offset, which will not set any offset.
-var workOffset = { (exists(param.W) ? param.W : null ) }
+; Default to null work offset, which will not set origin
+; on a work offset.
+var workOffset = null
 
-var probeNames = {
-    "Vise Corner",
-    "Circular Bore",
-    "Circular Boss",
-    "Rectangle Pocket",
-    "Outside Corner",
-    "Single Surface",
-}
+var probeNames = {"Vise Corner", "Circular Bore", "Circular Boss", "Rectangle Pocket", "Rectangle Boss", "Outside Corner", "Single Surface" }
 
-; Prompt the user to pick a probing operation.
-M291 P"Select a probing operation:" R"Probe Work piece" J1 T0 S4 F"0" K{var.probeNames}
-if result != 0
-    abort { "Operator cancelled probing operation!" }
+; Ask user for work offset to set.
+if { !exists(param.W) }
+    M291 P"Select WCS number to set origin on or press "None" to probe without setting WCS origin" R"Set WCS Origin?" T0 S4 K{global.mosWorkOffsetCodes}
+    if result != 0
+        abort { "Operator cancelled probing operation!" }
 
-; Run the selected probing operation.
-; We cannot lookup G command numbers to run dynamically so these must be
-; hardcoded in a set of if statements.
-var probeOp = { input }
+    set var.workOffset = { input }
 
-if { var.probeOp == 0 }
-    G6520 W{var.workOffset}
-elif { var.probeOp == 1 }
-    G6500 W{var.workOffset}
-elif { var.probeOp == 2 }
-    G6501 W{var.workOffset}
-elif { var.probeOp == 3 }
-    G6502 W{var.workOffset}
-elif { var.probeOp == 4 }
-    G6508 W{var.workOffset}
-elif { var.probeOp == 5 }
-    G6510 W{var.workOffset}
+    if { var.workOffset == 0 }
+        set var.workOffset = null
 else
-    abort { "Invalid probing operation!" }
+    set var.workOffset = { param.W }
+
+if { exists(var.workOffset) }
+    echo { "G6600 Work Offset: " ^ var.workOffset}
+    ; Prompt the user to pick a probing operation.
+    M291 P"Select a probing operation:" R"Probe Work piece" J1 T0 S4 F0 K{var.probeNames}
+    if result != 0
+        abort { "Operator cancelled probing operation!" }
+
+    ; Run the selected probing operation.
+    ; We cannot lookup G command numbers to run dynamically so these must be
+    ; hardcoded in a set of if statements.
+    var probeOp = { input }
+
+    if { var.probeOp == 0 }
+        G6520 W{var.workOffset}
+    elif { var.probeOp == 1 }
+        G6500 W{var.workOffset}
+    elif { var.probeOp == 2 }
+        G6501 W{var.workOffset}
+    elif { var.probeOp == 3 }
+        G6502 W{var.workOffset}
+    elif { var.probeOp == 4 }
+        G6508 W{var.workOffset}
+    elif { var.probeOp == 5 }
+        G6510 W{var.workOffset}
+    else
+        abort { "Invalid probing operation!" }
+
+    ; "Vice Corner" is a 3 axis probe, all others are
+    if { var.probeOp != 0 }
+        echo { "Please probe Z axis to set work origin zero"}

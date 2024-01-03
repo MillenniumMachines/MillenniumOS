@@ -13,6 +13,9 @@
 
 ; This macro uses G6510.1 to perform the actual probing.
 
+G90
+G21
+
 ; Start point in X/Y is directly above the reference surface.
 var sX = { global.mosReferenceSurfaceCoords[global.mosIX] }
 var sY = { global.mosReferenceSurfaceCoords[global.mosIY] }

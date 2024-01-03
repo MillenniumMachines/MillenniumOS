@@ -18,8 +18,9 @@ global mosExpertMode=false
 global mosOriginCorners={"Front Left","Front Right","Rear Right","Rear Left"}
 global mosOriginAll={"Front Left","Front Right","Rear Right","Rear Left","Centre"}
 
-; Define names for work offsets. The work offset ID is the index into these arrays, plus 1.
-global mosWorkOffsetCodes={"G54","G55","G56","G57","G58","G59","G59.1","G59.2","G59.3"}
+; Define names for work offsets. The work offset ID is the index into these arrays.
+; None means do not set origins on a work offset.
+global mosWorkOffsetCodes={"None", "G54","G55","G56","G57","G58","G59","G59.1","G59.2","G59.3"}
 
 ; Coordinates returned by the most recent probing operation.
 global mosProbeCoordinate={ null, null, null }
