@@ -8,8 +8,6 @@
 ; and hit OK, at which point the bore probe cycle will
 ; be executed.
 
-echo { "G6500 Work Offset: " ^ param.W}
-
 if { !global.mosExpertMode }
     M291 P"This operation finds the center of a circular bore by probing outwards in 3 directions. You will be asked to enter a bore diameter, an overtravel distance, a probing depth and to jog the touch probe over the bore." R"Probe: BORE" J1 T0 S3
     if { result != 0 }

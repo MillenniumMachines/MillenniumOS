@@ -146,7 +146,6 @@ if { var.sZ > var.safeZ }
 ; Move to starting position
 G6550.1 I{ param.I } X{ var.sX } Y{ var.sY }
 
-
 ; Move to probe height.
 G6550.1 I{ param.I } Z{ var.sZ }
 
@@ -182,6 +181,14 @@ while { iterations <= var.retries }
         G27
         abort { "MillenniumOS: Probe " ^ param.I ^ " experienced an error, aborting!" }
 
+    M400
+
+    ; G38 commands appear to return before the machine has finished moving
+    ; (likely during deceleration), so we need to wait for the machine to
+    ; stop moving entirely before recording the position. There must be a
+    ; better way to do this, but I can't work it out at the moment. So
+    ; this will suffice. TODO: Fix this.
+    G4 P{global.mosProbePositionDelay}
 
     ; Drop to fine probing speed
     M558 K{ param.I } F{ var.fineSpeed }
@@ -229,7 +236,7 @@ while { iterations <= var.retries }
     var dZ = { var.sZ - var.curPos[global.mosIZ] }
 
     ; Calculate back-off normal
-    var bN = { sqrt(pow(var.dX,2) + pow(var.dY,2) + pow(var.dZ,2)) }
+    var bN = { sqrt(pow(var.dX, 2) + pow(var.dY, 2) + pow(var.dZ, 2)) }
 
     ; Calculate normalized direction and backoff
     var backoffX = { var.dX / var.bN * var.backoffDist }
@@ -238,9 +245,13 @@ while { iterations <= var.retries }
 
     ; Back off until the probe is no longer triggered
     G6550.2 I{ param.I } X{ var.curPos[global.mosIX] + var.backoffX } Y{ var.curPos[global.mosIY] + var.backoffY } Z{ var.curPos[global.mosIZ] + var.backoffZ }
+    if { result != 0 }
+        echo { "Back-off failed in G6550.2"}
 
     ; Protected move back to the back-off position
     G6550.1 I{ param.I } X{ var.curPos[global.mosIX] + var.backoffX } Y{ var.curPos[global.mosIY] + var.backoffY } Z{ var.curPos[global.mosIZ] + var.backoffZ }
+    if { result != 0 }
+        echo { "Back-off failed in G6550.1"}
 
     ; If axis has moved, check if we're within tolerance on that axis.
     ; We can only abort early if we're within tolerance on all moved (probed) axes.
@@ -275,11 +286,12 @@ if { ! var.dangerWillRobinson }
     G6550.1 I{ param.I } Z{ var.safeZ }
 
 ; Set probe output variable X, Y and Z
-; Only set output variables for axes we actually moved in.
-; This means we can chain multiple G6510.1 calls and only
-; read the output variables for the axes we're interested in.
-set global.mosProbeCoordinate[global.mosIX] = { var.nM[global.mosIX] }
-set global.mosProbeCoordinate[global.mosIY] = { var.nM[global.mosIY] }
-set global.mosProbeCoordinate[global.mosIZ] = { var.nM[global.mosIZ] }
+; We round to 3 decimal places (0.001mm) which is
+; way more than we actually need, because 1.8 degree
+; steppers with 8mm leadscrews aren't that accurate
+; anyway.
+set global.mosProbeCoordinate[global.mosIX] = { ceil(var.nM[global.mosIX]*1000) / 1000 }
+set global.mosProbeCoordinate[global.mosIY] = { ceil(var.nM[global.mosIY]*1000) / 1000 }
+set global.mosProbeCoordinate[global.mosIZ] = { ceil(var.nM[global.mosIZ]*1000) / 1000 }
 
 set global.mosProbeVariance = { var.pV }

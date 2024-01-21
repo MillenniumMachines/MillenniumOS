@@ -22,11 +22,19 @@ global mosOriginAll={"Front Left","Front Right","Rear Right","Rear Left","Centre
 ; None means do not set origins on a work offset.
 global mosWorkOffsetCodes={"None", "G54","G55","G56","G57","G58","G59","G59.1","G59.2","G59.3"}
 
+; Store additional tool information.
+global mosToolTable = { vector(50, { null, false, {0, 0} }) }
+
 ; Coordinates returned by the most recent probing operation.
 global mosProbeCoordinate={ null, null, null }
 global mosProbeVariance={ null, null, null }
 
 global mosProbeOvertravel=2.0 ; Overtravel distance in mm
+
+; Delay in ms after probing operation completes before recording position.
+; Do not override this unless you are seeing false protected move triggers
+; as otherwise it will just slow down all probing operations.
+global mosProbePositionDelay=0
 
 global mosBoreRadius=null
 global mosBoreCenterPos={null, null}
@@ -93,9 +101,13 @@ global mosN                 = {"X","Y","Z"}
 ; Define constants for probe types
 global mosReferenceSurfaceCoords=null
 global mosReferenceSurfaceZ=null
-global mosToolSetterCoords=null
+global mosToolSetterPos=null
+global mosToolSetterDatum=null
 global mosToolSetterHeight=null
 global mosToolSetterID=null
 global mosTouchProbeID=null
 global mosSpindleID=null
 
+; Used during configuration to detect
+; probes.
+global mosDetectedProbeID=null

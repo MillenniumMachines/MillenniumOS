@@ -15,12 +15,12 @@
 ; on a work offset.
 var workOffset = null
 
-var probeNames = {"Vise Corner", "Circular Bore", "Circular Boss", "Rectangle Pocket", "Rectangle Boss", "Outside Corner", "Single Surface" }
+var probeNames = {"Vise Corner (X,Y,Z)", "Circular Bore (X,Y)", "Circular Boss (X,Y)", "Rectangle Pocket (X,Y)", "Rectangle Boss (X,Y)", "Outside Corner (X,Y)", "Single Surface (X/Y/Z)" }
 
 ; Ask user for work offset to set.
 if { !exists(param.W) }
     M291 P"Select WCS number to set origin on or press "None" to probe without setting WCS origin" R"Set WCS Origin?" T0 S4 K{global.mosWorkOffsetCodes}
-    if result != 0
+    if { result != 0 }
         abort { "Operator cancelled probing operation!" }
 
     set var.workOffset = { input }
@@ -34,7 +34,7 @@ if { exists(var.workOffset) }
     echo { "G6600 Work Offset: " ^ var.workOffset}
     ; Prompt the user to pick a probing operation.
     M291 P"Select a probing operation:" R"Probe Work piece" J1 T0 S4 F0 K{var.probeNames}
-    if result != 0
+    if { result != 0 }
         abort { "Operator cancelled probing operation!" }
 
     ; Run the selected probing operation.
@@ -57,6 +57,6 @@ if { exists(var.workOffset) }
     else
         abort { "Invalid probing operation!" }
 
-    ; "Vice Corner" is a 3 axis probe, all others are
+    ; "Vice Corner" is a 3 axis probe, all others are X/Y
     if { var.probeOp != 0 }
         echo { "Please probe Z axis to set work origin zero"}

@@ -16,10 +16,10 @@ if { !exists(global.mosVarsLoaded) }
     M98 P"mos-vars.g"
     global mosVarsLoaded=true
 
-; Load user-defined variables
-if { fileexists("0:/sys/mos-user-vars.g.example") && !fileexists("0:/sys/mos-user-vars.g") }
-    echo { "Please rename /sys/mos-user-vars.g.example to /sys/mos-user-vars.g and edit it to your liking." }
-    M99
+; If user vars file doesn't exist, run configuration wizard
+if { !fileexists("0:/sys/mos-user-vars.g") }
+    echo { "No user configuration file found. Running configuration wizard." }
+    G8000
 
 if { fileexists("0:/sys/mos-user-vars.g.example") }
     echo { "Cleaning up extraneous mos-user-vars.g.example file." }
