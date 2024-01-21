@@ -34,8 +34,6 @@ var mLZ = { var.tPZ < move.axes[global.mosIZ].min || var.tPZ > move.axes[global.
 if { var.mLX || var.mLY || var.mLZ }
     abort { "Target probe position is outside machine limits." }
 
-echo { "Protected move to X " ^ var.tPX ^ " Y " ^ var.tPY ^ " Z " ^ var.tPZ }
-
 var roughSpeed   = { sensors.probes[param.I].speeds[0]   }
 var fineSpeed    = { sensors.probes[param.I].speeds[1]   }
 var travelSpeed  = { sensors.probes[param.I].travelSpeed }

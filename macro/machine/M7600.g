@@ -1,4 +1,4 @@
-; M7500.g: PRINT ALL VARIABLES
+; M7600.g: PRINT ALL VARIABLES
 ;
 ; Outputs all MillenniumOS variables to the console.
 ; These variables can be useful where you are trying to do

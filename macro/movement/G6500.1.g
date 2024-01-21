@@ -4,15 +4,14 @@
 ;
 ; J, K and L indicate the start X, Y and Z
 ; positions of the probe, which should be an
-; approximate center of the bore, below the
-; top surface.
+; approximate center of the bore in X and Y, with
+; the L value below the surface of the bore.
+
 ; H indicates the approximate bore diameter,
 ; and is used to calculate a probing radius along
 ; with O, the overtravel distance.
 ; If W is specified, the WCS origin will be set
 ; to the center of the bore.
-
-echo { "G6500.1 Work Offset: " ^ param.W}
 
 var maxWCS = #global.mosWorkOffsetCodes
 if { exists(param.W) && param.W != null && (param.W < 1 || param.W > var.maxWCS) }
@@ -96,10 +95,10 @@ set global.mosBoreCenterPos = { var.cX, var.cY }
 set global.mosBoreRadius = { var.avgR }
 
 ; Move to the calculated center of the bore
-G53 G0 X{var.cX} Y{var.cY}
+G6550.1 I{global.mosTouchProbeID} X{var.cX} Y{var.cY}
 
 if { !global.mosExpertMode }
-    echo { "Bore - Center X,Y:" ^ global.mosBoreCenterPos ^ " Radius :" ^ global.mosBoreRadius }
+    echo { "Bore - Center X,Y: " ^ global.mosBoreCenterPos ^ " Radius: " ^ global.mosBoreRadius }
 else
     echo { "global.mosBoreCenterPos=" ^ global.mosBoreCenterPos }
     echo { "global.mosBoreRadius=" ^ global.mosBoreRadius }

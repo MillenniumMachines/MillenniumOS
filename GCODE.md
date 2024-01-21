@@ -22,6 +22,9 @@ Ask the user to install the touch probe into the spindle and plug it in. Most ch
 #### `M7501` - PROMPT TOUCHPROBE REMOVAL
 Ask the user to remove the touch probe from the spindle. This confirms that we will not spin up the touch probe by making sure a user has to dismiss a modal after removing the touch probe.
 
+#### `M8001` - CHECK PROBE STATUS CHANGE
+Iterates through all configured probes every <n>ms, checking to see if their values have changed. This can be used to identify the right probe via user input when configuring MillenniumOS.
+
 ---
 
 ## Probing
@@ -70,7 +73,8 @@ If the post knows what _type_ of workpiece probe should be executed, it can call
 
 #### `G6550` - PROTECTED MOVE
 Uses `G38.3` internally to perform a protected move against a given probe ID.
-The machine will move at the given probe's travel speed.
+The machine will move at the given probe's travel speed. The sub codes
+(G6550.1 and G6550.2) are used to move towards and away from a work piece.
 
 
 
@@ -100,4 +104,4 @@ The machine will move at the given probe's travel speed.
 
 ## Variable Control
 
-#### `M7500` - OUTPUT ALL KNOWN VARIABLES
+#### `M7600` - OUTPUT ALL KNOWN VARIABLES
