@@ -17,7 +17,7 @@ set global.mosFeatureToolSetter=true
 set global.mosFeatureTouchProbe=true
 
 ; Set Toolsetter trigger height, and X/Y coordinates
-set global.mosToolSetterCoords={0, 113}
+set global.mosToolSetterPos={0, 113}
 ;set global.mosToolSetterHeight=42.5 ; Height in mm from reference
                                   ; surface when toolsetter triggers.
 
@@ -31,4 +31,4 @@ set global.mosTouchProbeID=2
 set global.mosSpindleID=1
 
 ; Set reference surface coordinates
-set global.mosReferenceSurfaceCoords={0, 65}
+set global.mosReferenceSurfacePos={0, 65}

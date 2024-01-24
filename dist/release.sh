@@ -11,7 +11,7 @@ mkdir -p ${TMP_DIR}/{sys,macros,sys/mos}
 
 # Copy files to correct location in temp dir
 ${SYNC_CMD} sys/* ${TMP_DIR}/sys/
-${SYNC_CMD} macro/public/* ${TMP_DIR}/macros/
+${SYNC_CMD} macro/public/* ${TMP_DIR}/macros/MillenniumOS
 ${SYNC_CMD} macro/private/* ${TMP_DIR}/sys/mos
 ${SYNC_CMD} macro/machine/* ${TMP_DIR}/sys/
 ${SYNC_CMD} macro/movement/* ${TMP_DIR}/sys/

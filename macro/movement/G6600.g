@@ -30,8 +30,8 @@ if { !exists(param.W) }
 else
     set var.workOffset = { param.W }
 
+var wcsZeroed = { false, false, false }
 if { exists(var.workOffset) }
-    echo { "G6600 Work Offset: " ^ var.workOffset}
     ; Prompt the user to pick a probing operation.
     M291 P"Select a probing operation:" R"Probe Work piece" J1 T0 S4 F0 K{var.probeNames}
     if { result != 0 }
@@ -44,6 +44,8 @@ if { exists(var.workOffset) }
 
     if { var.probeOp == 0 }
         G6520 W{var.workOffset}
+        set var.wcsZeroed[0] = true
+        set var.wcsZeroed[1] = true
     elif { var.probeOp == 1 }
         G6500 W{var.workOffset}
     elif { var.probeOp == 2 }
@@ -57,6 +59,9 @@ if { exists(var.workOffset) }
     else
         abort { "Invalid probing operation!" }
 
-    ; "Vice Corner" is a 3 axis probe, all others are X/Y
-    if { var.probeOp != 0 }
+    ; "Vice Corner" (index 0) is a 3 axis probe, "Single Surface" (index 6) is a 1 axis probe.
+    if { var.probeOp > 0 && var.probeOp < 6 }
+        set var.wcsZeroed[0] = true
+        set var.wcsZeroed[1] = true
+    else if {}
         echo { "Please probe Z axis to set work origin zero"}

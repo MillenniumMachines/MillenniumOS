@@ -14,7 +14,6 @@ if { !exists(global.mosLoaded) || !global.mosLoaded }
 ; speed variance, and then implement the new variance
 ; if the correct time has passed.
 
-
 ; If tool is not active, dont bother calculating anything
 if { spindles[global.mos[SpindleID].state != "forward" }
     M99 ; Return, spindle is not active

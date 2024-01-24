@@ -655,13 +655,8 @@ function onSection() {
   // same tool.
   var s = sVar.format(curTool['rpm']);
   if(s && curTool['type'] !== TOOL_PROBE) {
-    writeComment("Start spindle at requested RPM");
-    writeBlock(mCodes.format(3), s);
-    if(properties.waitForSpindle > 0) {
-      writeln("");
-      writeComment("Wait for spindle to reach target RPM");
-      writeBlock(gCodesF.format(4), dVar.format(properties.waitForSpindle));
-    }
+    writeComment("Start spindle at requested RPM and wait for it to accelerate");
+    writeBlock(mCodes.format(3.1), s);
     writeln("");
   }
 
@@ -990,7 +985,7 @@ function onClose() {
   writeln("");
 
   writeComment("Double-check spindle is stopped!");
-  writeBlock(mCodes.format(5));
+  writeBlock(mCodes.format(5.1));
   writeln("");
   writeComment("End Program");
   writeBlock(mCodes.format(0));
