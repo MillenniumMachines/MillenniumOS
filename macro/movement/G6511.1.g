@@ -17,8 +17,8 @@ G90
 G21
 
 ; Start point in X/Y is directly above the reference surface.
-var sX = { global.mosReferenceSurfaceCoords[global.mosIX] }
-var sY = { global.mosReferenceSurfaceCoords[global.mosIY] }
+var sX = { global.mosReferenceSurfacePos[global.mosIX] }
+var sY = { global.mosReferenceSurfacePos[global.mosIY] }
 
 ; Start point in Z is the maximum height of the Axis (usually 0)
 var sZ = { move.axes[global.mosIZ].max }

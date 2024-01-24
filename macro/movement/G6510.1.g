@@ -290,8 +290,42 @@ if { ! var.dangerWillRobinson }
 ; way more than we actually need, because 1.8 degree
 ; steppers with 8mm leadscrews aren't that accurate
 ; anyway.
-set global.mosProbeCoordinate[global.mosIX] = { ceil(var.nM[global.mosIX]*1000) / 1000 }
-set global.mosProbeCoordinate[global.mosIY] = { ceil(var.nM[global.mosIY]*1000) / 1000 }
+; We compensate for the probe radius and deflection
+; here, so the output should be as close to accurate
+; as we can achieve, given well calibrated values of
+; probe radius and deflection.
+
+; Deflection is subtracted from radius because the
+; probe tip will deflect slightly 'backwards' when
+; it contacts the surface.
+var probeCompensationRadius = { global.mosTouchProbeRadius - global.mosTouchProbeDeflection }
+
+; Calculate the direction of the probe movement
+var pdX = { var.nM[global.mosIX] - var.sX }
+var pdY = { var.nM[global.mosIY] - var.sY }
+
+; Calculate the magnitude of the direction vector
+var mag = { sqrt(pow(var.pdX, 2) + pow(var.pdY, 2)) }
+
+; Normalize the direction vector
+var pnX = { var.pdX / var.mag }
+var pnY = { var.pdY / var.mag }
+
+; Adjust the final position along the direction of movement in X and Y by the probe compensation radius
+set global.mosProbeCoordinate[global.mosIX] = { ceil((var.nM[global.mosIX] + var.probeCompensationRadius * var.pnX) * 1000) / 1000 }
+set global.mosProbeCoordinate[global.mosIY] = { ceil((var.nM[global.mosIY] + var.probeCompensationRadius * var.pnY) * 1000) / 1000 }
+
+; We do not compensate for the probe location in Z.
 set global.mosProbeCoordinate[global.mosIZ] = { ceil(var.nM[global.mosIZ]*1000) / 1000 }
+
+; This does bring up an interesting conundrum though. If you're probing in 2 axes where
+; one is Z, then you have no way of knowing whether the probe was triggered by the Z
+; movement or the X/Y movement. If the probe is triggered by Z then we would end up
+; compensating on the X/Y axes which would not necessarily be correct.
+
+; For these purposes, we have to assume that it is most likely for probes to be run
+; in X/Y, _or_ Z, and we have some control over this as we're writing the higher
+; level macros.
+
 
 set global.mosProbeVariance = { var.pV }

@@ -9,7 +9,7 @@
 ; for automatic tool-changing etc)
 
 if { !exists(param.P) || !exists(param.R) || !exists(param.S) }
-    abort { "Must provide tool number (P...), radius (R...) and description (S\"...\") to register tool!" }
+    abort { "Must provide tool number (P...), radius (R...) and description (S...) to register tool!" }
 
 if { param.P >= limits.tools || param.P < 1 }
     abort { "Tool index must be between 1 and " ^  limits.tools-1 ^ "!" }

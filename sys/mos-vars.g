@@ -5,6 +5,7 @@
 ; Define global variables that are intended to be overridden by the user in mos-user-vars.g
 global mosFeatureToolSetter=false
 global mosFeatureTouchProbe=false
+global mosFeatureSpindleFeedback=false
 global mosFeatureVSSC=true
 
 ; Expert mode skips descriptor steps during tool changes and probing operations. It does not skip
@@ -99,14 +100,15 @@ global mosN                 = {"X","Y","Z"}
 
 
 ; Define constants for probe types
-global mosReferenceSurfaceCoords=null
-global mosReferenceSurfaceZ=null
-global mosToolSetterPos=null
-global mosToolSetterDatum=null
-global mosToolSetterHeight=null
-global mosToolSetterID=null
-global mosTouchProbeID=null
 global mosSpindleID=null
+global mosSpindleAccelSeconds=null
+global mosSpindleDecelSeconds=null
+global mosTouchProbeID=null
+global mosToolSetterID=null
+global mosToolSetterPos=null
+global mosTouchProbeRadius=null
+global mosTouchProbeDeflection=null
+global mosTouchProbeReferencePos=null
 
 ; Used during configuration to detect
 ; probes.
