@@ -11,8 +11,15 @@
 if { !exists(param.P) || !exists(param.R) || !exists(param.S) }
     abort { "Must provide tool number (P...), radius (R...) and description (S...) to register tool!" }
 
-if { param.P >= limits.tools || param.P < 1 }
-    abort { "Tool index must be between 1 and " ^  limits.tools-1 ^ "!" }
+var maxTools = { limits.tools-1 }
+
+; If enabled, touch probe is configured
+; in the last tool slot.
+if { global.mosTouchProbeToolID != null }
+    set var.maxTools = { var.maxTools-1 }
+
+if { param.P > var.maxTools || param.P < 0 }
+    abort { "Tool index must be between 1 and " ^  var.maxTools ^ "!" }
 
 ; Define RRF tool against spindle.
 ; RRF Tools are zero-indexed so we can store 1 less than RRF.

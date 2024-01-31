@@ -1,8 +1,8 @@
-; G6510.1.g: SINGLE SURFACE PROBE - EXECUTE
+; G6512.g: SINGLE SURFACE PROBE - EXECUTE
 ;
 ; Repeatable surface probe in any direction.
 ;
-; G6510.1
+; G6512
 ;    I<probe-id>
 ;    {X,Y,Z}<one-or-more-target-coord>
 ;    L<start-coord-z>
@@ -24,22 +24,22 @@
 ;
 ; All co-ordinates are absolute machine co-ordinates!
 ; Examples:
-;   G6510.1 I1 L{move.axes[2].max} Z{move.axes[2].min} -
+;   G6512 I1 L{move.axes[2].max} Z{move.axes[2].min} -
 ;     Probe at current X/Y machine position, Z=max towards
 ;     Z=min using probe 1. This might be used for probing
 ;     tool offset using the toolsetter.
 ;
-;   G6510.1 I2 L-10 X100 - Probe from current X/Y machine
+;   G6512 I2 L-10 X100 - Probe from current X/Y machine
 ;     position at Z=-10 towards X=100 using probe 2.
 ;     This might be used for probing one side of a workpiece.
 ;     There would be no movement in the Y or Z directions during
 ;     the probe movement.
 ;
-;   G6510.1 I2 J50 K50 L-20 X0 Y0 - Probe from X=50, Y=50,
+;   G6512 I2 J50 K50 L-20 X0 Y0 - Probe from X=50, Y=50,
 ;     Z=-20 towards X=0, Y=0 (2 axis) using probe 2. This
 ;     would be a diagonal probing move.
 ;
-;   G6510.1 I1 J50 K50 L-10 X0 Y0 Z-20 - Probe from X=50,
+;   G6512 I1 J50 K50 L-10 X0 Y0 Z-20 - Probe from X=50,
 ;     Y=50, Z=-10 towards X=0, Y=0, Z=-20 (3 axis) using
 ;     probe 1. This would involve movement in all 3 axes
 ;     at once. Can't think of where this would be useful right now
@@ -49,11 +49,11 @@
 ; parameters from the user, use the G6510 macro which will prompt the operator
 ; for the required parameters.
 
-; TODO: Implement probe radius and deflection compensation
-;var probeCompensation = { - (global.mosTouchProbeRadius - global.mosTouchProbeDeflection) }
-
 if { !exists(param.I) || sensors.probes[param.I].type != 8 }
     abort { "Must provide a valid probe ID (I..)!" }
+
+; Make sure machine is stationary before checking machine positions
+M400
 
 ; Default to current machine position for unset X/Y starting locations
 var sX = { (exists(param.J)) ? param.J : move.axes[global.mosIX].machinePosition }
@@ -81,6 +81,17 @@ var sZ = { param.L }
 var tPX = { exists(param.X)? param.X : var.sX }
 var tPY = { exists(param.Y)? param.Y : var.sY }
 var tPZ = { exists(param.Z)? param.Z : var.sZ }
+
+
+; Round start positions
+set var.sX = { ceil(var.sX * 1000) / 1000 }
+set var.sY = { ceil(var.sY * 1000) / 1000 }
+set var.sZ = { ceil(var.sZ * 1000) / 1000 }
+
+; Round target positions
+set var.tPX = { ceil(var.tPX * 1000) / 1000 }
+set var.tPY = { ceil(var.tPY * 1000) / 1000 }
+set var.tPZ = { ceil(var.tPZ * 1000) / 1000 }
 
 ; Check if target position is within machine limits
 var mLX = { var.tPX < move.axes[global.mosIX].min || var.tPX > move.axes[global.mosIX].max }
@@ -147,6 +158,7 @@ if { var.sZ > var.safeZ }
 G6550.1 I{ param.I } X{ var.sX } Y{ var.sY }
 
 ; Move to probe height.
+; No-op if we already moved above.
 G6550.1 I{ param.I } Z{ var.sZ }
 
 ; Set rough probe speed
@@ -176,11 +188,13 @@ while { iterations <= var.retries }
         ; Reset probing speed limits
         M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
 
-        ; Park. This is a safety precaution to prevent subsequent X/Y moves from
+        ; Park at Z max.
+        ; This is a safety precaution to prevent subsequent X/Y moves from
         ; crashing the probe.
-        G27
+        G27 Z1
         abort { "MillenniumOS: Probe " ^ param.I ^ " experienced an error, aborting!" }
 
+    ; Wait for all moves in the queue to finish
     M400
 
     ; G38 commands appear to return before the machine has finished moving
@@ -243,15 +257,23 @@ while { iterations <= var.retries }
     var backoffY = { var.dY / var.bN * var.backoffDist }
     var backoffZ = { var.dZ / var.bN * var.backoffDist }
 
+    ; Unprotected back-off move.
+    ; TODO: This assumes that the back-off
+    ; distance is always safe, as we're moving back
+    ; towards our starting location. If our back-off
+    ; distance is higher than the distance we travelled from
+    ; the starting location then this assumption does not hold
+    ; and we should use a protected move instead.
+    G53 G1 X{ var.curPos[global.mosIX] + var.backoffX } Y{ var.curPos[global.mosIY] + var.backoffY } Z{ var.curPos[global.mosIZ] + var.backoffZ } F{var.travelSpeed}
+
+    ; Wait for all moves in the queue to finish
+    M400
+
     ; Back off until the probe is no longer triggered
-    G6550.2 I{ param.I } X{ var.curPos[global.mosIX] + var.backoffX } Y{ var.curPos[global.mosIY] + var.backoffY } Z{ var.curPos[global.mosIZ] + var.backoffZ }
-    if { result != 0 }
-        echo { "Back-off failed in G6550.2"}
+    ; G6550.2 I{ param.I } X{ var.curPos[global.mosIX] + var.backoffX } Y{ var.curPos[global.mosIY] + var.backoffY } Z{ var.curPos[global.mosIZ] + var.backoffZ }
 
     ; Protected move back to the back-off position
-    G6550.1 I{ param.I } X{ var.curPos[global.mosIX] + var.backoffX } Y{ var.curPos[global.mosIY] + var.backoffY } Z{ var.curPos[global.mosIZ] + var.backoffZ }
-    if { result != 0 }
-        echo { "Back-off failed in G6550.1"}
+    ; G6550.1 I{ param.I } X{ var.curPos[global.mosIX] + var.backoffX } Y{ var.curPos[global.mosIY] + var.backoffY } Z{ var.curPos[global.mosIZ] + var.backoffZ }
 
     ; If axis has moved, check if we're within tolerance on that axis.
     ; We can only abort early if we're within tolerance on all moved (probed) axes.
@@ -266,7 +288,7 @@ while { iterations <= var.retries }
     ; If we're within tolerance on all axes, we can stop probing
     ; and report the result.
     if { var.tR && iterations >= var.minProbes }
-        if { !global.mosExpertMode }
+        if { !global.mosDebug }
             echo { "MillenniumOS: Probe " ^ param.I ^ ": Reached requested tolerance " ^ var.tolerance ^ "mm after " ^ iterations ^ "/" ^ var.retries ^ " probes" }
         break
 

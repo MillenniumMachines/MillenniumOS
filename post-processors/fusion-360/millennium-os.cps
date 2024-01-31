@@ -59,6 +59,9 @@ allowHelicalMoves     = true;              // Output helical moves as arcs
 allowSpiralMoves      = false;             // Linearize spirals (circular moves with a different starting and ending radius)
 allowedCircularPlanes = undefined;         // Allow arcs on all planes
 
+// Base WCS number, offset is added to this
+var wcsBase = 53;
+
 // Define WCS probing modes
 var wcsProbeMode = {
   NONE: "NONE",
@@ -76,12 +79,14 @@ var warpSpeedMode = {
   NONE: "NONE",
   CLEARANCE: "CLEARANCE",
   RETRACT: "RETRACT",
+  ZERO: "ZERO"
 }
 
 var warpSpeedModeProperty = [
   { title: "None", id: warpSpeedMode.NONE },
   { title: "Clearance", id: warpSpeedMode.CLEARANCE },
   { title: "Retract", id: warpSpeedMode.RETRACT },
+  { title: "Zero", id: warpSpeedMode.ZERO }
 ];
 
 // Property groups for user-configurable properties
@@ -122,7 +127,7 @@ properties = {
   },
   warpSpeedMode: {
     title: "Restore rapid moves at and above the selected height",
-    description: "The operation height above which G0 moves will be restored. Only vertical OR lateral moves are considered.",
+    description: "The operation height above which G0 moves will be restored. Only vertical OR lateral moves are considered. None disables warp mode. Retract and Clearance restore rapid moves at and above the relevant height set on the operation. Zero restores all rapid moves at or above Z=0 in the active WCS. BEWARE: Be absolutely certain when using Zero mode that your tool offsets are calculated accurately, as rapid moves back down to Z=0 will not allow any leeway for tool length errors! Additionally, only use Zero if you can guarantee there is nothing above Z=0 that could interfere with rapid moves.",
     group: "formats",
     scope: "post",
     type: "enum",
@@ -131,7 +136,7 @@ properties = {
   },
   outputJobSetup: {
     title: "Output job setup commands",
-    description: "When enabled, the post-processor will output supplemental commands to make sure the machine is properly configured before starting a job. These commands include homing the machine and probing and Zeroing any used WCSs. Individual supplemental commands can be enabled, disabled and configured separately but disabling this allows advanced operators to setup the machine for the job using their own workflow, while still outputting known-good operation gcode from this post.",
+    description: "When enabled, the post-processor will output supplemental commands to make sure the machine is properly configured before starting a job. These commands include homing the machine, probing and zeroing any used WCSs. Individual supplemental commands can be enabled, disabled and configured separately but disabling this allows advanced operators to setup the machine for the job using their own workflow, while still outputting known-good operation gcode from this post.",
     group: "configuration",
     scope: "post",
     type: "boolean",
@@ -152,14 +157,6 @@ properties = {
     type: "enum",
     values: wcsProbeModeProperty,
     value: wcsProbeModeProperty[2].id
-  },
-  waitForSpindle: {
-    title: "Dwell time in seconds to wait for spindle to reach target RPM",
-    description: "When set, machine will wait (dwell) for this number of seconds after starting or stopping the spindle to allow it to accelerate or decelerate to the target speed.",
-    group: "spindle",
-    scope: "machine",
-    type: "integer",
-    value: 20
   },
   vsscEnabled: {
     title: "Enable Variable Spindle Speed Control",
@@ -188,8 +185,15 @@ properties = {
 };
 
 // Configure command formatting functions
-var gFmt = createFormat({ prefix: "G", decimals: 1 }); // Create formatting command for G codes
-var mFmt = createFormat({ prefix: "M", decimals: 0 }); // Create formatting command for M codes
+// Contrary to what everyone understands an INTEGER to be, Fusion360 CAM believes
+// FORMAT_INTEGER means "output whole numbers without a decimal point", _AND_ output
+// decimal numbers with a decimal point. The post-processor training guide suggests
+// FORMAT_TZS (format trailing zero suppression) is the right format to use, but
+// that one outputs everything with a decimal point and without the trailing zeroes.
+// I'm not sure what was being smoked that day, but the below type specifications
+// output the right decimal codes we need.
+var gFmt = createFormat({ prefix: "G", decimals: 1, type: FORMAT_INTEGER }); // Create formatting command for G codes
+var mFmt = createFormat({ prefix: "M", decimals: 1, type: FORMAT_INTEGER }); // Create formatting command for M codes
 var tFmt = createFormat({ prefix: "T", decimals: 0 }); // Create formatting command for T (tool) codes
 
 
@@ -245,13 +249,11 @@ var dVar = createOutputVariable({ prefix: "S", control: CONTROL_FORCE }, intFmt)
 var G = {
   PARK: 27,
   HOME: 28,
-  TOOL: 37,
   PROBE_OPERATOR: 6600,
   PROBE_BORE: 6500.1,
   PROBE_BOSS: 6501.1,
   PROBE_RECTANGLE_POCKET: 6502.1,
   PROBE_SINGLE_SURFACE: 6510.1,
-  PROBE_REF_SURFACE: 6511.1
 };
 
 // TODO: Add more probing codes
@@ -261,7 +263,8 @@ var M = {
   ADD_TOOL: 4000,
   VSSC_ENABLE: 7000,
   VSSC_DISABLE: 7001,
-  PROBE_REMOVE: 7003,
+  SPINDLE_ON_CW: 3.9,
+  SPINDLE_OFF: 5.9
 };
 
 var CYCLE = {
@@ -277,6 +280,9 @@ var CYCLE = {
 };
 
 // Create modal groups
+// NOTE: Modal groups do not handle decimal
+// gcodes correctly, it looks like they are
+// floored and outputted as an integer.
 var gCodes = createModalGroup(
   // Only allow the following gcodes to be outputted (we restrict
   // output to gcodes we know are safe).
@@ -297,12 +303,10 @@ var gCodesF = createModalGroup(
       [4],                                        // Dwell codes
       [G.PARK, G.HOME],                           // Other positioning codes
       [
-        G.PROBE_TOOL,
         G.PROBE_OPERATOR,
         G.PROBE_BORE,
         G.PROBE_BOSS,
-        G.PROBE_RECTANGLE_POCKET,
-        G.PROBE_REF_SURFACE
+        G.PROBE_RECTANGLE_POCKET
       ] // Probe codes
   ],
   gFmt);
@@ -311,14 +315,12 @@ var mCodes = createModalGroup(
   // Only allow the following mcodes to be outputted.
   { strict: true, force: true },
   [
-    [0, 2],                          // Program codes
-    [3, 4, 5],                       // Spindle codes
-    [6],                             // Tool change codes
-    [M.ADD_TOOL],                    // Tool data codes
-    [M.VSSC_ENABLE, M.VSSC_DISABLE], // VSSC codes
-    [M.PROBE_REMOVE]                 // Probe codes
+    [0, 2],                           // Program codes
+    [M.ADD_TOOL],                     // Tool data codes
+    [M.VSSC_ENABLE, M.VSSC_DISABLE]   // VSSC codes
   ],
   mFmt);
+
 
 // Called to make sure X/Y/Z variables are output when next called
 function resetXYZ() {
@@ -434,14 +436,7 @@ function onOpen() {
       writeln("");
     }
 
-    if(nTools > 0) {
-      writeComment("Probe reference surface prior to tool changes");
-      writeBlock(gCodesF.format(G.PROBE_REF_SURFACE));
-      writeln("");
-    }
-
     writeComment("WCS Probing Mode: {mode}".supplant({mode: getProperty("jobWCSProbeMode")}));
-
     if(getProperty("jobWCSProbeMode") === wcsProbeMode.ATSTART) {
       for(var i = 0; i < seenWCS.length; i++) {
         var wcs = seenWCS[i];
@@ -449,17 +444,9 @@ function onOpen() {
         writeBlock(gCodesF.format(G.PROBE_OPERATOR), "W{wcs}".supplant({wcs: wcs}));
         writeln("");
       }
-      // If probe mode is ONCHANGE, then onSection() deals with prompting the operator
-      // to insert and remove the touch probe. If we probe all used WCS here, then we can
-      // safely prompt the operator to remove the touch probe here and proceed with
-      // the operations.
-      writeComment("Prompt operator to remove touch probe before continuing");
-      writeBlock(mCodes.format(M.PROBE_REMOVE));
-      writeln("");
     } else {
       writeln("");
     }
-
   }
 
   // Output movement configuration - absolute moves, mm or inches, arcs in X/Y.
@@ -477,7 +464,7 @@ function onOpen() {
   // All feeds in mm/min
   writeBlock(gCodes.format(94));
 
-    writeln("");
+  writeln("");
 };
 
 // Track parameter values required for the current operation.
@@ -548,22 +535,22 @@ function onParameter(param, value) {
     // Generate errors on unsupported parameter values
     case 'operation:isMillingStrategy':
       if(value !== 1) {
-        error("Non milling strategies are not supported on Milo!");
+        error("Non milling strategies are not supported by MillenniumOS!");
       }
     break;
     case 'operation:tool_isMill':
       if(value !== 1) {
-        error("Non milling tools are not supported on Milo!");
+        error("Non milling tools are not supported by MillenniumOS!");
       }
     break;
     case 'operation:tool_clockwise':
       if(value !== 1) {
-        error("Anti-clockwise spindle rotation is not supported on Milo!");
+        error("Anti-clockwise spindle rotation is not supported by MillenniumOS!");
       }
     break;
     case 'operation:isMultiAxisStrategy':
       if(value === 1) {
-        error("Multi-axis strategies are not supported on Milo!");
+        error("Multi-axis strategies are not supported by MillenniumOS!");
       }
     break;
 
@@ -598,44 +585,43 @@ function onSection() {
 
   var curWCS = currentSection.workOffset;
 
-  if(curWCS > 6) {
-    error("Extended Work Co-ordinate Systems (G59.1..9) are not supported on Milo!")
+  if(curWCS > 9) {
+    error("Extended Work Co-ordinate Systems above G59.3 are not supported by MillenniumOS!")
   }
 
-  // If WCS requires changing
-  if(wcsChanging) {
-    // Only probe on WCS change if probe mode is set to ONCHANGE
-    var doProbe = getProperty("jobWCSProbeMode") === wcsProbeMode.ONCHANGE && !isProbeOperation();
+  // Only probe on WCS change if probe mode is set to ONCHANGE
+  var doProbe = getProperty("jobWCSProbeMode") === wcsProbeMode.ONCHANGE && !isProbeOperation();
 
-    var wcsO = { wcs: curWCS };
+  var wcsF = { wcs: curWCS };
 
-    // WCS Gcode is the offset from 53 (machine co-ordinates).
-    var wcsCode = 53 + curWCS;
+  // WCS Gcode is the offset from 53 (machine co-ordinates).
+  var wcsCode = wcsBase + curWCS;
 
-    // Only probe if required, prompt operator to remove touch probe
-    // before continuing.
-    if(doProbe) {
+  // If WCS requires changing and probe is required
+  if(wcsChanging && doProbe) {
       writeComment("Park ready for WCS change");
       writeBlock(gCodesF.format(G.PARK));
       writeln("");
-      writeComment("Probe origin corner and save in WCS {wcs}".supplant(wcsO));
-      writeBlock(gCodesF.format(G.PROBE_OPERATOR), "W{wcs}".supplant(wcsO));
+      writeComment("Probe origin and save in WCS {wcs}".supplant(wcsF));
+      writeBlock(gCodesF.format(G.PROBE_OPERATOR), "W{wcs}".supplant(wcsF));
       writeln("");
-      writeComment("Prompt operator to remove touch probe before continuing");
-      writeBlock(mCodes.format(M.PROBE_REMOVE));
-      writeln("");
-    }
-    writeComment("Switch to WCS {wcs}".supplant(wcsO));
+  }
+
+  if (wcsChanging) {
+    writeComment("Switch to WCS {wcs}".supplant(wcsF));
     writeBlock(gCodes.format(wcsCode));
     writeln("");
   }
 
-  // If tool requires changing
-  if(toolChanging) {
+  // If tool requires changing or wcs was probed
+  // We must force a tool change if probe was required
+  // because the tool change is what deactivates the
+  // touch probe.
+  if(toolChanging || (wcsChanging && doProbe)) {
     writeComment("TC: {desc} L={length}".supplant(curTool));
 
-    // Write tool number and M6 command to trigger tool change
-    writeBlock(tCmd.format(tool.number), mCodes.format(6));
+    // Write tool change command.
+    writeBlock(tCmd.format(tool.number));
 
     writeln("");
   }
@@ -656,7 +642,10 @@ function onSection() {
   var s = sVar.format(curTool['rpm']);
   if(s && curTool['type'] !== TOOL_PROBE) {
     writeComment("Start spindle at requested RPM and wait for it to accelerate");
-    writeBlock(mCodes.format(3.1), s);
+    // We must use mFmt directly rather than mCodes here
+    // because modal groups do not correctly handle
+    // decimals.
+    writeBlock(mFmt.format(M.SPINDLE_ON_CW), s);
     writeln("");
   }
 
@@ -679,9 +668,6 @@ function onSection() {
 
 // At the end of every section
 function onSectionEnd() {
-  if(isProbeOperation()) {
-    writeBlock(gCodesF.format(M.PROBE_REMOVE));
-  }
 
   if(getProperty("vsscEnabled")) {
     writeComment("Disable Variable Spindle Speed Control");
@@ -752,7 +738,7 @@ function onCyclePoint() {
           xPVar.format(x + approach(cycle.approach1, cycle.probeClearance)),
           yPVar.format(y + approach(cycle.approach2, cycle.probeClearance)),
       ]);
-      // Add P and Q variables if probespacing is defined, which
+      // Add P and Q variables if probe spacing is defined, which
       // will perform an extra probe along each axis and can calculate
       // the angle of the probed corner.
       if(cycle.probeSpacing !== undefined) {
@@ -768,12 +754,11 @@ function onCyclePoint() {
 // Called when a spindle speed change is requested
 function onSpindleSpeed(rpm) {
   writeComment("Spindle speed changed");
-  writeBlock(mCodes.format(3), sVar.format(rpm));
+  writeBlock(mFmt.format(M.SPINDLE_ON_CW), sVar.format(rpm));
 }
 
 // Called when a rapid linear move is requested
 function onRapid(x, y, z) {
-
   var a1 = xVar.format(x);
   var a2 = yVar.format(y);
   var a3 = zVar.format(z);
@@ -794,17 +779,19 @@ function onLinear(x, y, z, f) {
   var a4 = fVar.format(f);
 
   var warpMode = getProperty("warpSpeedMode");
-  var zWarp;
-
+  var warpable = false;
   switch(warpMode) {
     case warpSpeedMode.CLEARANCE:
-      zWarp = curOp['clearance'];
+      warpable = (z >= curOp['clearance']);
     break;
     case warpSpeedMode.RETRACT:
-      zWarp = curOp['retract'];
+      warpable = (z >= curOp['retract']);
+    break;
+    case warpSpeedMode.ZERO:
+      warpable = (z >= 0);
     break;
     default:
-      zWarp = Number.MAX_SAFE_INTEGER;
+      warpable = false
   }
 
   // Warp if we can. We will not warp if moving in all 3 axes
@@ -812,7 +799,7 @@ function onLinear(x, y, z, f) {
   // purposes.
   var isHorizontal = (a1 || a2) && !a3;
   var isVertical = !a1 && !a2 && a3;
-  if ((isHorizontal || isVertical) && z >= zWarp) {
+  if ((isHorizontal || isVertical) && warpable) {
       writeComment("Warp move");
       writeBlock(gCodesF.format(0), a1, a2, a3);
       fVar.reset();
@@ -985,8 +972,9 @@ function onClose() {
   writeln("");
 
   writeComment("Double-check spindle is stopped!");
-  writeBlock(mCodes.format(5.1));
+  writeBlock(mFmt.format(M.SPINDLE_OFF));
   writeln("");
+
   writeComment("End Program");
   writeBlock(mCodes.format(0));
 }

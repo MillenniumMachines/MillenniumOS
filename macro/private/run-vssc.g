@@ -15,7 +15,7 @@ if { !exists(global.mosLoaded) || !global.mosLoaded }
 ; if the correct time has passed.
 
 ; If tool is not active, dont bother calculating anything
-if { spindles[global.mos[SpindleID].state != "forward" }
+if { spindles[global.mosSpindleID].state != "forward" }
     M99 ; Return, spindle is not active
 
 ; Use uptime to get millisecond precision

@@ -22,6 +22,10 @@
 ;
 ; NOTE: This is designed to work with a NEGATIVE Z - that is, MAX is 0 and MIN is -<something>
 
+if { global.mosTouchProbeToolID != null && global.mosToolSetterActivationPos == null }
+    abort { "Touch probe feature is enabled but reference surface has not been probed. Please run <b>G6511</b> before probing tool lengths!" }
+    M99
+
 G27 Z1    ; park spindle
 
 if { state.status == "paused" }
@@ -40,8 +44,8 @@ if { state.status == "paused" }
 ; the toolsetter.
 
 if { state.currentTool == -1 }
-    M291 P"No tool selected. Make sure to select a configured tool using T<N> before running G37!" R"MillenniumOS: Tool Change" S3
-    M25.1 S{ "No tool selected. Run T<N> M6 to perform a tool change and then press 'Resume Job' to continue." }
+    abort { "No tool selected. Run <b>T<N> P0</b> to select a tool before running G37 manually!" }
+    M99
 
 if { state.currentTool == state.previousTool }
     echo "Tool #" ^ state.currentTool ^ " is already selected. Skipping tool change."
@@ -53,21 +57,27 @@ G10 P{state.currentTool} Z0
 echo {"Probing tool #" ^ state.currentTool ^ " length at X=" ^ global.mosToolSetterPos[global.mosIX] ^ ", Y=" ^ global.mosToolSetterPos[global.mosIY] }
 
 ; Probe towards axis minimum until toolsetter is activated
-G6510.1 I{global.mosToolSetterID} J{global.mosToolSetterPos[global.mosIX]} K{global.mosToolSetterPos[global.mosIY]} L{move.axes[global.mosIZ].max} Z{global.mosToolSetterPos[global.mosIZ]}
+G6512 I{global.mosToolSetterID} J{global.mosToolSetterPos[global.mosIX]} K{global.mosToolSetterPos[global.mosIY]} L{move.axes[global.mosIZ].max} Z{move.axes[global.mosIZ].min}
 
-var toolOffset = { -(abs(global.mosToolSetterPos[global.mosIZ]) - abs(global.mosProbeCoordinate[global.mosIZ])) }
+; If touch probe is configured, then our position in Z is relative to
+; the installed height of the touch probe, which we don't know. What we
+; _do_ know is the Z co-ordinate of a reference surface probed by both
+; the 'datum tool' and the touch probe, and the Z co-ordinate of the
+; expected activation point of the toolsetter when activated by the
+; datum tool.
+; Using this, we calculate the expected activation point of the toolsetter
+; based on the reference surface probed height, and then calculate our
+; offset from there instead.
 
-; TODO: We might have positive offsets here given the toolsetter / touch probe is
-; calibrated with a dowel that sticks out. We should find a way to make sure the
-; positive offset is not higher than the length of the dowel that was used to
-; calibrate the toolsetter position, because otherwise we risk ramming the spindle
-; nose into things.
-
-if { var.toolOffset > 0 }
-    M25.1 S{ "Probed tool has a positive offset! This means it is shorter than your stored datum height, which should be impossible. Fix your tool or reset your datum height by running the Configuration Wizard using G8000." }
+var toolOffset = 0
+if { global.mosTouchProbeToolID != null }
+    set var.toolOffset = { -(global.mosProbeCoordinate[global.mosIZ] - global.mosToolSetterActivationPos) }
+else
+    set var.toolOffset = { -(abs(global.mosToolSetterPos[global.mosIZ]) - abs(global.mosProbeCoordinate[global.mosIZ])) }
 
 echo {"Tool #" ^ state.currentTool ^ " Offset=" ^ var.toolOffset ^ "mm"}
 
-G27 Z1
+; Park spindle centrally
+G27
 
 G10 P{state.currentTool} X0 Y0 Z{var.toolOffset}

@@ -33,10 +33,10 @@ var sX   = { param.J + param.I, param.J - param.I, param.J - param.I, param.J + 
 var sY   = { param.K + param.I, param.K + param.I, param.K - param.I, param.K - param.I }
 
 ; Probe edge on X axis
-G6510.1 K{global.mosTouchProbeID} J{var.sX[param.H]} K{var.sY[param.H]} L{param.L} X{var.dirX[param.H]}
+G6512 K{global.mosTouchProbeID} J{var.sX[param.H]} K{var.sY[param.H]} L{param.L} X{var.dirX[param.H]}
 
 ; Probe edge on Y axis
-G6510.1 K{global.mosTouchProbeID} J{var.sX[param.H]} K{var.sY[param.H]} L{param.L} Y{var.dirY[param.H]}
+G6512 K{global.mosTouchProbeID} J{var.sX[param.H]} K{var.sY[param.H]} L{param.L} Y{var.dirY[param.H]}
 
 ; Set most recent corner position variables
 set global.mosOutsideCornerNum = param.H
