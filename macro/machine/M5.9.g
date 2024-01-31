@@ -1,4 +1,4 @@
-; M5.1.g: SPINDLE OFF
+; M5.9.g: SPINDLE OFF
 ;
 ; It takes a bit of time to decelerate the spindle. How long this
 ; requires depends on the VFD setup and how much energy can be
@@ -8,7 +8,7 @@
 ; amongst other things) and the post-processor, so we need an m-code
 ; that can be used by both and that means our wait-for-spindle dwell
 ; time only needs to exist in one place.
-; USAGE: M5.1 [S<rpm>] [P<spindle-id>] [D<override-dwell-seconds>]
+; USAGE: M5.9 [D<override-dwell-seconds>]
 
 ; Spindles only need to be stopped if they're actually running.
 ; The base M5 code will stop the spindle for the current tool, or
@@ -19,7 +19,7 @@
 var doWait = false
 while { iterations < #spindles }
     var sS = { spindles[iterations].state }
-    set var.doWait = { var.sS != "unconfigured" && var.sS != "stopped" || var.doWait }
+    set var.doWait = { (var.sS != "unconfigured" && var.sS != "stopped") || var.doWait }
 
 ; We run M5 unconditionally for safety purposes. If
 ; the object model is not up to date for whatever

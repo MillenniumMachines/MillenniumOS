@@ -71,22 +71,22 @@ var pR = { {0, 0}, {null, null}, {0, 0}, {null, null} }
 set global.mosOutsideCornerNum = param.H
 
 ; Probe X surface
-G6510.1 K{global.mosTouchProbeID} J{var.sX1} K{var.sY1} L{param.L} X{var.tX1}
+G6512 K{global.mosTouchProbeID} J{var.sX1} K{var.sY1} L{param.L} X{var.tX1}
 set var.pR[0] = { global.mosProbeCoordinate[0], global.mosProbeCoordinate[1] }
 
 ; If we have a secondary probe offset on X, probe again
 if { var.hasSecondaries }
-    G6510.1 K{global.mosTouchProbeID} J{var.sX1} K{var.sY1 + param.P} L{param.L} X{var.tX1}
+    G6512 K{global.mosTouchProbeID} J{var.sX1} K{var.sY1 + param.P} L{param.L} X{var.tX1}
     set var.pR[1] = { global.mosProbeCoordinate[0], global.mosProbeCoordinate[1] }
 endif
 
 ; Probe Y surface
-G6510.1 K{global.mosTouchProbeID} J{var.sX2} K{var.sY2} L{param.L} Y{var.tY2}
+G6512 K{global.mosTouchProbeID} J{var.sX2} K{var.sY2} L{param.L} Y{var.tY2}
 set var.pR[2] = { global.mosProbeCoordinate[0], global.mosProbeCoordinate[1] }
 
 ; If we have a secondary probe offset on Y, probe again
 if { var.hasSecondaries }
-    G6510.1 K{global.mosTouchProbeID} J{var.sX2 + param.Q} K{var.sY2} L{param.L} Y{var.tY2}
+    G6512 K{global.mosTouchProbeID} J{var.sX2 + param.Q} K{var.sY2} L{param.L} Y{var.tY2}
     set var.pR[3] = { global.mosProbeCoordinate[0], global.mosProbeCoordinate[1] }
 endif
 

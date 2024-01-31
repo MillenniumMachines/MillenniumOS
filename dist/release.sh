@@ -15,6 +15,7 @@ ${SYNC_CMD} macro/public/* ${TMP_DIR}/macros/MillenniumOS
 ${SYNC_CMD} macro/private/* ${TMP_DIR}/sys/mos
 ${SYNC_CMD} macro/machine/* ${TMP_DIR}/sys/
 ${SYNC_CMD} macro/movement/* ${TMP_DIR}/sys/
+${SYNC_CMD} macro/tool-change/* ${TMP_DIR}/sys/
 
 find ${TMP_DIR}
 

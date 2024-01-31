@@ -5,7 +5,7 @@
 ; USAGE: "G27"
 
 ; Stop spindle after raising Z, in case it is spinning and
-; in contact with the work piece when this macro is called.
+; in contact with the workpiece when this macro is called.
 
 ; Use absolute positions in mm
 G90
@@ -15,7 +15,7 @@ G21
 G53 G0 Z{move.axes[global.mosIZ].max}
 
 ; Stop spindle and wait
-M5.1
+M5.9
 
 ; If park is called with Z parameter, then the table itself will not be
 ; moved.

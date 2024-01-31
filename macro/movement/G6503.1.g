@@ -43,22 +43,22 @@ var pX   = { null, null }
 var pY   = { null, null }
 
 ; Probe edge min on X axis
-G6510.1 K{global.mosTouchProbeID} J{var.sX[0]} K{param.K} L{param.L} X{dirX[0]}
+G6512 K{global.mosTouchProbeID} J{var.sX[0]} K{param.K} L{param.L} X{dirX[0]}
 set var.pX[0] = { global.mosProbeCoordinate[global.mosIX] }
 
 ; Probe edge max on X axis
-G6510.1 K{global.mosTouchProbeID} J{var.sX[1]} K{param.K} L{param.L} X{dirX[1]}
+G6512 K{global.mosTouchProbeID} J{var.sX[1]} K{param.K} L{param.L} X{dirX[1]}
 set var.pX[1] = { global.mosProbeCoordinate[global.mosIX] }
 
 set global.mosRectangleBlockDimensions[0] = { var.pX[1] - var.pX[0] }
 set global.mosRectangleBlockCenterPos[0] = { (var.pX[0] + var.pX[1]) / 2 }
 
 ; Probe edge min on Y axis, using the X center of the pocket
-G6510.1 K{global.mosTouchProbeID} J{global.mosRectangleBlockCenterPos[0]} K{var.sY[0]} L{param.L} Y{dirY[0]}
+G6512 K{global.mosTouchProbeID} J{global.mosRectangleBlockCenterPos[0]} K{var.sY[0]} L{param.L} Y{dirY[0]}
 set var.pY[0] = { global.mosProbeCoordinate[global.mosIY] }
 
 ; Probe edge max on Y axis, using the X center of the pocket
-G6510.1 K{global.mosTouchProbeID} J{global.mosRectangleBlockCenterPos[0]} K{var.sY[1]} L{param.L} Y{dirY[1]}
+G6512 K{global.mosTouchProbeID} J{global.mosRectangleBlockCenterPos[0]} K{var.sY[1]} L{param.L} Y{dirY[1]}
 set var.pY[1] = { global.mosProbeCoordinate[global.mosIY] }
 
 set global.mosRectangleBlockDimensions[1] = { var.pY[1] - var.pY[0] }

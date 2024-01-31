@@ -1,4 +1,4 @@
-; M8001.g: DETECT PROBE STATUS CHANGE
+; M8001.g: DETECT PROBE BY STATUS CHANGE
 ;
 ; This macro is called by the MillenniumOS configuration wizard to detect
 ; a change in the status of any of the configured probes. It is used to
@@ -12,7 +12,7 @@ set global.mosDetectedProbeID = null
 var delay = { (exists(param.D)) ? param.D : 100 }
 
 ; Maximum time to wait without detecting a probe, in s
-var maxWait = {(exists(param.W)) ? param.W : 30}
+var maxWait = { (exists(param.W)) ? param.W : 30 }
 
 ; Calculate number of iterations to reach maxWait
 ; at given delay

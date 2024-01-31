@@ -52,7 +52,7 @@ var safeZ = { move.axes[global.mosIZ].machinePosition }
 ; Probe each of the 3 points
 while { iterations < #var.dirXY }
     ; Perform a probe operation towards the center of the boss
-    G6510.1 I{global.mosTouchProbeID} J{var.dirXY[iterations][0]} K{var.dirXY[iterations][1]} L{var.sZ} X{var.sX} Y{var.sY}
+    G6512 I{global.mosTouchProbeID} J{var.dirXY[iterations][0]} K{var.dirXY[iterations][1]} L{var.sZ} X{var.sX} Y{var.sY}
 
     ; Save the probed co-ordinates
     set var.pXY[iterations] = { global.mosProbeCoordinate[global.mosIX], global.mosProbeCoordinate[global.mosIY] }

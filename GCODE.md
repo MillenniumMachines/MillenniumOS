@@ -63,7 +63,7 @@ If the post knows what _type_ of workpiece probe should be executed, it can call
 #### `G6510` - SINGLE SURFACE
 
 #### `G6511` - PROBE REFERENCE SURFACE
-  - Calls `G6510.1`, probing from z-max towards z-min
+  - Calls `G6512`, probing from z-max towards z-min
 
 ### Three Axis
 

@@ -20,6 +20,9 @@ if { !exists(param.I) || sensors.probes[param.I].type != 8 }
 if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
     abort { "Must provide a valid target position in one or more axes (X.. Y.. Z..)!" }
 
+; Make sure machine is stationary before checking machine positions
+M400
+
 ; Generate target position and defaults
 var tPX = { exists(param.X)? param.X : move.axes[global.mosIX].machinePosition }
 var tPY = { exists(param.Y)? param.Y : move.axes[global.mosIY].machinePosition }
@@ -47,6 +50,8 @@ M558 K{ param.I } F{ var.travelSpeed }
 
 ; Move to position while checking probe for deactivation.
 G53 G38.5 K{ param.I } X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
+
+M400
 
 ; Reset probe speed
 M558 K{param.I} F{var.roughSpeed, var.fineSpeed}
