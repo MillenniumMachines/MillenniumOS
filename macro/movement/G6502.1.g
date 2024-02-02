@@ -20,9 +20,9 @@ if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
 
 ; Calculate probing directions, 4 probes total
 ;             LEFT EDGE                    RIGHT EDGE
-var dirX  = { move.axes[global.mosIX].min, move.axes[global.mosIX].max }
+var dirX  = { move.axes[0].min, move.axes[0].max }
 ;             FRONT EDGE                   REAR EDGE
-var dirY  = { move.axes[global.mosIY].max, move.axes[global.mosIY].min }
+var dirY  = { move.axes[1].max, move.axes[1].min }
 
 
 ; Start position is provided by operator and should be the approximate
@@ -39,22 +39,22 @@ var pY   = { null, null }
 
 ; Probe edge min on X axis
 G6512 K{global.mosTouchProbeID} J{param.J} K{param.K} L{param.L} X{dirX[0]}
-set var.pX[0] = { global.mosProbeCoordinate[global.mosIX] }
+set var.pX[0] = { global.mosProbeCoordinate[0] }
 
 ; Probe edge max on X axis
 G6512 K{global.mosTouchProbeID} J{param.J} K{param.K} L{param.L} X{dirX[1]}
-set var.pX[1] = { global.mosProbeCoordinate[global.mosIX] }
+set var.pX[1] = { global.mosProbeCoordinate[0] }
 
 set global.mosRectanglePocketDimensions[0] = { var.pX[1] - var.pX[0] }
 set global.mosRectanglePocketCenterPos[0] = { (var.pX[0] + var.pX[1]) / 2 }
 
 ; Probe edge min on Y axis, using the X center of the pocket
 G6512 K{global.mosTouchProbeID} J{global.mosRectanglePocketCenterPos[0]} K{param.K} L{param.L} Y{dirY[0]}
-set var.pY[0] = { global.mosProbeCoordinate[global.mosIY] }
+set var.pY[0] = { global.mosProbeCoordinate[1] }
 
 ; Probe edge max on Y axis, using the X center of the pocket
 G6512 K{global.mosTouchProbeID} J{global.mosRectanglePocketCenterPos[0]} K{param.K} L{param.L} Y{dirY[1]}
-set var.pY[1] = { global.mosProbeCoordinate[global.mosIY] }
+set var.pY[1] = { global.mosProbeCoordinate[1] }
 
 set global.mosRectanglePocketDimensions[1] = { var.pY[1] - var.pY[0] }
 set global.mosRectanglePocketCenterPos[1] = { (var.pY[0] + var.pY[1]) / 2 }

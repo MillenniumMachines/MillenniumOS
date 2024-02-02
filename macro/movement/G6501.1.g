@@ -1,4 +1,4 @@
-; G6500.2.g: BOSS - EXECUTE
+; G6501.1.g: BOSS - EXECUTE
 ;
 ; Probe the outside surface of a boss.
 ;
@@ -8,7 +8,7 @@
 ; top surface.
 ; H indicates the approximate boss diameter,
 ; and is used to calculate a probing radius along
-; with O, the overtravel distance.
+; with T, the clearance distance.
 ; If W is specified, the WCS origin will be set
 ; to the center of the boss.
 
@@ -22,12 +22,19 @@ if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
 if { !exists(param.H) }
     abort { "Must provide an approximate boss diameter using the H parameter!" }
 
-var overTravel = { (exists(param.O) ? param.O : global.mosProbeOvertravel) }
+var probeId = { global.mosFeatureTouchProbe ? global.mosTouchProbeID : null }
 
-; We add the overtravel distance to the boss
-; radius to ensure we start probing from outside
-; the boss.
-var bR = { (param.H / 2) + var.overTravel }
+var clearance = {(exists(param.T) ? param.T : global.mosProbeClearance)}
+
+; Switch to probe tool if necessary
+var needsProbeTool = { global.mosProbeToolID != state.currentTool }
+if { var.needsProbeTool }
+    T T{global.mosProbeToolID}
+
+; We add the clearance distance to the boss
+; radius to ensure we move clear of the boss
+; before dropping to probe height.
+var cR = { (param.H / 2) + var.clearance }
 
 ; J = start position X
 ; K = start position Y
@@ -42,20 +49,20 @@ var sZ   = { param.L }
 ; Angle is in degrees
 var angle = 120
 
-var dirXY = { { var.sX + var.bR, var.sY}, { var.sX + var.bR * cos(radians(var.angle)), var.sY + var.bR * sin(radians(var.angle)) }, { var.sX + var.bR * cos(radians(2 * var.angle)), var.sY + var.bR * sin(radians(2 * var.angle)) } }
+var dirXY = { { var.sX + var.cR, var.sY}, { var.sX + var.cR * cos(radians(var.angle)), var.sY + var.cR * sin(radians(var.angle)) }, { var.sX + var.cR * cos(radians(2 * var.angle)), var.sY + var.cR * sin(radians(2 * var.angle)) } }
 
 ; Boss edge co-ordinates for 3 probed points
 var pXY  = { null, null, null }
 
-var safeZ = { move.axes[global.mosIZ].machinePosition }
+var safeZ = { move.axes[2].machinePosition }
 
 ; Probe each of the 3 points
 while { iterations < #var.dirXY }
     ; Perform a probe operation towards the center of the boss
-    G6512 I{global.mosTouchProbeID} J{var.dirXY[iterations][0]} K{var.dirXY[iterations][1]} L{var.sZ} X{var.sX} Y{var.sY}
+    G6512 I{var.probeId} J{var.dirXY[iterations][0]} K{var.dirXY[iterations][1]} L{var.sZ} X{var.sX} Y{var.sY}
 
     ; Save the probed co-ordinates
-    set var.pXY[iterations] = { global.mosProbeCoordinate[global.mosIX], global.mosProbeCoordinate[global.mosIY] }
+    set var.pXY[iterations] = { global.mosProbeCoordinate[0], global.mosProbeCoordinate[1] }
 
 ; Calculate the slopes, midpoints, and perpendicular bisectors
 var sM1 = { (var.pXY[1][1] - var.pXY[0][1]) / (var.pXY[1][0] - var.pXY[0][0]) }
@@ -85,11 +92,14 @@ var avgR = { (var.r1 + var.r2 + var.r3) / 3 }
 set global.mosBossCenterPos = { var.cX, var.cY }
 set global.mosBossRadius = { var.avgR }
 
+; Confirm we are at the safe Z height
+G6550 I{var.probeID} Z{var.safeZ}
+
 ; Move to the calculated center of the boss
-G6550.1 I{global.mosTouchProbeID} X{var.cX} Y{var.cY}
+G6550 I{var.probeId} X{var.cX} Y{var.cY}
 
 if { !global.mosExpertMode }
-    echo { "Boss - Center X,Y:" ^ global.mosBossCenterPos ^ " Radius :" ^ global.mosBossRadius }
+    echo { "Boss - Center X=" ^ global.mosBossCenterPos[0] ^ " Y=" ^ global.mosBossCenterPos[1] ^ " R=" ^ global.mosBossRadius }
 else
     echo { "global.mosBossCenterPos=" ^ global.mosBossCenterPos }
     echo { "global.mosBossRadius=" ^ global.mosBossRadius }
@@ -98,3 +108,6 @@ else
 if { exists(param.W) && param.W != null }
     echo { "Setting WCS " ^ param.W ^ " X,Y origin to center of boss" }
     G10 L2 P{param.W} X{var.cX} Y{var.cY}
+
+; Save code of last probe cycle
+set global.mosLastProbeCycle = "G6501"

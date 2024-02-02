@@ -40,5 +40,4 @@ while { iterations < var.maxIterations }
     ; If no probe status change detected, save the current value for the next iteration
     set var.previousValue = { sensors.probes[var.probeID].value[0] }
 
-if { !global.mosExpertMode }
-    echo { "MillenniumOS: Probe " ^ var.probeID ^ " not detected after ^ var.maxWait ^ "s" }
+M7500 { "MillenniumOS: Probe " ^ var.probeID ^ " not detected after " ^ var.maxWait ^ "s" }

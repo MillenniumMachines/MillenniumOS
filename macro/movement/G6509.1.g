@@ -23,8 +23,8 @@ if { exists(param.W) && (param.W < 1 || param.W > var.maxWCS) }
 ; Calculate all possible movement directions
 ; We only pick one of these depending on the corner selected
 ;             FL                           FR                           RR                           RL
-var dirX  = { move.axes[global.mosIX].max, move.axes[global.mosIX].min, move.axes[global.mosIX].min, move.axes[global.mosIX].max  }
-var dirY  = { move.axes[global.mosIY].max, move.axes[global.mosIY].max, move.axes[global.mosIY].min, move.axes[global.mosIY].min  }
+var dirX  = { move.axes[0].max, move.axes[0].min, move.axes[0].min, move.axes[0].max  }
+var dirY  = { move.axes[1].max, move.axes[1].max, move.axes[1].min, move.axes[1].min  }
 
 ; Calculate all possible start positions
 ; Again, we only pick one of these depending on the corner selected
@@ -51,4 +51,4 @@ else
 ; Set WCS origin to the probed corner, if requested
 if { exists(param.W) }
     echo { "Setting WCS " ^ param.W ^ " X,Y origin." }
-    G10 L2 P{param.W} X{global.mosProbeCoordinate[global.mosIX]} Y{global.mosProbeCoordinate[global.mosIY]}
+    G10 L2 P{param.W} X{global.mosProbeCoordinate[0]} Y{global.mosProbeCoordinate[1]}

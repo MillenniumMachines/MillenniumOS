@@ -17,6 +17,7 @@ echo { "  global.mosFeatureVSSC=" ^ global.mosFeatureVSSC }
 echo { "===" }
 
 echo { "MOS Probing:" }
+echo { "  global.mosProbeToolID=" ^ global.mosProbeToolID }
 echo { "  global.mosProbeDetected=" ^ global.mosProbeDetected }
 echo { "  global.mosDetectedProbeID=" ^ global.mosDetectedProbeID }
 echo { "  global.mosProbeCoordinate=" ^ global.mosProbeCoordinate }
@@ -41,7 +42,6 @@ echo { "===" }
 
 echo { "MOS Touch Probe:" }
 echo { "  global.mosTouchProbeID=" ^ global.mosTouchProbeID }
-echo { "  global.mosTouchProbeToolID=" ^ global.mosTouchProbeToolID }
 echo { "  global.mosTouchProbeRadius=" ^ global.mosTouchProbeRadius }
 echo { "  global.mosTouchProbeDeflection=" ^ global.mosTouchProbeDeflection }
 echo { "  global.mosTouchProbeReferencePos=" ^ global.mosTouchProbeReferencePos }

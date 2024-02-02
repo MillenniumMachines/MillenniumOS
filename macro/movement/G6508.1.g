@@ -29,6 +29,8 @@ if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
 
 var hasSecondaries = { exists(param.P) && exists(param.Q) }
 
+var probeId = { global.mosFeatureTouchProbe ? global.mosTouchProbeID : null }
+
 ; J = start position X
 ; K = start position Y
 ; L = start position Z - our probe height
@@ -68,27 +70,32 @@ endif
 
 var pR = { {0, 0}, {null, null}, {0, 0}, {null, null} }
 
-set global.mosOutsideCornerNum = param.H
-
 ; Probe X surface
-G6512 K{global.mosTouchProbeID} J{var.sX1} K{var.sY1} L{param.L} X{var.tX1}
+G6512 K{var.probeId} J{var.sX1} K{var.sY1} L{param.L} X{var.tX1}
 set var.pR[0] = { global.mosProbeCoordinate[0], global.mosProbeCoordinate[1] }
+M7500 S{ "Surface position X1=" ^ var.pR[0][0] }
 
 ; If we have a secondary probe offset on X, probe again
 if { var.hasSecondaries }
-    G6512 K{global.mosTouchProbeID} J{var.sX1} K{var.sY1 + param.P} L{param.L} X{var.tX1}
+    G6512 K{var.probeId} J{var.sX1} K{var.sY1 + param.P} L{param.L} X{var.tX1}
     set var.pR[1] = { global.mosProbeCoordinate[0], global.mosProbeCoordinate[1] }
+    M7500 S{ "Surface position X2=" ^ var.pR[1][0] }
 endif
 
 ; Probe Y surface
-G6512 K{global.mosTouchProbeID} J{var.sX2} K{var.sY2} L{param.L} Y{var.tY2}
+G6512 K{var.probeId} J{var.sX2} K{var.sY2} L{param.L} Y{var.tY2}
 set var.pR[2] = { global.mosProbeCoordinate[0], global.mosProbeCoordinate[1] }
+M7500 S{ "Surface position Y1=" ^ var.pR[2][1] }
 
 ; If we have a secondary probe offset on Y, probe again
 if { var.hasSecondaries }
-    G6512 K{global.mosTouchProbeID} J{var.sX2 + param.Q} K{var.sY2} L{param.L} Y{var.tY2}
+    G6512 K{var.probeId} J{var.sX2 + param.Q} K{var.sY2} L{param.L} Y{var.tY2}
     set var.pR[3] = { global.mosProbeCoordinate[0], global.mosProbeCoordinate[1] }
+    M7500 S{ "Surface position Y2=" ^ var.pR[3][1] }
 endif
+
+; Set corner number
+set global.mosOutsideCornerNum = param.H
 
 ; Set naiive corner position if we only have 1 probe
 ; point for each axis. We assume the surfaces probed are
@@ -99,7 +106,7 @@ if { !var.hasSecondaries }
 else
     ; Otherwise, we have multiple probe points on the same axes.
     ; Calculate an angle between the points for each axis, and then
-    ; calculate where those lines across to identify the corner.
+    ; calculate where those lines cross to identify the corner.
     var aX = { atan2(var.pR[1][1] - var.pR[0][1], var.pR[1][0] - var.pR[0][0]) }
     var aY = { atan2(var.pR[3][1] - var.pR[2][1], var.pR[3][0] - var.pR[2][0]) }
 
@@ -141,4 +148,4 @@ else
 ; Set WCS origin to the probed corner, if requested
 if { exists(param.W) }
     echo { "Setting WCS " ^ param.W ^ " X,Y origin." }
-    G10 L2 P{param.W} X{global.mosProbeCoordinate[global.mosIX]} Y{global.mosProbeCoordinate[global.mosIY]}
+    G10 L2 P{param.W} X{global.mosProbeCoordinate[0]} Y{global.mosProbeCoordinate[1]}

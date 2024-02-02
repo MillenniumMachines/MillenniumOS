@@ -74,7 +74,7 @@ If the post knows what _type_ of workpiece probe should be executed, it can call
 #### `G6550` - PROTECTED MOVE
 Uses `G38.3` internally to perform a protected move against a given probe ID.
 The machine will move at the given probe's travel speed. The sub codes
-(G6550.1 and G6550.2) are used to move towards and away from a work piece.
+(G6550 and G6550.2) are used to move towards and away from a work piece.
 
 
 

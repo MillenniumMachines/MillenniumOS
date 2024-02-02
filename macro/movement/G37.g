@@ -22,7 +22,7 @@
 ;
 ; NOTE: This is designed to work with a NEGATIVE Z - that is, MAX is 0 and MIN is -<something>
 
-if { global.mosTouchProbeToolID != null && global.mosToolSetterActivationPos == null }
+if { global.mosFeatureTouchProbe && global.mosToolSetterActivationPos == null }
     abort { "Touch probe feature is enabled but reference surface has not been probed. Please run <b>G6511</b> before probing tool lengths!" }
     M99
 
@@ -54,10 +54,10 @@ if { state.currentTool == state.previousTool }
 ; Reset the tool offset before probing
 G10 P{state.currentTool} Z0
 
-echo {"Probing tool #" ^ state.currentTool ^ " length at X=" ^ global.mosToolSetterPos[global.mosIX] ^ ", Y=" ^ global.mosToolSetterPos[global.mosIY] }
+echo {"Probing tool #" ^ state.currentTool ^ " length at X=" ^ global.mosToolSetterPos[0] ^ ", Y=" ^ global.mosToolSetterPos[1] }
 
 ; Probe towards axis minimum until toolsetter is activated
-G6512 I{global.mosToolSetterID} J{global.mosToolSetterPos[global.mosIX]} K{global.mosToolSetterPos[global.mosIY]} L{move.axes[global.mosIZ].max} Z{move.axes[global.mosIZ].min}
+G6512 I{global.mosToolSetterID} J{global.mosToolSetterPos[0]} K{global.mosToolSetterPos[1]} L{move.axes[2].max} Z{move.axes[2].min}
 
 ; If touch probe is configured, then our position in Z is relative to
 ; the installed height of the touch probe, which we don't know. What we
@@ -70,10 +70,10 @@ G6512 I{global.mosToolSetterID} J{global.mosToolSetterPos[global.mosIX]} K{globa
 ; offset from there instead.
 
 var toolOffset = 0
-if { global.mosTouchProbeToolID != null }
-    set var.toolOffset = { -(global.mosProbeCoordinate[global.mosIZ] - global.mosToolSetterActivationPos) }
+if { global.mosFeatureTouchProbe }
+    set var.toolOffset = { -(global.mosProbeCoordinate[2] - global.mosToolSetterActivationPos) }
 else
-    set var.toolOffset = { -(abs(global.mosToolSetterPos[global.mosIZ]) - abs(global.mosProbeCoordinate[global.mosIZ])) }
+    set var.toolOffset = { -(abs(global.mosToolSetterPos[2]) - abs(global.mosProbeCoordinate[2])) }
 
 echo {"Tool #" ^ state.currentTool ^ " Offset=" ^ var.toolOffset ^ "mm"}
 
