@@ -8,18 +8,16 @@ if { !exists(param.P) }
 
 var maxTools = { limits.tools-1 }
 
-; If enabled, touch probe is configured
-; in the last tool slot.
-if { global.mosTouchProbeToolID != null }
-    set var.maxTools = { var.maxTools-1 }
-
 if { param.P > var.maxTools || param.P < 0 }
-    abort { "Tool index must be between 1 and " ^  var.maxTools ^ "!" }
+    abort { "Tool index must be between 0 and " ^  var.maxTools ^ "!" }
+
+if { #tools > 0 && tools[param.P].spindle != global.mosSpindleID }
+    abort { "Tool #" ^ param.P ^ " is not assigned to the configured spindle, ID #" ^ global.mosSpindleID ^ "!" }
 
 ; Reset RRF Tool
 M563 P{param.P} R-1 S"Unknown Tool"
 
 ; Reset tool description in zero-indexed array
-set global.mosToolTable[param.P] = {0.0, false, {0, 0}}
+set global.mosToolTable[param.P] = global.mosEmptyTool
 
-echo {"Removed tool #" ^ param.P}
+M7500 S{"Removed tool #" ^ param.P}

@@ -13,19 +13,19 @@ if { !exists(param.P) || !exists(param.R) || !exists(param.S) }
 
 var maxTools = { limits.tools-1 }
 
-; If enabled, touch probe is configured
-; in the last tool slot.
-if { global.mosTouchProbeToolID != null }
-    set var.maxTools = { var.maxTools-1 }
-
+; Validate tool index
 if { param.P > var.maxTools || param.P < 0 }
-    abort { "Tool index must be between 1 and " ^  var.maxTools ^ "!" }
+    abort { "Tool index must be between 0 and " ^  var.maxTools ^ "!" }
+
+; Check if tool already exists. If no tools are defined, the
+; length of the tools array is 0.
+if { #tools > 0 && tools[param.P].spindle != -1 }
+    abort { "Tool #" ^ param.P ^ " is already defined." }
 
 ; Define RRF tool against spindle.
-; RRF Tools are zero-indexed so we can store 1 less than RRF.
 M563 P{param.P} S{param.S} R{global.mosSpindleID}
 
 ; Store tool description in zero-indexed array.
 set global.mosToolTable[param.P] = {param.R, false, {0, 0}}
 
-echo {"Stored tool #" ^ param.P ^ ": " ^ param.S ^ " R=" ^ param.R }
+M7500 S{"Stored tool #" ^ param.P ^ " R=" ^ param.R ^ " S=" ^ param.S}

@@ -19,9 +19,9 @@ if { !global.mosExpertMode && !global.mosDescBoreDisplayed }
         M99
     set global.mosDescBoreDisplayed = true
 
-var needsTouchProbe = { global.mosTouchProbeToolID != null && global.mosTouchProbeToolID != state.currentTool }
-if { var.needsTouchProbe }
-    T T{global.mosTouchProbeToolID}
+var needsProbeTool = { global.mosProbeToolID != state.currentTool }
+if { var.needsProbeTool }
+    T T{global.mosProbeToolID}
 
 ; Prompt for bore diameter
 M291 P"Please enter approximate bore diameter in mm." R"MillenniumOS: Probe Bore" J1 T0 S6 F6.0
@@ -61,4 +61,4 @@ else
                         abort { "Bore probe aborted!" }
                         M99
 
-                G6500.1 W{param.W} H{var.boreDiameter} O{var.overTravel} J{move.axes[global.mosIX].machinePosition} K{move.axes[global.mosIY].machinePosition} L{move.axes[global.mosIZ].machinePosition - var.probingDepth}
+                G6500.1 W{param.W} H{var.boreDiameter} O{var.overTravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}

@@ -16,29 +16,24 @@
 var maxWCS = #global.mosWorkOffsetCodes
 if { exists(param.W) && param.W != null && (param.W < 1 || param.W > var.maxWCS) }
     abort { "WCS number (W..) must be between 1 and " ^ var.maxWCS ^ "!" }
-    M99
 
 if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
-    abort {"Must provide a start position to probe from using J, K and L parameters!" }
-    M99
+    abort { "Must provide a start position to probe from using J, K and L parameters!" }
 
 if { !exists(param.H) }
-    abort {"Must provide an approximate bore diameter using the H parameter!" }
-    M99
+    abort { "Must provide an approximate bore diameter using the H parameter!" }
+
+var probeId = { global.mosFeatureTouchProbe ? global.mosTouchProbeID : null }
 
 var overTravel = {(exists(param.O) ? param.O : global.mosProbeOvertravel)}
 
-; Validate minimum bore diameter that we can probe.
-;var dH = sensors.probes[global.mosTouchProbeID].diveHeights
-;var minDiameter = { max(var.dH[0], var.dH[1]) * 2 }
+; TODO: Validate minimum bore diameter we can probe based on
+; dive height and back-off distance.
 
-;if { param.H < var.minDiameter }
-;    abort {"Bore diameter must be at least " ^ var.minDiameter ^ "mm otherwise we might collide when backing off between probes. Reduce the dive height on your probe to probe smaller bores!" }
-;    M99
-
-var needsTouchProbe = { global.mosTouchProbeToolID != null && global.mosTouchProbeToolID != state.currentTool }
-if { var.needsTouchProbe }
-    T T{global.mosTouchProbeToolID}
+; Switch to probe tool if necessary
+var needsProbeTool = { global.mosProbeToolID != state.currentTool }
+if { var.needsProbeTool }
+    T T{global.mosProbeToolID}
 
 ; We add the overtravel to the bore radius to give the user
 ; some leeway. If their estimate of the bore diameter is too
@@ -64,7 +59,7 @@ var dirXY = { { var.sX + var.bR, var.sY}, { var.sX + var.bR * cos(radians(var.an
 ; Bore edge co-ordinates for 3 probed points
 var pXY  = { null, null, null }
 
-var safeZ = { move.axes[global.mosIZ].machinePosition }
+var safeZ = { move.axes[2].machinePosition }
 
 ; Probe each of the 3 points
 while { iterations < #var.dirXY }
@@ -72,10 +67,10 @@ while { iterations < #var.dirXY }
     ; D1 causes the probe macro to not return to the safe position after probing.
     ; Since we're probing multiple times from the same starting point, there's no
     ; need to raise and lower the probe between each probe point.
-    G6512 D1 I{global.mosTouchProbeID} J{var.sX} K{var.sY} L{var.sZ} X{var.dirXY[iterations][0]} Y{var.dirXY[iterations][1]}
+    G6512 D1 I{var.probeId} J{var.sX} K{var.sY} L{var.sZ} X{var.dirXY[iterations][0]} Y{var.dirXY[iterations][1]}
 
     ; Save the probed co-ordinates
-    set var.pXY[iterations] = { global.mosProbeCoordinate[global.mosIX], global.mosProbeCoordinate[global.mosIY] }
+    set var.pXY[iterations] = { global.mosProbeCoordinate[0], global.mosProbeCoordinate[1] }
 
 ; Calculate the slopes, midpoints, and perpendicular bisectors
 var sM1 = { (var.pXY[1][1] - var.pXY[0][1]) / (var.pXY[1][0] - var.pXY[0][0]) }
@@ -106,13 +101,13 @@ set global.mosBoreCenterPos = { var.cX, var.cY }
 set global.mosBoreRadius = { var.avgR }
 
 ; Move to the calculated center of the bore
-G6550.1 I{global.mosTouchProbeID} X{var.cX} Y{var.cY}
+G6550 I{var.probeId} X{var.cX} Y{var.cY}
 
 ; Move back to safe Z height
-G53 G0 Z{var.safeZ}
+G6550 I{var.probeId} Z{var.safeZ}
 
 if { !global.mosExpertMode }
-    echo { "Bore - Center X=" ^ global.mosBoreCenterPos[global.mosIX] ^ " Y=" ^ global.mosBoreCenterPos[global.mosIY] ^ ", R=" ^ global.mosBoreRadius }
+    echo { "Bore - Center X=" ^ global.mosBoreCenterPos[0] ^ " Y=" ^ global.mosBoreCenterPos[1] ^ ", R=" ^ global.mosBoreRadius }
 else
     echo { "global.mosBoreCenterPos=" ^ global.mosBoreCenterPos }
     echo { "global.mosBoreRadius=" ^ global.mosBoreRadius }

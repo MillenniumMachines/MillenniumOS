@@ -8,6 +8,14 @@ if { state.machineMode != "CNC" }
     set global.mosStartupError = { "Machine mode must be set to CNC using M453!" }
     M99
 
+if { move.axes[2].max > 0 || move.axes[2].min >= 0 }
+    set global.mosStartupError = { "Your Z axis uses positive co-ordinates which are untested and unsupported. Please configure your Z max as 0 and Z min as a negative number." }
+    M99
+
+; Remove existing probe tool so
+; it can be redefined.
+M4001 P{global.mosProbeToolID}
+
 ; If we have a touch probe, make sure the co-ordinates are set
 if { global.mosFeatureTouchProbe }
     ; If we have a touch probe, make sure we have the ID set
@@ -24,12 +32,15 @@ if { global.mosFeatureTouchProbe }
         set global.mosStartupError = { "<b>global.mosTouchProbeDeflection</b> is not set. Run the configuration wizard to fix this (<b>G8000</b>)." }
         M99
 
-    ; Add a dummy touch probe tool to RRF at the last position
-    ; in the table.
-    set global.mosTouchProbeToolID = {limits.tools-1}
-    M563 R-1 S"Touch Probe" P{global.mosTouchProbeToolID}
-    set global.mosToolTable[global.mosTouchProbeToolID] = {global.mosTouchProbeRadius, false, {0, 0}}
+    ; Add a touch probe tool at the last index in the tool table.
+    M4000 S{"Touch Probe"} P{global.mosProbeToolID} R{global.mosTouchProbeRadius - global.mosTouchProbeDeflection}
+else
+    if { !exists(global.mosDatumToolRadius) || global.mosDatumToolRadius == null }
+        set global.mosStartupError = { "<b>global.mosDatumToolRadius</b> is not set. Run the configuration wizard to fix this (<b>G8000</b>)." }
+        M99
 
+    ; Add a datum tool at the last index in the tool table.
+    M4000 S{"Datum Tool"} P{global.mosProbeToolID} R{global.mosDatumToolRadius}
 
 ; If we have a toolsetter, make sure the co-ordinates are set
 if { global.mosFeatureToolSetter }

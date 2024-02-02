@@ -8,6 +8,7 @@ if { !exists(global.mosStartupMsgsDisplayed) }
     global mosStartupMsgsDisplayed = false
 
 if { !global.mosStartupMsgsDisplayed }
+    set global.mosStartupMsgsDisplayed = true
     if {(!exists(global.mosLoaded) || !global.mosLoaded)}
         var startupError = { (exists(global.mosStartupError) && global.mosStartupError != null) ? global.mosStartupError : "Unknown error" }
         M291 P{ var.startupError } R"MillenniumOS: Startup Error" S2 T10
@@ -15,5 +16,3 @@ if { !global.mosStartupMsgsDisplayed }
     else
         if { !global.mosExpertMode }
             echo { "MillenniumOS: Loaded v" ^ global.mosVersion }
-
-    set global.mosStartupMsgsDisplayed = true

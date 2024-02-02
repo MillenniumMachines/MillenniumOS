@@ -12,7 +12,7 @@ G90
 G21
 
 ; Move spindle to top of Z travel
-G53 G0 Z{move.axes[global.mosIZ].max}
+G53 G0 Z{move.axes[2].max}
 
 ; Stop spindle and wait
 M5.9
@@ -21,4 +21,4 @@ M5.9
 ; moved.
 if { !exists(param.Z) }
     ; Move table to center of X, and front of Y
-    G53 G0 X{(move.axes[global.mosIX].max - move.axes[global.mosIX].min)/2} Y{(move.axes[global.mosIY].max - move.axes[global.mosIY].min)/2}
+    G53 G0 X{(move.axes[0].max - move.axes[0].min)/2} Y{(move.axes[1].max - move.axes[1].min)/2}

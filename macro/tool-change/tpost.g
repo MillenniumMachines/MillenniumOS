@@ -8,7 +8,7 @@ var tI = { state.currentTool }
 if { var.tI < 0 }
     M99
 
-if { !move.axes[global.mosIX].homed || !move.axes[global.mosIY].homed || !move.axes[global.mosIZ].homed }
+if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
     M99
 
 ; Stop and park the spindle
@@ -18,14 +18,22 @@ G27 Z1
 ; the toolsetter activation position yet, then run G6511 to probe the
 ; reference surface so we can make this calculation.
 ; Touchprobe tool ID is only set if the touchprobe feature is enabled.
-if { var.tI == global.mosTouchProbeToolID }
-    if { global.mosToolSetterActivationPos == null }
-        M291 P{"Touch probe active. Press OK to probe reference surface."} R"MillenniumOS: Tool Change" S2
-        G6511
-    elif { !global.mosExpertMode }
-        echo { "MillenniumOS: Touch probe active, reference surface already probed." }
+if { var.tI == global.mosProbeToolID }
+    if { global.mosFeatureTouchProbe }
+        if { global.mosToolSetterActivationPos == null }
+            if { !global.mosExpertMode }
+                M291 P{"Press OK to probe reference surface."} R"MillenniumOS: Tool Change" S2
+            G6511
+        elif { !global.mosExpertMode }
+            echo { "MillenniumOS: Touch probe active, reference surface already probed." }
+    else
+        if { !global.mosExpertMode }
+            M291 P{"Press OK to probe tool length."} R"MillenniumOS: Tool Change" S2
+
+        ; Probe datum tool length
+        G37
 else
-    ; Probe non-touchprobe tool length
+    ; Probe non-probe tool length
     G37
 
     ; Continue after operator confirmation if necessary
