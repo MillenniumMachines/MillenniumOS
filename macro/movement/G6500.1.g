@@ -13,9 +13,8 @@
 ; If W is specified, the WCS origin will be set
 ; to the center of the bore.
 
-var maxWCS = #global.mosWorkOffsetCodes
-if { exists(param.W) && param.W != null && (param.W < 1 || param.W > var.maxWCS) }
-    abort { "WCS number (W..) must be between 1 and " ^ var.maxWCS ^ "!" }
+if { exists(param.W) && param.W != null && (param.W < 1 || param.W > #global.mosWorkOffsetCodes) }
+    abort { "WCS number (W..) must be between 1 and " ^ #global.mosWorkOffsetCodes ^ "!" }
 
 if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
     abort { "Must provide a start position to probe from using J, K and L parameters!" }
@@ -97,8 +96,8 @@ var r3 = { sqrt(pow((var.pXY[2][0] - var.cX), 2) + pow((var.pXY[2][1] - var.cY),
 var avgR = { (var.r1 + var.r2 + var.r3) / 3 }
 
 ; Update global vars
-set global.mosBoreCenterPos = { var.cX, var.cY }
-set global.mosBoreRadius = { var.avgR }
+set global.mosWorkPieceCenterPos   = { var.cX, var.cY }
+set global.mosWorkPieceRadius      = { var.avgR }
 
 ; Move to the calculated center of the bore
 G6550 I{var.probeId} X{var.cX} Y{var.cY}
@@ -107,10 +106,10 @@ G6550 I{var.probeId} X{var.cX} Y{var.cY}
 G6550 I{var.probeId} Z{var.safeZ}
 
 if { !global.mosExpertMode }
-    echo { "Bore - Center X=" ^ global.mosBoreCenterPos[0] ^ " Y=" ^ global.mosBoreCenterPos[1] ^ ", R=" ^ global.mosBoreRadius }
+    echo { "Bore - Center X=" ^ global.mosWorkPieceCenterPos[0] ^ " Y=" ^ global.mosWorkPieceCenterPos[1] ^ ", R=" ^ global.mosWorkPieceRadius }
 else
-    echo { "global.mosBoreCenterPos=" ^ global.mosBoreCenterPos }
-    echo { "global.mosBoreRadius=" ^ global.mosBoreRadius }
+    echo { "global.mosWorkPieceCenterPos=" ^ global.mosWorkPieceCenterPos }
+    echo { "global.mosWorkPieceRadius=" ^ global.mosWorkPieceRadius }
 
 ; Set WCS origin to the probed corner, if requested
 if { exists(param.W) && param.W != null }

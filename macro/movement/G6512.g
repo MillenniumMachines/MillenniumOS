@@ -68,6 +68,22 @@ M400
 var sX = { (exists(param.J)) ? param.J : move.axes[0].machinePosition }
 var sY = { (exists(param.K)) ? param.K : move.axes[1].machinePosition }
 
+; Note: We allow a safe-Z to be provided as a parameter, but default to
+; the current Z position. The reason for this is that we cannot always
+; assume that the current Z position is safe to move to the starting
+; position at. This is particularly important when the PREVIOUS call to
+; G6512 was made with a D1 parameter. This param means that the previous
+; macro did not return to its' safe height after probing, and that means
+; that _our_ safe height would be the current Z position, which is bad.
+
+; So, we allow the safe-Z to be provided as a parameter in those cases
+; where the user of this macro (other macros, mostly) know that we can
+; make multiple probes at a particular height (e.g. one side-surface of
+; a block), but we need to return to the safe height after the last
+; probe to perform probing on the other surfaces.
+
+var safeZ = { exists(param.S) ? param.S : move.axes[2].machinePosition }
+
 if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
     abort { "G6512: Must provide a valid target position in one or more axes (X.. Y.. Z..)!" }
 
@@ -89,8 +105,6 @@ var tPZ = { exists(param.Z)? param.Z : var.sZ }
 ; Check if the positions are within machine limits
 G6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
-; NOTE: We assume the _current_ height of the probe (when macro is called) is safe for lateral moves.
-var safeZ = { move.axes[2].machinePosition }
 
 M7500 S{ "Starting probe position: X=" ^ var.sX ^ " Y=" ^ var.sY ^ " Z=" ^ var.sZ }
 M7500 S{ "Target probe position: X=" ^ var.tPX ^ " Y=" ^ var.tPY ^ " Z=" ^ var.tPZ }
@@ -100,20 +114,27 @@ G90
 G21
 G94
 
+; TODO: It should be possible for these to be the same.
+; If we can get G6550 to handle protected and unprotected
+; moves then we can simply call the same code for both.
+
 if { var.manualProbe }
     ; If manual probing, use normal machine moves to approach starting
     ; position.
 
     ; Set rough feedrate to approach starting position
-    G53 G1 F{global.mosManualProbeSpeedTravel}
+    G53 G1 F{global.mosManualProbeSpeed[0]}
 
     ; If starting probe height is above safe height (current Z),
     ; then move to the starting probe height first.
     if { var.sZ > var.safeZ }
         G53 G1 Z{ var.sZ }
 
-    ; Move to starting position in X/Y
-    G53 G1 X{ var.sX } Y{ var.sY }
+    ; Move to starting position in X
+    G53 G1 X{ var.sX }
+
+    ; And then Y
+    G53 G1 Y{ var.sY }
 
     ; Move to probe height.
     ; No-op if we already moved above.
@@ -137,8 +158,11 @@ else
     if { var.sZ > var.safeZ }
         G6550 I{ param.I } Z{ var.sZ }
 
-    ; Move to starting position in X/Y
-    G6550 I{ param.I } X{ var.sX } Y{ var.sY }
+    ; Move to starting position in X
+    G6550 I{ param.I } X{ var.sX }
+
+    ; And then Y
+    G6550 I{ param.I } Y{ var.sY }
 
     ; Move to probe height.
     ; No-op if we already moved above.
@@ -176,20 +200,12 @@ if { var.validTool }
 
     M7500 S{"Compensating for tool radius of " ^ var.toolRadius ^ "mm."}
 
-    ; Calculate the direction of the probe movement
-    var pdX = { global.mosProbeCoordinate[0] - var.sX }
-    var pdY = { global.mosProbeCoordinate[1] - var.sY }
-
-    ; Calculate the magnitude of the direction vector
-    var mag = { sqrt(pow(var.pdX, 2) + pow(var.pdY, 2)) }
-
-    ; Normalize the direction vector
-    var pnX = { var.pdX / var.mag }
-    var pnY = { var.pdY / var.mag }
+    ; Calculate the magnitude of the direction vector of probe movement
+    var mag = { sqrt(pow(global.mosProbeCoordinate[0] - var.sX, 2) + pow(global.mosProbeCoordinate[1] - var.sY, 2)) }
 
     ; Adjust the final position along the direction of movement in X and Y by the tool radius.
-    set global.mosProbeCoordinate[0] = { global.mosProbeCoordinate[0] + var.toolRadius * var.pnX }
-    set global.mosProbeCoordinate[1] = { global.mosProbeCoordinate[1] + var.toolRadius * var.pnY }
+    set global.mosProbeCoordinate[0] = { global.mosProbeCoordinate[0] + var.toolRadius * ((global.mosProbeCoordinate[0] - var.sX) / var.mag) }
+    set global.mosProbeCoordinate[1] = { global.mosProbeCoordinate[1] + var.toolRadius * ((global.mosProbeCoordinate[1] - var.sY) / var.mag) }
 
     ; We do not adjust by the tool radius in Z.
 

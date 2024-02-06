@@ -11,7 +11,7 @@ if { !exists(param.K) || param.K < 0 || param.K >= #sensors.probes }
 if { sensors.probes[param.K].type < 5 || sensors.probes[param.K].type > 8 }
     abort { "Probe ID is not compatible!" }
 
-var probeID = { param.K }
+var probeId = { param.K }
 
 ; Delay between checking probe status in ms
 var delay = { (exists(param.D)) ? param.D : 100 }
@@ -26,18 +26,18 @@ var maxIterations = { var.maxWait / (var.delay/1000) }
 ; Previous probe value
 var previousValue = { null }
 
-set global.mosProbeDetected[var.probeID] = false
+set global.mosProbeDetected[var.probeId] = false
 
 ; Loop until a probe is detected or the maximum number of iterations is reached
 while { iterations < var.maxIterations }
     G4 P{ var.delay }
 
     ; If probe value has changed and we had a previous iteration value, treat this as a detected probe and return.
-    if { sensors.probes[var.probeID].value[0] != var.previousValue && var.previousValue != null }
-        set global.mosProbeDetected[var.probeID] = { true }
+    if { sensors.probes[var.probeId].value[0] != var.previousValue && var.previousValue != null }
+        set global.mosProbeDetected[var.probeId] = { true }
         M99
 
     ; If no probe status change detected, save the current value for the next iteration
-    set var.previousValue = { sensors.probes[var.probeID].value[0] }
+    set var.previousValue = { sensors.probes[var.probeId].value[0] }
 
-M7500 { "MillenniumOS: Probe " ^ var.probeID ^ " not detected after " ^ var.maxWait ^ "s" }
+M7500 { "MillenniumOS: Probe " ^ var.probeId ^ " not detected after " ^ var.maxWait ^ "s" }

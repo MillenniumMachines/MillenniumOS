@@ -38,13 +38,15 @@ var distances     = { 50, 10, 5, 1, 0.1, 0.01, 0.001, 0 }
 ; This is the index of the speed in the distances array to switch to fine probing speed
 var slowSpeed     = 3
 
-var curPos = { var.sX, var.sY, var.sZ }
+; Current position - shortened to cP to reduce command length!
+var cP = { var.sX, var.sY, var.sZ }
+
 while { true }
 
     ; Distance between current position and target in each axis
-    var dX = { var.curPos[0] - var.tPX }
-    var dY = { var.curPos[1] - var.tPY }
-    var dZ = { var.curPos[2] - var.tPZ }
+    var dX = { var.cP[0] - var.tPX }
+    var dY = { var.cP[1] - var.tPY }
+    var dZ = { var.cP[2] - var.tPZ }
 
     if { var.dX == 0 && var.dY == 0 && var.dZ == 0 }
         abort { "Reached target position without operator selecting Finish!" }
@@ -56,9 +58,9 @@ while { true }
     var dist = { sqrt(pow(var.dX, 2) + pow(var.dY, 2) + pow(var.dZ, 2)) }
 
     ; Find the v distances less than the distance to the target
-    var vDistCount = null
-    var vDists = null
-    var vDistNames = null
+    var vDistC = null
+    var vD = null
+    var vDistN = null
     var seenvDists = false
     var vDistIndex = 0
     var slowSpeedIndex = null
@@ -68,38 +70,36 @@ while { true }
     ; Calculate the v distances
     while { iterations < #var.distances }
         ; If the distance of a step is less than the distance to the target,
-        ; then it is v.
-        ; If the distance is v, then all subsequent distances are also v.
-        ; We should build a list of v distances and their names
+        ; then it is valid.
+        ; If the distance is valid, then all subsequent distances are also
+        ; valid.
+        ; We build a list of valid distances and their names to show to the
+        ; operator.
         if { var.distances[iterations] < var.dist }
             if { !var.seenvDists }
                 set var.vDistIndex = { iterations }
                 ; The number of v distances is the total number of distances
                 ; minus the number of iterations before seeing a v distance.
-                set var.vDistCount = { #var.distances - iterations }
+                set var.vDistC = { #var.distances - iterations }
                 ; With a v distanceCount, we can instantiate new lists for
                 ; v distances and v distance names.
-                set var.vDists = { vector(var.vDistCount, 0) }
-                set var.vDistNames = { vector(var.vDistCount, "Unknown") }
+                set var.vD = { vector(var.vDistC, 0) }
+                set var.vDistN = { vector(var.vDistC, "Unknown") }
 
                 ; Only run the above when seeing the first v distance
                 set var.seenvDists = true
 
             ; Append the v distance to the list of v distances
-            set var.vDists[iterations - var.vDistIndex] = { var.distances[iterations] }
-            set var.vDistNames[iterations - var.vDistIndex] = { var.distanceNames[iterations] }
+            set var.vD[iterations - var.vDistIndex] = { var.distances[iterations] }
+            set var.vDistN[iterations - var.vDistIndex] = { var.distanceNames[iterations] }
 
 
 
     ; Calculate the index where we switch to slow speed.
-    set var.slowSpeedIndex = { var.slowSpeed - (#var.distances - var.vDistCount) }
+    set var.slowSpeedIndex = { var.slowSpeed - (#var.distances - var.vDistC) }
 
-    var pX = { var.curPos[0] }
-    var pY = { var.curPos[1] }
-    var pZ = { var.curPos[2] }
-
-    M291 P{"Current Position: X=" ^ var.pX ^ " Y=" ^ var.pY ^ " Z=" ^ var.pZ ^ "<br/>Expected Distance to target: " ^ var.dist ^ "mm.<br/>Select distance to move towards target."} R"MillenniumOS: Manual Probe" S4 K{ var.vDistNames } D{var.vDistCount} T0 J1
-
+    ; Ask operator to select a distance to move towards the target point.
+    M291 P{"Current Position: X=" ^ var.cP[0] ^ " Y=" ^ var.cP[1] ^ " Z=" ^ var.cP[2] ^ "<br/>Approx Distance to target: " ^ var.dist ^ "mm.<br/>Select distance to move towards target."} R"MillenniumOS: Manual Probe" S4 K{ var.vDistN } D{var.vDistC} T0 J1
     if { result != 0 }
         abort { "Operator cancelled probing!" }
 
@@ -107,23 +107,25 @@ while { true }
 
     M7500 S{"Selected distance index: " ^ var.dI}
 
-    if { var.dI < 0 || var.dI > #var.vDistNames }
+    ; Validate selected distance
+    if { var.dI < 0 || var.dI > #var.vDistN }
         abort { "Invalid distance selected!" }
 
     ; Otherwise, pick the operator selected distance
-    var dD = { var.vDists[var.dI] }
+    var dD = { var.vD[var.dI] }
 
+    ; Break if operator picks the 'zero' distance.
     if { var.dD == 0 }
         M7500 S{"Operator indicated that surface is being touched by tool"}
         break
 
     ; Use a lower movement speed for the smallest increments
-    var moveSpeed = { (var.dI >= var.slowSpeedIndex) ? global.mosManualProbeSpeedFine : global.mosManualProbeSpeedApproach }
+    var moveSpeed = { (var.dI >= var.slowSpeedIndex) ? global.mosManualProbeSpeed[2] : global.mosManualProbeSpeed[1] }
 
     ; Generate the new position based on the increment chosen
-    var nPX = { var.curPos[0] - ((var.dX / var.mag) * var.dD) }
-    var nPY = { var.curPos[1] - ((var.dY / var.mag) * var.dD) }
-    var nPZ = { var.curPos[2] - ((var.dZ / var.mag) * var.dD) }
+    var nPX = { var.cP[0] - ((var.dX / var.mag) * var.dD) }
+    var nPY = { var.cP[1] - ((var.dY / var.mag) * var.dD) }
+    var nPZ = { var.cP[2] - ((var.dZ / var.mag) * var.dD) }
 
     ; Move towards probe point in increment chosen by operator
     G53 G1 X{ var.nPX } Y{ var.nPY } Z{ var.nPZ } F{var.moveSpeed}
@@ -132,27 +134,22 @@ while { true }
     M400
 
     ; Update the current position
-    set var.curPos = { move.axes[0].machinePosition, move.axes[1].machinePosition, move.axes[2].machinePosition }
+    set var.cP = { move.axes[0].machinePosition, move.axes[1].machinePosition, move.axes[2].machinePosition }
 
 ; Set the probe coordinates to the current position
-set global.mosProbeCoordinate = var.curPos
+set global.mosProbeCoordinate = var.cP
 
 ; Probe variance makes no sense for manual probes that are done once
 set global.mosProbeVariance = { 0 }
 
-; Calculate distance between start and current position
-var dX = { var.sX - var.curPos[0] }
-var dY = { var.sY - var.curPos[1] }
-var dZ = { var.sZ - var.curPos[2] }
-
 ; Calculate back-off normal
-var bN = { sqrt(pow(var.dX, 2) + pow(var.dY, 2) + pow(var.dZ, 2)) }
+var bN = { sqrt(pow(var.sX - var.cP[0], 2) + pow(var.sY - var.cP[1], 2) + pow(var.sZ - var.cP[2], 2)) }
 
 ; Calculate normalized direction and backoff,
 ; apply to current position.
-var bPX = { var.curPos[0] + (var.dX / var.bN * global.mosManualProbeBackoff) }
-var bPY = { var.curPos[1] + (var.dY / var.bN * global.mosManualProbeBackoff) }
-var bPZ = { var.curPos[2] + (var.dZ / var.bN * global.mosManualProbeBackoff) }
+var bPX = { var.cP[0] + ((var.sX - var.cP[0]) / var.bN * global.mosManualProbeBackoff) }
+var bPY = { var.cP[1] + ((var.sY - var.cP[1]) / var.bN * global.mosManualProbeBackoff) }
+var bPZ = { var.cP[2] + ((var.sZ - var.cP[2]) / var.bN * global.mosManualProbeBackoff) }
 
 G6550 X{ var.bPX } Y{ var.bPY } Z{ var.bPZ }
 
