@@ -22,7 +22,7 @@ G27 Z1
 ; on a work offset.
 var workOffset = null
 
-if { !global.mosExpertMode && !global.mosDescProbeWorkpieceDisplayed }
+if { !global.mosExpertMode && !global.mosDescDisplayed[0] }
     M291 P{"Before executing cutting operations, it is necessary to identify where the workpiece for a part is. We will do this by probing and setting a work co-ordinate system (WCS) origin point."} R"MillenniumOS: Probe Workpiece" T0 S2
     M291 P{"The origin of a WCS is the reference point for subsequent cutting operations, and must match the chosen reference point in your CAM software."} R"MillenniumOS: Probe Workpiece" T0 S2
     M291 P{"You will need to select an appropriate probe cycle type (or types!) based on the shape of your workpiece."} R"MillenniumOS: Probe Workpiece" T0 S2
@@ -34,7 +34,7 @@ if { !global.mosExpertMode && !global.mosDescProbeWorkpieceDisplayed }
     if { global.mosProbeToolID == null }
         M291 P{"Your machine does not have a touch probe configured, so probing will involve manually jogging the machine until an installed tool or metal dowel touches the workpiece."} R"MillenniumOS: Probe Workpiece" T0 S2
         M291 P{"You will be walked through this process so it should be relatively foolproof, but <b>it is possible to damage your tool, spindle or workpiece</b> if you press the wrong jog button!"} R"MillenniumOS: Probe Workpiece" T0 S2
-    set global.mosDescProbeWorkpieceDisplayed = true
+    set global.mosDescDisplayed[0] = true
 
 ; Ask user for work offset to set.
 if { !exists(param.W) }
@@ -51,9 +51,9 @@ else
     set var.workOffset = { param.W }
 
 ; Warn about null work offset
-if { var.workOffset == null && !global.mosExpertMode && !global.mosDescProbeWcsDisplayed }
+if { var.workOffset == null && !global.mosExpertMode && !global.mosDescDisplayed[1] }
     M291 P{"Probing can still run without a WCS origin being set. The output of the probing cycle will be available in the global variables specific to the probe cycle."} R"MillenniumOS: Probe Workpiece" T0 S2
-    set global.mosDescProbeWcsDisplayed=true
+    set global.mosDescDisplayed[1]=true
 
 ; If WCS is set via parameter, warn about setting WCS origin
 if { exists(param.W) && !global.mosExpertMode }
@@ -91,7 +91,7 @@ if { global.mosProbeToolID != state.currentTool }
     T T{global.mosProbeToolID}
 
 ; Prompt the user to pick a probing operation.
-M291 P"Please select a probe cycle type." R"MillenniumOS: Probe Workpiece" T0 S4 F0 K{global.mosProbeCycleNames}
+M291 P"Please select a probe cycle type." R"MillenniumOS: Probe Workpiece" T0 J1 S4 F0 K{global.mosProbeCycleNames}
 if { result != 0 }
     abort { "Operator cancelled probe cycle!" }
 
@@ -108,7 +108,9 @@ if { input != null }
         G6500 W{var.workOffset}
     elif { input == 2 } ; Circular Boss
         G6501 W{var.workOffset}
-    elif { input == 3 } ; Single Surface
+    elif { input == 3 } ; Rectangle Block
+        G6503 W{var.workOffset}
+    elif { input == 4 } ; Single Surface
         G6510 W{var.workOffset}
     else
         abort { "Invalid probe operation " ^ input ^ " selected!" }

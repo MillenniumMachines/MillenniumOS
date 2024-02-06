@@ -39,12 +39,23 @@ If the post knows what _type_ of workpiece probe should be executed, it can call
 ### Two Axis
 
 #### `G6500` - BORE
+Guided bore probe, prompts the user for approximate diameter, overtravel, approximate center position and probe depth.
+Executes `G6500.1` with the relevant parameters to run the actual probe.
+
+##### `G6500.1` - BORE - EXECUTE
+Calculates the center of a bore and its radius, by running 3 probes outwards from the chosen starting position towards the edge of the bore. The overtravel is added to the radius of the bore and this sets the distance moved from the
+center point in each of the 3 directions before the probe cycle will error if it does not trigger.
 
 #### `G6501` - BOSS
 
 #### `G6502` - RECTANGLE POCKET
 
 #### `G6503` - RECTANGLE BLOCK
+Guided rectangle block probe, prompts the user for an approximate width (X), length (Y), overtravel and clearance, an approximate center position and probe depth. Executes `G6503.1` with the relevant parameters to run the actual probe.
+
+##### `G6503.1` - RECTANGLE BLOCK - EXECUTE
+Calculates the center of a rectangle block, its surface angles, rotation angle (in relation to the X axis) and its dimensions based on 8 different probes.
+Using the provided width, height, clearance and starting location, we probe inwards from the expected edges of each surface by the clearance distance. We probe each surface twice to get a surface angle, and validate that the block itself is both rectangular and how far it is rotated from the X axis.
 
 #### `G6504` - WEB X
 

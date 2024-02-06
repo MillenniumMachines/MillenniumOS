@@ -26,8 +26,8 @@ global mosOriginAll={"Front Left","Front Right","Rear Right","Rear Left","Center
 ; None means do not set origins on a work offset.
 global mosWorkOffsetCodes={"None","G54","G55","G56","G57","G58","G59","G59.1","G59.2","G59.3"}
 
-;var mosProbeCycleNames = {"Vise Corner (X,Y,Z)", "Circular Bore (X,Y)", "Circular Boss (X,Y)", "Rectangle Pocket (X,Y)", "Rectangle Boss (X,Y)", "Outside Corner (X,Y)", "Single Surface (X/Y/Z)" }
-var mosProbeCycleNames = { "Vise Corner (X,Y,Z)", "Circular Bore (X,Y)", "Circular Boss (X,Y)", "Single Surface (X/Y/Z)" }
+;global mosProbeCycleNames = {"Vise Corner (X,Y,Z)", "Circular Bore (X,Y)", "Circular Boss (X,Y)", "Rectangle Pocket (X,Y)", "Rectangle Boss (X,Y)", "Outside Corner (X,Y)", "Single Surface (X/Y/Z)" }
+global mosProbeCycleNames = { "Vise Corner (X,Y,Z)", "Circular Bore (X,Y)", "Circular Boss (X,Y)", "Rectangle Block (X,Y)", "Single Surface (X/Y/Z)" }
 
 ; Friendly names to indicate the location of a surface to be probed, relative to the tool.
 ; Left means 'surface is to the left of the tool', i.e. we will move the table towards the
@@ -70,80 +70,73 @@ global mosProbeClearance=10.0
 ; hopefully not be damaged or the probe itself bent.
 global mosProbeOvertravel=2.0
 
+; The maximum angle in degrees that is deemed to be a square
+; corner or parallel surface. Surfaces or corners that are
+; not within this threshold will be considered to be non-parallel
+; or perpendicular.
+global mosProbeSquareAngleThreshold=0.1
+
 ; Delay in ms after probing operation completes before recording position.
 ; Do not override this unless you are seeing false protected move triggers
 ; as otherwise it will just slow down all probing operations.
 global mosProbePositionDelay=0
 
-; These store the X and Y co-ordinates of the center
-; of the most recent bore probe.
-global mosBoreCenterPos = {null, null}
+; Stores the calculated center position in X and Y of the last workpiece probed.
+; If this is used to probe a feature of the workpiece rather than the
+; whole workpiece itself, then this will refer to the center of the
+; _feature_. For example, if you probe a circular boss, this will be
+; the center of the boss, which is not necessarily the center of the
+; workpiece.
+; When writing macros that implement cutting moves, it is very important
+; to remember this distinction, and make sure that the operator has
+; been made aware of this when probing for a cutting macro.
+global mosWorkPieceCenterPos = { null, null }
 
-; And the calculated radius of the bore
-global mosBoreRadius = null
+; Stores the calculated radius of the last circular workpiece probed.
+global mosWorkPieceRadius = null
 
-; These store the X and Y co-ordinates of the center
-; of the most recent boss probe.
-global mosBossCenterPos = {null, null}
+; Stores the calculated dimensions of the last rectangular workpiece probed.
+global mosWorkPieceDimensions = { null, null }
 
-; And the calculated radius of the boss
-global mosBossRadius = null
+; Stores the calculated rotation of the workpiece in relation to the
+; X axis. This value can be applied as a G68 rotation value to align
+; the workpiece with the machine axes.
+global mosWorkPieceRotationAngle = null
 
-; These are the X and Y coordinates of the center
-; of the most recent rectangular pocket probe.
-global mosRectanglePocketCenterPos = {null, null}
 
-; And the calculated dimensions in mm, of the
-; most recent rectangular pocket probe.
-global mosRectanglePocketDimensions = {null, null}
+; Stores the calculated bounding box of the last workpiece probed.
+; in X and Y dimensions. Each entry is a min, max pair for X and
+; Y dimensions respectively.
+global mosWorkPieceBoundingBox = { {null, null}, {null, null}}
 
-; These are the X and Y coordinates of the center
-; of the most recent rectangle block probe.
-global mosRectangleBlockCenterPos = {null, null}
+; This is the corner number that was picked by the
+; operator for the most recent outside or inside
+; corner probe.
+global mosWorkPieceCornerNum = null
 
-; These are the calculated dimensions, in mm, of the
-; most recent rectangle block probe.
-global mosRectangleBlockDimensions = {null, null}
+; These are the X and Y coordinates of the most recent
+; corner probe.
+global mosWorkPieceCornerPos = {null, null}
 
-; When probing an outside corner, move inwards by
+; When probing a corner, move inwards by
 ; this distance in mm for the initial probe.
 global mosOutsideCornerDefaultDistance = 10.0
 
-; This is the corner number that was picked by the
-; operator for the most recent outside corner probe
-global mosOutsideCornerNum = null
-
-; These are the X and Y coordinates of the most recent
-; outside corner probe.
-global mosOutsideCornerPos = {null, null}
 
 ; These are the angles of the X and Y surfaces of the
 ; most recent outside corner probe.
-global mosOutsideCornerSurfaceAngle = {null, null}
+global mosWorkPieceCornerSurfaceAngle = {null, null}
 
 ; This is the angle of the corner of the most recent
 ; outside corner probe.
-global mosOutsideCornerAngle = null
-
-; This will be set to true after an outside corner
-; cycle if the X and Y faces of the corner are not
-; aligned with their respective axes.
-global mosOutsideCornerIsMisaligned = null
-
-; This is the corner number that was picked by the
-; operator for the most recent inside corner probe
-global mosInsideCornerNum = null
-
-; These are the X and Y coordinates of the most recent
-; inside corner probe.
-global mosInsideCornerPos = {null, null}
+global mosWorkPieceCornerAngle = null
 
 ; This is the Co-ordinate along the chosen axis of the
 ; most recent single surface probe
-global mosSurfacePos = null
+global mosWorkPieceSurfacePos = null
 
 ; This is the axis along which the most recent single
-global mosSurfaceAxis = null
+global mosWorkPieceSurfaceAxis = null
 
 
 ; Daemon settings
@@ -165,10 +158,7 @@ global mosVsscSpeedWarningIssued = false
 global mosVsscPreviousAdjustmentTime = 0
 global mosVsscPreviousAdjustmentRPM = 0.0
 
-; Define constants for axis indices and names
-global mosN                 = {"X","Y","Z"}
-
-; Define constants for probe types
+; Define constants for wizard configured settings
 global mosSpindleID = null
 global mosSpindleAccelSeconds = null
 global mosSpindleDecelSeconds = null
@@ -179,10 +169,9 @@ global mosToolSetterActivationPos = null
 global mosTouchProbeRadius = null
 global mosTouchProbeDeflection = null
 global mosTouchProbeReferencePos = null
+global mosDatumToolRadius = null
 
-global mosManualProbeSpeedTravel=1200
-global mosManualProbeSpeedApproach=300
-global mosManualProbeSpeedFine=60
+global mosManualProbeSpeed = { 1200, 300, 60 }
 global mosManualProbeBackoff=5
 
 ; The last tool in the table is used for probing
@@ -192,7 +181,6 @@ global mosManualProbeBackoff=5
 ; stores a tool radius which is used to apply
 ; compensation during probing.
 global mosProbeToolID = { limits.tools - 1 }
-global mosDatumToolRadius = null
 
 ; Used during configuration to detect
 ; probes.
@@ -205,12 +193,4 @@ global mosProbeDetected = {vector(limits.zProbes, false)}
 ; Last canned probe cycle executed
 global mosLastProbeCycle = null
 
-global mosDescProbeWorkpieceDisplayed  = false
-global mosDescProbeWcsDisplayed        = false
-global mosDescBoreDisplayed            = false
-global mosDescBossDisplayed            = false
-global mosDescSurfaceDisplayed         = false
-global mosDescOutsideCornerDisplayed   = false
-global mosDescInsideCornerDisplayed    = false
-global mosDescRectanglePocketDisplayed = false
-global mosDescRectangleBlockDisplayed  = false
+global mosDescDisplayed = { vector(9, false) }

@@ -8,12 +8,11 @@
 ; depth to probe at (in the case of a Z probe, this is how deep
 ; we will attempt to probe from the starting location).
 
-var axisNames = global.mosSurfaceLocationNames
-var zProbeI = { #var.axisNames - 1 }
+var zProbeI = { #global.mosSurfaceLocationNames - 1 }
 var probeId = { global.mosFeatureTouchProbe ? global.mosTouchProbeID : null }
 
 ; Display description of surface probe if not displayed this session
-if { !global.mosExpertMode && !global.mosDescSurfaceDisplayed }
+if { !global.mosExpertMode && !global.mosDescDisplayed[4] }
     M291 P"This operation finds the co-ordinate of a surface on a single axis. It is usually used to find the top surface of a workpiece but can be used to find X or Y positions as well." R"MillenniumOS: Probe Surface" T0 S2
     M291 P"<b>CAUTION</b>: This operation will only return accurate results if the surface you are probing is perpendicular to the axis you are probing in." R"MillenniumOS: Probe Surface" T0 S2
     M291 P"You will jog the tool or touch probe to your chosen starting position. Your starting position should be outside and above X or Y surfaces, or directly above the top surface." R"MillenniumOS: Probe Surface" T0 S2
@@ -24,7 +23,7 @@ if { !global.mosExpertMode && !global.mosDescSurfaceDisplayed }
     if { result != 0 }
         abort { "Surface probe aborted!" }
 
-    set global.mosDescSurfaceDisplayed = true
+    set global.mosDescDisplayed[4] = true
 
 ; Ask the operator to jog to their chosen starting position
 M291 P"Please jog the probe or tool to your chosen starting position.<br/><b>CAUTION</b>: Remember - Jogging in RRF does <b>NOT</b> watch the probe status. Be careful!" R"MillenniumOS: Probe Surface" X1 Y1 Z1 T0 S3
@@ -32,7 +31,7 @@ if { result != 0 }
     abort { "Surface probe aborted!" }
 
 ; Prompt the operator for the location of the surface
-M291 P"Select the location of the surface to be probed in relation to the tool." R"MillenniumOS: Probe Surface" T0 S4 F{var.zProbeI} K{var.axisNames}
+M291 P"Select the location of the surface to be probed in relation to the tool." R"MillenniumOS: Probe Surface" T0 S4 F{var.zProbeI} K{global.mosSurfaceLocationNames}
 var probeAxis = { input }
 
 var probingDepth = 0
@@ -104,26 +103,26 @@ G6512 I{var.probeId} L{var.sZ} X{var.tPX} Y{var.tPY} Z{var.tPZ}
 var sAxis = { (var.probeAxis <= 1)? "X" : (var.probeAxis <= 3)? "Y" : "Z" }
 
 ; Set the axis that we probed on
-set global.mosSurfaceAxis = { var.sAxis }
+set global.mosWorkPieceSurfaceAxis = { var.sAxis }
 
 ; Set surface position on relevant axis
-set global.mosSurfacePos = { (var.probeAxis <= 1)? global.mosProbeCoordinate[0] : (var.probeAxis <= 3)? global.mosProbeCoordinate[1] : global.mosProbeCoordinate[2] }
+set global.mosWorkPieceSurfacePos = { (var.probeAxis <= 1)? global.mosProbeCoordinate[0] : (var.probeAxis <= 3)? global.mosProbeCoordinate[1] : global.mosProbeCoordinate[2] }
 
 if { !global.mosExpertMode }
-    echo { "MillenniumOS: Surface - " ^ var.sAxis ^ "=" ^ global.mosSurfacePos }
+    echo { "MillenniumOS: Surface - " ^ var.sAxis ^ "=" ^ global.mosWorkPieceSurfacePos }
 else
-    echo { "global.mosSurfaceAxis=" ^ global.mosSurfaceAxis }
-    echo { "global.mosSurfacePos=" ^ global.mosSurfacePos }
+    echo { "global.mosWorkPieceSurfaceAxis=" ^ global.mosWorkPieceSurfaceAxis }
+    echo { "global.mosWorkPieceSurfacePos=" ^ global.mosWorkPieceSurfacePos }
 
 ; Set WCS if required
 if { exists(param.W) && param.W != null }
     echo { "Setting WCS " ^ param.W ^ " " ^ var.sAxis ^ " origin to probed co-ordinate" }
     if { var.probeAxis <= 1 }
-        G10 L2 P{param.W} X{global.mosSurfacePos}
+        G10 L2 P{param.W} X{global.mosWorkPieceSurfacePos}
     elif { var.probeAxis <= 3 }
-        G10 L2 P{param.W} Y{global.mosSurfacePos}
+        G10 L2 P{param.W} Y{global.mosWorkPieceSurfacePos}
     else
-        G10 L2 P{param.W} Z{global.mosSurfacePos}
+        G10 L2 P{param.W} Z{global.mosWorkPieceSurfacePos}
 
 
 ; Save code of last probe cycle

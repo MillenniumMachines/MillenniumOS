@@ -36,8 +36,13 @@ var tPZ = { exists(param.Z)? param.Z : var.sZ }
 ; Check if the positions are within machine limits
 G6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
+; We have to store these, as we apply them manually to
+; the probe before triggering a single probe. We must
+; be able to access the original values after the probe
+; to restore the probe speed after completing each probe.
 var roughSpeed   = { sensors.probes[param.I].speeds[0] }
 var fineSpeed    = { sensors.probes[param.I].speeds[1] }
+
 var roughDivider = 5
 
 if { var.roughSpeed == var.fineSpeed }
@@ -50,13 +55,6 @@ if { var.roughSpeed == var.fineSpeed }
 ; If we're within requested tolerance after this many
 ; retries, we stop probing.
 var minProbes   = 3
-
-var roughBackoff = sensors.probes[param.I].diveHeights[0]
-var fineBackoff  = sensors.probes[param.I].diveHeights[1]
-var retries      = sensors.probes[param.I].maxProbeCount
-var recovery     = sensors.probes[param.I].recoveryTime
-var tolerance    = sensors.probes[param.I].tolerance
-var travelSpeed  = sensors.probes[param.I].travelSpeed
 
 ; Set rough probe speed
 M558 K{ param.I } F{ var.roughSpeed }
@@ -75,8 +73,8 @@ var pV          = { 0,0,0 }
 
 ; Probe until we hit a retry limit.
 ; We may also abort early if we reach the requested tolerance
-while { iterations <= var.retries }
-    M7500 S{ "Probe " ^ param.I ^ ": Starting probe " ^ iterations ^ "/" ^ var.retries ^ " using G38.2" }
+while { iterations <= sensors.probes[param.I].maxProbeCount }
+    M7500 S{ "Probe " ^ param.I ^ ": Starting probe " ^ iterations ^ "/" ^ sensors.probes[param.I].maxProbeCount ^ " using G38.2" }
     ; Probe towards surface
     ; NOTE: This has potential to move in all 3 axes!
     G53 G38.2 K{ param.I } X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
@@ -148,7 +146,7 @@ while { iterations <= var.retries }
 
     M7500 S{ "Applying backoff" }
     ; Apply correct back-off distance
-    var backoff = { iterations == 0 ? var.roughBackoff : var.fineBackoff }
+    var backoff = { iterations == 0 ? sensors.probes[param.I].diveHeights[0] : sensors.probes[param.I].diveHeights[1] }
 
     ; Calculate distance between start and current position
     var dX = { var.sX - var.curPos[0] }
@@ -175,21 +173,21 @@ while { iterations <= var.retries }
     ; We can only abort early if we're within tolerance on all moved (probed) axes.
     var tR = true
     if { var.tPX != var.sX }
-        set var.tR = { var.tR && var.pV[0] <= var.tolerance }
+        set var.tR = { var.tR && var.pV[0] <= sensors.probes[param.I].tolerance }
     if { var.tPY != var.sY }
-        set var.tR = { var.tR && var.pV[1] <= var.tolerance }
+        set var.tR = { var.tR && var.pV[1] <= sensors.probes[param.I].tolerance }
     if { var.tPZ != var.sZ }
-        set var.tR = { var.tR && var.pV[2] <= var.tolerance }
+        set var.tR = { var.tR && var.pV[2] <= sensors.probes[param.I].tolerance }
 
     ; If we're within tolerance on all axes, we can stop probing
     ; and report the result.
     if { var.tR && iterations >= var.minProbes }
-        M7500 S{ "Probe " ^ param.I ^ ": Reached requested tolerance " ^ var.tolerance ^ "mm after " ^ iterations ^ "/" ^ var.retries ^ " probes" }
+        M7500 S{ "Probe " ^ param.I ^ ": Reached requested tolerance " ^ sensors.probes[param.I].tolerance ^ "mm after " ^ iterations ^ "/" ^ sensors.probes[param.I].maxProbeCount ^ " probes" }
         break
 
-    if { var.recovery > 0.0 }
+    if { sensors.probes[param.I].recoveryTime > 0.0 }
         ; Dwell so machine can settle
-        G4 P{ ceil(var.recovery*1000) }
+        G4 P{ ceil(sensors.probes[param.I].recoveryTime * 1000) }
 
 
 M7500 S{ "Probe cycle finished, setting vars" }
