@@ -9,7 +9,6 @@
 ; enter a probe depth. These values will then be passed
 ; to the underlying G6503.1 macro to execute the probe cycle.
 
-
 ; Display description of rectangle block probe if not already displayed this session
 if { !global.mosExpertMode && !global.mosDescDisplayed[5] }
     M291 P"This probe cycle finds the X and Y co-ordinates of the center of a rectangular block (protruding feature) on a workpiece by probing towards the approximate center of the block from all 4 directions." R"MillenniumOS: Probe Rect. Block " T0 S2
@@ -70,6 +69,4 @@ else
                             if { result != 0 }
                                 abort { "Rectangle block probe aborted!" }
 
-                        G6503.1 W{param.W} H{var.blockWidth} I{var.blockLength} T{var.clearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
-
-                        ;G6503.1 W4 H51 I77 T10 O2 J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - 10}
+                        G6503.1 W{exists(param.W)? param.W : null} H{var.blockWidth} I{var.blockLength} T{var.clearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}

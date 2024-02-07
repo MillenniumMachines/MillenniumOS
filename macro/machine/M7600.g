@@ -25,19 +25,16 @@ echo { "  global.mosProbeVariance=" ^ global.mosProbeVariance }
 echo { "  global.mosProbeOvertravel=" ^ global.mosProbeOvertravel }
 echo { "  global.mosProbePositionDelay=" ^ global.mosProbePositionDelay }
 echo { "  global.mosLastProbeCycle=" ^ global.mosLastProbeCycle }
-echo { "  global.mosBoreCenterPos=" ^ global.mosBoreCenterPos }
-echo { "  global.mosBoreRadius=" ^ global.mosBoreRadius }
-echo { "  global.mosSurfaceAxis=" ^ global.mosSurfaceAxis }
-echo { "  global.mosSurfacePos=" ^ global.mosSurfacePos }
-echo { "  global.mosInsideCornerNum=" ^ global.mosInsideCornerNum }
-echo { "  global.mosInsideCornerPos=" ^ global.mosInsideCornerPos }
-echo { "  global.mosOutsideCornerNum=" ^ global.mosOutsideCornerNum }
-echo { "  global.mosOutsideCornerPos=" ^ global.mosOutsideCornerPos }
-echo { "  global.mosOutsideCornerDefaultDistance=" ^ global.mosOutsideCornerDefaultDistance }
-echo { "  global.mosRectangleBlockCenterPos=" ^ global.mosRectangleBlockCenterPos }
-echo { "  global.mosRectangleBlockDimensions=" ^ global.mosRectangleBlockDimensions }
-echo { "  global.mosRectanglePocketCenterPos=" ^ global.mosRectanglePocketCenterPos }
-echo { "  global.mosRectanglePocketDimensions=" ^ global.mosRectanglePocketDimensions }
+echo { "  global.mosWorkPieceCenterPos=" ^ global.mosWorkPieceCenterPos }
+echo { "  global.mosWorkPieceDimensions=" ^ global.mosWorkPieceDimensions }
+echo { "  global.mosWorkPieceRadius=" ^ global.mosWorkPieceRadius }
+echo { "  global.mosWorkPieceRotationAngle=" ^ global.mosWorkPieceRotationAngle }
+echo { "  global.mosWorkPieceBoundingBox=" ^ global.mosWorkPieceBoundingBox }
+echo { "  global.mosWorkPieceCornerNum=" ^ global.mosWorkPieceCornerNum }
+echo { "  global.mosWorkPieceCornerPos=" ^ global.mosWorkPieceCornerPos }
+echo { "  global.mosWorkPieceCornerAngle=" ^ global.mosWorkPieceCornerAngle }
+echo { "  global.mosWorkPieceSurfaceAxis=" ^ global.mosWorkPieceSurfaceAxis }
+echo { "  global.mosWorkPieceSurfacePos=" ^ global.mosWorkPieceSurfacePos }
 echo { "===" }
 
 echo { "MOS Touch Probe:" }

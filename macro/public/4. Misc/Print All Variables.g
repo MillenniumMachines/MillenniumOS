@@ -1,2 +1,2 @@
-; MOS Print All Variables.g
+; Print All Variables.g
 M7600

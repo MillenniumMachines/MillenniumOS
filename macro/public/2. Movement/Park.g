@@ -1,2 +1,2 @@
-; MOS Park.g
+; Park.g
 G27

@@ -1,4 +1,4 @@
-; MOS Toggle Debug Mode.g
+; Toggle Debug Mode.g
 
 ; Toggles global.mosDaemonEnable so that daemon tasks
 ; can be controlled via DWC.

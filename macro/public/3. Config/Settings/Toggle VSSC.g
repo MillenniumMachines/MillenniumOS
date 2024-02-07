@@ -1,4 +1,4 @@
-; MOS Toggle VSSC.g
+; Toggle VSSC.g
 
 ; Toggles global.mosVsscOverrideEnabled so that VSSC behaviour can be overridden
 ; by the operator on the fly.

@@ -18,8 +18,8 @@ if { !global.mosExpertMode && !global.mosDescDisplayed[3] }
         abort { "Boss probe aborted!" }
     set global.mosDescDisplayed[3] = true
 
-var needsProbeTool = { global.mosProbeToolID != state.currentTool }
-if { var.needsProbeTool }
+; Make sure probe tool is selected
+if { global.mosProbeToolID != state.currentTool }
     T T{global.mosProbeToolID}
 
 ; Prompt for boss diameter
@@ -54,4 +54,4 @@ else
                     if { result != 0 }
                         abort { "Boss probe aborted!" }
 
-                G6501.1 W{param.W} H{var.bossDiameter} T{var.clearance} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
+                G6501.1 W{exists(param.W)? param.W : null} H{var.bossDiameter} T{var.clearance} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}

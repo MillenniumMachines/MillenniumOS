@@ -1,4 +1,4 @@
-; MOS Toggle Touch Probe.g
+; Toggle Touch Probe.g
 
 ; Toggles global.mosDaemonEnable so that daemon tasks
 ; can be controlled via DWC.

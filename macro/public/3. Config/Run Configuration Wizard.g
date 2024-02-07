@@ -1,2 +1,2 @@
-; MOS Run Configuration Wizard.g
+; Run Configuration Wizard.g
 G8000

@@ -15,9 +15,8 @@ if { !exists(param.H) || !exists(param.I) }
 
 var probeId = { global.mosFeatureTouchProbe ? global.mosTouchProbeID : null }
 
-; Switch to probe tool if necessary
-var needsProbeTool = { global.mosProbeToolID != state.currentTool }
-if { var.needsProbeTool }
+; Make sure probe tool is selected
+if { global.mosProbeToolID != state.currentTool }
     T T{global.mosProbeToolID}
 
 ; J = start position X
@@ -40,20 +39,13 @@ var fL   = { param.I }
 var hW   = { var.fW/2 }
 var hL   = { var.fL/2 }
 
-; Tool Radius. We need to offset probe start and target
-; positions to account for the fact that all probe tools
-; have a radius. If we probe with a 10mm diameter dowel
-; and 5mm clearance, then the edge of the tool would be
-; touching the probed surface so we have to account for
-; that.
-; Our tool radius (var.tR) is applied to the clearance
-; and overtravel distances
-var tR = { global.mosToolTable[state.currentTool][0] }
+; Tool Radius is the first entry for each value in
+; our extended tool table.
 
 ; Apply tool radius to clearance. We want to make sure
 ; the surface of the tool and the workpiece are the
 ; clearance distance apart, rather than less than that.
-var clearance = { (exists(param.T) ? param.T : global.mosProbeClearance) + var.tR }
+var clearance = { (exists(param.T) ? param.T : global.mosProbeClearance) + global.mosToolTable[state.currentTool][0] }
 
 ; Apply tool radius to overtravel. We want to allow
 ; less movement past the expected point of contact
@@ -61,7 +53,22 @@ var clearance = { (exists(param.T) ? param.T : global.mosProbeClearance) + var.t
 ; For big tools and low overtravel values, this value
 ; might end up being negative. This is fine, as long
 ; as the configured tool radius is accurate.
-var overtravel = { (exists(param.O) ? param.O : global.mosProbeOvertravel) - var.tR }
+var overtravel = { (exists(param.O) ? param.O : global.mosProbeOvertravel) - global.mosToolTable[state.currentTool][0] }
+
+; Check that the clearance distance isn't
+; higher than the width or height of the block.
+; Since we use the clearance distance to choose
+; how far along each surface we should probe from
+; the expected corners, a clearance higher than
+; the width or height would mean we would try to
+; probe off the edge of the block.
+if { var.clearance >= var.fW || var.clearance >= var.fL }
+    abort { "Clearance distance is higher than the width or height of the rectangle block! Cannot probe." }
+
+; The overtravel distance does not have the same
+; requirement, as it is only used to adjust the
+; probe target towards or away from the target
+; surface rather.
 
 M7500 S{"Distance Modifiers adjusted for Tool Radius - Clearance=" ^ var.clearance ^ " Overtravel=" ^ var.overtravel }
 
@@ -252,6 +259,11 @@ set global.mosWorkPieceCenterPos[1] = { var.sY }
 set global.mosWorkPieceDimensions[0] = { ((var.pX[2] + var.pX[3]) / 2) - ((var.pX[0] + var.pX[1]) / 2) }
 set global.mosWorkPieceDimensions[1] = { ((var.pY[2] + var.pY[3]) / 2) - ((var.pY[0] + var.pY[1]) / 2) }
 
+; Make sure we're at the safeZ height
+G6550 I{var.probeId} Z{var.safeZ}
+
+; Move to the calculated center of the block
+G6550 I{var.probeId} X{global.mosWorkPieceCenterPos[0]} Y{global.mosWorkPieceCenterPos[1]}
 
 ; Calculate the rotation of the block against the X axis.
 ; After the checks above, we know the block is rectangular,
@@ -279,7 +291,7 @@ else
     echo { "global.mosWorkPieceRotationAngle=" ^ global.mosWorkPieceRotationAngle }
 
 ; Set WCS origin to the probed center, if requested
-if { exists(param.W) }
+if { exists(param.W) && param.W != null }
     echo { "Setting WCS " ^ param.W ^ " X,Y origin to center of rectangle block" }
     G10 L2 P{param.W} X{global.mosWorkPieceCenterPos[0]} Y{global.mosWorkPieceCenterPos[1]}
 
