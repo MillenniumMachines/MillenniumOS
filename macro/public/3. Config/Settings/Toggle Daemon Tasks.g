@@ -1,4 +1,4 @@
-; MOS Toggle Daemon Tasks.g
+; Toggle Daemon Tasks.g
 
 ; Toggles global.mosDaemonEnable so that daemon tasks
 ; can be controlled via DWC.

@@ -118,15 +118,6 @@ global mosWorkPieceCornerNum = null
 ; corner probe.
 global mosWorkPieceCornerPos = {null, null}
 
-; When probing a corner, move inwards by
-; this distance in mm for the initial probe.
-global mosOutsideCornerDefaultDistance = 10.0
-
-
-; These are the angles of the X and Y surfaces of the
-; most recent outside corner probe.
-global mosWorkPieceCornerSurfaceAngle = {null, null}
-
 ; This is the angle of the corner of the most recent
 ; outside corner probe.
 global mosWorkPieceCornerAngle = null

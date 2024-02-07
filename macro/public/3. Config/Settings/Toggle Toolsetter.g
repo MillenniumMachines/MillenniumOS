@@ -1,4 +1,4 @@
-; MOS Toggle Toolsetter.g
+; Toggle Toolsetter.g
 
 ; Toggles global.mosDaemonEnable so that daemon tasks
 ; can be controlled via DWC.

@@ -21,14 +21,13 @@ G27 Z1
 if { var.tI == global.mosProbeToolID }
     if { global.mosFeatureTouchProbe }
         if { global.mosToolSetterActivationPos == null }
-            if { !global.mosExpertMode }
-                M291 P{"Press OK to probe reference surface."} R"MillenniumOS: Tool Change" S2
+            M291 P{"<b>Touch Probe Detected</b>.<br/>We will now probe the reference surface. Move away from the machine!"} R"MillenniumOS: Tool Change" S2
             G6511
         elif { !global.mosExpertMode }
             echo { "MillenniumOS: Touch probe active, reference surface already probed." }
     else
         if { !global.mosExpertMode }
-            M291 P{"Press OK to probe tool length."} R"MillenniumOS: Tool Change" S2
+            M291 P{"<b>Datum Tool Installed</b>.<br/>We will now probe the tool length. Move away from the machine!"} R"MillenniumOS: Tool Change" S2
 
         ; Probe datum tool length
         G37

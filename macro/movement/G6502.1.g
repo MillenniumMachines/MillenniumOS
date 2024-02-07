@@ -15,13 +15,28 @@ if { !exists(param.H) || !exists(param.I) }
 
 var probeId = { global.mosFeatureTouchProbe ? global.mosTouchProbeID : null }
 
-var clearance = {(exists(param.T) ? param.T : global.mosProbeClearance)}
-var overtravel = {(exists(param.O) ? param.O : global.mosProbeOvertravel)}
-
-; Switch to probe tool if necessary
-var needsProbeTool = { global.mosProbeToolID != state.currentTool }
-if { var.needsProbeTool }
+; Make sure probe tool is selected
+if { global.mosProbeToolID != state.currentTool }
     T T{global.mosProbeToolID}
+
+; Tool Radius is the first entry for each value in
+; our extended tool table.
+
+; Apply tool radius to clearance. We want to make sure
+; the surface of the tool and the workpiece are the
+; clearance distance apart, rather than less than that.
+var clearance = { (exists(param.T) ? param.T : global.mosProbeClearance) + global.mosToolTable[state.currentTool][0] }
+
+; Apply tool radius to overtravel. We want to allow
+; less movement past the expected point of contact
+; with the surface based on the tool radius.
+; For big tools and low overtravel values, this value
+; might end up being negative. This is fine, as long
+; as the configured tool radius is accurate.
+var overtravel = { (exists(param.O) ? param.O : global.mosProbeOvertravel) - global.mosToolTable[state.currentTool][0] }
+
+M7500 S{"Distance Modifiers adjusted for Tool Radius - Clearance=" ^ var.clearance ^ " Overtravel=" ^ var.overtravel }
+
 
 ; J = start position X
 ; K = start position Y
@@ -77,7 +92,7 @@ else
     echo { "global.mosWorkPieceCenterPos=" ^ global.mosWorkPieceCenterPos }
     echo { "global.mosWorkPieceDimensions=" ^ global.mosWorkPieceDimensions }
 
-; Set WCS origin to the probed corner, if requested
-if { exists(param.W) }
+; Set WCS origin to the probed center, if requested
+if { exists(param.W) && param.W != null }
     echo { "Setting WCS " ^ param.W ^ " X,Y origin to center of pocket" }
     G10 L2 P{param.W} X{global.mosWorkPieceCenterPos[0]} Y{global.mosWorkPieceCenterPos[1]}

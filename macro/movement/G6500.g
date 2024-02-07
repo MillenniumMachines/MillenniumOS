@@ -18,8 +18,8 @@ if { !global.mosExpertMode && !global.mosDescDisplayed[2] }
         abort { "Bore probe aborted!" }
     set global.mosDescDisplayed[2] = true
 
-var needsProbeTool = { global.mosProbeToolID != state.currentTool }
-if { var.needsProbeTool }
+; Make sure probe tool is selected
+if { global.mosProbeToolID != state.currentTool }
     T T{global.mosProbeToolID}
 
 ; Note: These if's below are nested for a reason.
@@ -51,7 +51,7 @@ else
 
             var probingDepth = { input }
 
-            if { var.probingDepth < 0}
+            if { var.probingDepth < 0 }
                 abort { "Probing depth was negative!" }
             else
                 ; Run the bore probe cycle
@@ -60,4 +60,4 @@ else
                     if { result != 0 }
                         abort { "Bore probe aborted!" }
 
-                G6500.1 W{param.W} H{var.boreDiameter} O{var.overTravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
+                G6500.1 W{exists(param.W)? param.W : null} H{var.boreDiameter} O{var.overTravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}

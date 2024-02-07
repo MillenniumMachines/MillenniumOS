@@ -1,4 +1,4 @@
-; MOS Toggle Expert Mode.g
+; Toggle Expert Mode.g
 
 ; Toggles global.mosDaemonEnable so that daemon tasks
 ; can be controlled via DWC.

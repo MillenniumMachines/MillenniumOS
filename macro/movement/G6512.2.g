@@ -108,7 +108,7 @@ while { true }
     set var.slowSpeedIndex = { var.slowSpeed - (#var.distances - var.vDistC) }
 
     ; Ask operator to select a distance to move towards the target point.
-    M291 P{"Current Position: X=" ^ var.cP[0] ^ " Y=" ^ var.cP[1] ^ " Z=" ^ var.cP[2] ^ "<br/>Approx Distance to target: " ^ var.dist ^ "mm.<br/>Select distance to move towards target."} R"MillenniumOS: Manual Probe" S4 K{ var.vDistN } D{var.vDistC} T0 J1
+    M291 P{"Current Position: X=" ^ var.cP[0] ^ " Y=" ^ var.cP[1] ^ " Z=" ^ var.cP[2] ^ "<br/>Approx Distance to target: " ^ (ceil(var.dist*100)/100) ^ "mm.<br/>Select distance to move towards target."} R"MillenniumOS: Manual Probe" S4 K{ var.vDistN } D{var.vDistC} T0 J1
     if { result != 0 }
         abort { "Operator cancelled probing!" }
 

@@ -1,2 +1,2 @@
-; MOS Probe Workpiece.g
+; Probe Workpiece.g
 G6600
