@@ -20,8 +20,8 @@ if { !global.mosExpertMode && !global.mosDescDisplayed[5] }
         abort { "Rectangle block probe aborted!" }
     set global.mosDescDisplayed[5] = true
 
-var needsProbeTool = { global.mosProbeToolID != state.currentTool }
-if { var.needsProbeTool }
+; Make sure probe tool is selected
+if { global.mosProbeToolID != state.currentTool }
     T T{global.mosProbeToolID}
 
 M291 P{"Please enter approximate <b>block width</b> in mm.<br/><b>NOTE</b>: <b>Width</b> is measured along the <b>X</b> axis."} R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F100.0
