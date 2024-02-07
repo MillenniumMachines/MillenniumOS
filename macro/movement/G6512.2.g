@@ -157,11 +157,20 @@ set global.mosProbeVariance = { 0 }
 ; Calculate back-off normal
 var bN = { sqrt(pow(var.sX - var.cP[0], 2) + pow(var.sY - var.cP[1], 2) + pow(var.sZ - var.cP[2], 2)) }
 
-; Calculate normalized direction and backoff,
-; apply to current position.
-var bPX = { var.cP[0] + ((var.sX - var.cP[0]) / var.bN * global.mosManualProbeBackoff) }
-var bPY = { var.cP[1] + ((var.sY - var.cP[1]) / var.bN * global.mosManualProbeBackoff) }
-var bPZ = { var.cP[2] + ((var.sZ - var.cP[2]) / var.bN * global.mosManualProbeBackoff) }
+; In some cases, our back-off distance might be higher than
+; the distance we've travelled from the starting location.
+; In this case, we should travel back to the starting location
+; instead, because otherwise we risk crashing into things (like
+; the other side of a bore that we just probed).
+; If the backoff distance is higher than the normal from from the
+; starting location, then we use the normal as the backoff distance.
+; This is essentially the same as multiplying var.d{X,Y,Z} by 1.
+
+; Calculate normalized direction and backoff per axis,
+; and apply to current position.
+var bPX = { var.cP[0] + ((var.sX - var.cP[0]) / var.bN * ((global.mosManualProbeBackoff > var.bN) ? var.bN : global.mosManualProbeBackoff)) }
+var bPY = { var.cP[1] + ((var.sY - var.cP[1]) / var.bN * ((global.mosManualProbeBackoff > var.bN) ? var.bN : global.mosManualProbeBackoff)) }
+var bPZ = { var.cP[2] + ((var.sZ - var.cP[2]) / var.bN * ((global.mosManualProbeBackoff > var.bN) ? var.bN : global.mosManualProbeBackoff)) }
 
 G6550 X{ var.bPX } Y{ var.bPY } Z{ var.bPZ }
 

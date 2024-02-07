@@ -64,13 +64,13 @@ M558 K{ param.I } F{ var.roughSpeed }
 ; average positions and variances of the probed points.
 ; We track position in all 3 axes, as our probing direction may be
 ; rotated so we are not moving in a single axis.
-var curPos      = { 0,0,0 }
-var oM          = { 0,0,0 }
-var oS          = { 0.0, 0.0, 0.0 }
-var nD          = { 0,0,0 }
-var nM          = { 0,0,0 }
-var nS          = { 0,0,0 }
-var pV          = { 0,0,0 }
+var cP = { 0,0,0 }
+var oM = { 0,0,0 }
+var oS = { 0.0, 0.0, 0.0 }
+var nD = { 0,0,0 }
+var nM = { 0,0,0 }
+var nS = { 0,0,0 }
+var pV = { 0,0,0 }
 
 var maxProbeCount = sensors.probes[param.I].maxProbeCount
 
@@ -118,28 +118,28 @@ while { iterations <= sensors.probes[param.I].maxProbeCount }
     M7500 S{ "Calculating mean position" }
 
     ; Record current position into local variable
-    set var.curPos = { move.axes[0].machinePosition, move.axes[1].machinePosition, move.axes[2].machinePosition }
+    set var.cP = { move.axes[0].machinePosition, move.axes[1].machinePosition, move.axes[2].machinePosition }
 
     ; We only start tracking values after the first probe
     if { iterations > 0 }
         ; If this is the first probe, set the initial values
         if { iterations == 1 }
-            set var.oM = var.curPos
-            set var.nM = var.curPos
+            set var.oM = var.cP
+            set var.nM = var.cP
             set var.oS = { 0.0, 0.0, 0.0 }
         else
             ; Otherwise calculate mean and cumulative variance for each axis
-            set var.nD[0] = { var.curPos[0] - var.oM[0] }
-            set var.nD[1] = { var.curPos[1] - var.oM[1] }
-            set var.nD[2] = { var.curPos[2] - var.oM[2] }
+            set var.nD[0] = { var.cP[0] - var.oM[0] }
+            set var.nD[1] = { var.cP[1] - var.oM[1] }
+            set var.nD[2] = { var.cP[2] - var.oM[2] }
 
             set var.nM[0] = { var.oM[0] + (var.nD[0] / iterations) }
             set var.nM[1] = { var.oM[1] + (var.nD[1] / iterations) }
             set var.nM[2] = { var.oM[2] + (var.nD[2] / iterations) }
 
-            set var.nS[0] = { var.oS[0] + (var.nD[0] * (var.curPos[0] - var.nM[0])) }
-            set var.nS[1] = { var.oS[1] + (var.nD[1] * (var.curPos[1] - var.nM[1])) }
-            set var.nS[2] = { var.oS[2] + (var.nD[2] * (var.curPos[2] - var.nM[2])) }
+            set var.nS[0] = { var.oS[0] + (var.nD[0] * (var.cP[0] - var.nM[0])) }
+            set var.nS[1] = { var.oS[1] + (var.nD[1] * (var.cP[1] - var.nM[1])) }
+            set var.nS[2] = { var.oS[2] + (var.nD[2] * (var.cP[2] - var.nM[2])) }
 
             ; Set old values for next iteration
             set var.oM = var.nM
@@ -153,29 +153,32 @@ while { iterations <= sensors.probes[param.I].maxProbeCount }
     ; Wait for all moves in the queue to finish
     M400
 
-    M7500 S{ "Applying backoff" }
     ; Apply correct back-off distance
     var backoff = { iterations == 0 ? sensors.probes[param.I].diveHeights[0] : sensors.probes[param.I].diveHeights[1] }
 
-    ; Calculate distance between start and current position
-    var dX = { var.sX - var.curPos[0] }
-    var dY = { var.sY - var.curPos[1] }
-    var dZ = { var.sZ - var.curPos[2] }
+    ; Calculate normal
+    ; This is the distance between the current and starting position
+    ; in a straight line.
+    var bN = { sqrt(pow(var.sX - var.cP[0], 2) + pow(var.sY - var.cP[1], 2) + pow(var.sZ - var.cP[2], 2)) }
 
-    ; Calculate back-off normal
-    var bN = { sqrt(pow(var.dX, 2) + pow(var.dY, 2) + pow(var.dZ, 2)) }
+    ; In some cases, our back-off distance might be higher than
+    ; the distance we've travelled from the starting location.
+    ; In this case, we should travel back to the starting location
+    ; instead, because otherwise we risk crashing into things (like
+    ; the other side of a bore that we just probed).
+    ; If the backoff distance is higher than the normal from from the
+    ; starting location, then we use the normal as the backoff distance.
+    ; This is essentially the same as multiplying var.d{X,Y,Z} by 1.
 
-    ; Calculate normalized backoff direction and apply it to each axis
-    var bPX = { var.curPos[0] + (var.dX / var.bN * var.backoff) }
-    var bPY = { var.curPos[1] + (var.dY / var.bN * var.backoff) }
-    var bPZ = { var.curPos[2] + (var.dZ / var.bN * var.backoff) }
+    ; Calculate normalized direction and backoff per axis,
+    ; and apply to current position.
+    var bPX = { var.cP[0] + ((var.sX - var.cP[0]) / var.bN * ((var.backoff > var.bN) ? var.bN : var.backoff)) }
+    var bPY = { var.cP[1] + ((var.sY - var.cP[1]) / var.bN * ((var.backoff > var.bN) ? var.bN : var.backoff)) }
+    var bPZ = { var.cP[2] + ((var.sZ - var.cP[2]) / var.bN * ((var.backoff > var.bN) ? var.bN : var.backoff)) }
 
-    ; TODO: This assumes that the back-off
-    ; distance is always safe, as we're moving back
-    ; towards our starting location. If our back-off
-    ; distance is higher than the distance we travelled from
-    ; the starting location then this assumption does not hold
-    ; and we should use a protected move instead.
+    ; This move probably doesn't need to be protected since we
+    ; can only move back to the starting location, which is
+    ; where we already moved _from_.
     G6550 I{ param.I } X{ var.bPX } Y{ var.bPY } Z{ var.bPZ }
 
     ; If axis has moved, check if we're within tolerance on that axis.
@@ -194,8 +197,8 @@ while { iterations <= sensors.probes[param.I].maxProbeCount }
         M7500 S{ "Probe " ^ param.I ^ ": Reached requested tolerance " ^ sensors.probes[param.I].tolerance ^ "mm after " ^ iterations ^ "/" ^ sensors.probes[param.I].maxProbeCount ^ " probes" }
         break
 
+    ; Dwell so machine can settle, if necessary
     if { sensors.probes[param.I].recoveryTime > 0.0 }
-        ; Dwell so machine can settle
         G4 P{ ceil(sensors.probes[param.I].recoveryTime * 1000) }
 
 
