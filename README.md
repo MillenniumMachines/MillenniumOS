@@ -27,7 +27,7 @@ We build _on top of_ RepRapFirmware, providing operators of the Millennium Machi
 ## RRF Config
 You need to configure your Toolsetter and optionally, Touch Probe, in RRF before trying to use them in MillenniumOS.
 
-This involves configuring both of them as Z probes, which can be done with the `M950` command.
+This involves configuring both of them as Z probes, which can be done with the `M558` command.
 
 You would add a line similar to these to your RRF `config.g` file, above where the MillenniumOS file (`mos.g`) is included.
 
