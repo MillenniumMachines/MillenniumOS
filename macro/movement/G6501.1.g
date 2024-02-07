@@ -49,7 +49,7 @@ M7500 S{"Distance Modifiers adjusted for Tool Radius - Clearance=" ^ var.clearan
 ; We add the clearance distance to the boss
 ; radius to ensure we move clear of the boss
 ; before dropping to probe height.
-var cR = { (param.H / 2) + var.clearance }
+var cR = { (param.H / 2) }
 
 ; J = start position X
 ; K = start position Y
@@ -62,10 +62,10 @@ var sZ   = { param.L }
 
 ; Calculate probing directions using approximate boss radius
 ; Angle is in degrees
-var angle = 120
+var angle = { radians(120) }
 
-; For each probe point: start x, start y, target x, target y
-var dirXY = vector(3, {null, null, null, null })
+; For each probe point: {start x, start y}, {target x, target y}
+var dirXY = { vector(3, {{null, null}, {null, null}}) }
 
 ; The start position is the approximate radius of the boss plus
 ; the clearance at 3 points around the center of the boss, at
@@ -73,9 +73,28 @@ var dirXY = vector(3, {null, null, null, null })
 ; The target position is the approximate radius of the boss minus
 ; the overtravel distance, at the same 3 points around the center
 ; of the boss, at 120 degree intervals.
-set var.dirXY[0] = { var.sX + var.cR, var.sY, var.sX + (var.cR - var.overtravel) * cos(radians(var.angle)), var.sY + (var.cR - var.overtravel) * sin(radians(var.angle)) }
-set var.dirXY[1] = { var.sX + var.cR * cos(radians(var.angle)), var.sY + var.cR * sin(radians(var.angle)), var.sX + (var.cR - var.overtravel) * cos(radians(var.angle)), var.sY + (var.cR - var.overtravel) * sin(radians(var.angle))}
-set var.dirXY[2] = { var.sX + var.cR * cos(radians(2 * var.angle)), var.sY + var.cR * sin(radians(2 * var.angle)), var.sX + (var.cR - var.overtravel) * cos(radians(2 * var.angle)), var.sY + (var.cR - var.overtravel) * sin(radians(2 * var.angle))}
+
+
+
+M7500 S{"Boss Radius=" ^ var.cR }
+
+; Start position probe 1
+set var.dirXY[0][0] = { var.sX + var.cR + var.clearance, var.sY }
+
+; Target position probe 1
+set var.dirXY[0][1] = { var.sX + var.cR - var.overtravel, var.sY }
+
+; Start position probe 2 (120 degrees)
+set var.dirXY[1][0] = { var.sX + (var.cR + var.clearance)*cos(var.angle), var.sY + (var.cR + var.clearance)*sin(var.angle) }
+
+; Target position probe 2 (120 degrees)
+set var.dirXY[1][1] = { var.sX + (var.cR - var.overtravel)*cos(var.angle), var.sY + (var.cR - var.overtravel)*sin(var.angle) }
+
+; Start position probe 3 (240 degrees)
+set var.dirXY[2][0] = { var.sX + (var.cR + var.clearance)*cos(var.angle*2), var.sY + (var.cR + var.clearance)*sin(var.angle*2) }
+
+; Target position probe 3 (240 degrees)
+set var.dirXY[2][1] = { var.sX + (var.cR - var.overtravel)*cos(var.angle*2), var.sY + (var.cR - var.overtravel)*sin(var.angle*2) }
 
 ; Boss edge co-ordinates for 3 probed points
 var pXY  = { null, null, null }
@@ -85,7 +104,9 @@ var safeZ = { move.axes[2].machinePosition }
 ; Probe each of the 3 points
 while { iterations < #var.dirXY }
     ; Perform a probe operation towards the center of the boss
-    G6512 I{var.probeId} J{var.dirXY[iterations][0]} K{var.dirXY[iterations][1]} L{var.sZ} X{var.dirXY[iterations][2]} Y{var.dirXY[iterations][3]}
+    M7500 S{"Starting location X=" ^ var.dirXY[iterations][0][0] ^ " Y=" ^ var.dirXY[iterations][0][1] ^ " Z=" ^ var.sZ }
+    M7500 S{"Target location X=" ^ var.dirXY[iterations][1][0] ^ " Y=" ^ var.dirXY[iterations][1][1] ^ " Z=" ^ var.sZ }
+    G6512 I{var.probeId} J{var.dirXY[iterations][0][0]} K{var.dirXY[iterations][0][1]} L{var.sZ} X{var.dirXY[iterations][1][0]} Y{var.dirXY[iterations][1][1]}
 
     ; Save the probed co-ordinates
     set var.pXY[iterations] = { global.mosProbeCoordinate[0], global.mosProbeCoordinate[1] }
