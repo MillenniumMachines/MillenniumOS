@@ -78,8 +78,8 @@ The following is an example preamble that MOS is designed to understand:
 
 (Begin preamble)
 (Pass tool details to firmware)
-M4000 I2 R1.5 D"3mm Flat Endmill F=1 L=12.0 CR=0.0"
-M4000 I3 R3 D"6mm Flat Endmill F=1 L=20.0 CR=0.0"
+M4000 P2 R1.5 S"3mm Flat Endmill F=1 L=12.0 CR=0.0"
+M4000 P3 R3 S"6mm Flat Endmill F=1 L=20.0 CR=0.0"
 
 (Home before start)
 G28
@@ -87,18 +87,10 @@ G28
 (Movement Configuration)
 G90
 G21
-
-(Prompt operator to insert touch probe before continuing)
-M7500
-
-(Probe reference surface for later tool changes)
-G6511
+G94
 
 (Probe origin corner and save in WCS 3)
 G6508 W3
-
-(Prompt operator to remove touch probe before continuing)
-M7501
 
 (Switch to WCS 3)
 G56
@@ -109,11 +101,18 @@ M7000 P2000 V100
 (TC: 3mm Flat Endmill L=12)
 T2 M6
 
-M3 S19000
-G4 S20
+(Start spindle and wait for it to accelerate)
+M3.9 S19000
+
 
 (Begin operation adaptive2d: 2D Adaptive1)
 (Move to starting position in Z)
 G0 Z15.0
 ...
+
+(Stop spindle and wait for it to decelerate)
+M5.9
+
+(End Job)
+M0
 ```
