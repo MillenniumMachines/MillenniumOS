@@ -54,7 +54,8 @@ if { var.roughSpeed == var.fineSpeed }
 ; 3 retries is the minimum to acquire a valid average.
 ; If we're within requested tolerance after this many
 ; retries, we stop probing.
-var minProbes   = 3
+var minAvgProbes = 3
+var minProbes    = 2
 
 ; Set rough probe speed
 M558 K{ param.I } F{ var.roughSpeed }
@@ -70,6 +71,14 @@ var nD          = { 0,0,0 }
 var nM          = { 0,0,0 }
 var nS          = { 0,0,0 }
 var pV          = { 0,0,0 }
+
+var maxProbeCount = sensors.probes[param.I].maxProbeCount
+
+if { var.maxProbeCount < var.minProbes }
+    if { !global.mosExpertMode }
+        echo { "MillenniumOS: Probe " ^ param.I ^ " is configured with a probe count of " ^ var.maxProbeCount ^ " which is too low (first result is discarded)." }
+        echo { "MillenniumOS: Please use <b>M558 K" ^ param.I ^ " A" ^ var.minProbes ^ "</b> to silence this warning." }
+    set var.maxProbeCount = var.minProbes
 
 ; Probe until we hit a retry limit.
 ; We may also abort early if we reach the requested tolerance
@@ -181,7 +190,7 @@ while { iterations <= sensors.probes[param.I].maxProbeCount }
 
     ; If we're within tolerance on all axes, we can stop probing
     ; and report the result.
-    if { var.tR && iterations >= var.minProbes }
+    if { var.tR && iterations >= var.minAvgProbes }
         M7500 S{ "Probe " ^ param.I ^ ": Reached requested tolerance " ^ sensors.probes[param.I].tolerance ^ "mm after " ^ iterations ^ "/" ^ sensors.probes[param.I].maxProbeCount ^ " probes" }
         break
 

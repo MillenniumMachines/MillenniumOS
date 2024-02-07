@@ -13,6 +13,7 @@ We build _on top of_ RepRapFirmware, providing operators of the Millennium Machi
   - Compatible with Millennium Machines Milo GCode Dialect.
 
 ## Usage
+  - Configure your toolsetter and optionally, touch probe, in RRF. Please see [here](#rrf-config) for instructions.
   - Download the ZIP file of a release.
   - Extract the ZIP file onto the root of your SD card, or upload it to DWC.
   - Add `M98 P"mos.g"` to the bottom of your `config.g` file.
@@ -22,6 +23,38 @@ We build _on top of_ RepRapFirmware, providing operators of the Millennium Machi
 ## Notes
   - You _must_ be using RRF `v3.5.0-rc.2` or above. MOS uses many 'meta gcode' features that do not exist in earlier versions.
   - MOS includes its own `daemon.g` file to implement repetitive tasks, such as VSSC. If you already have a `daemon.g` file, you will need to rename it and include it into the MOS `daemon.g`. This will require modifying your existing code to work smoothly with the MOS `daemon.g`, and is outside of the scope of this documentation. Anything you add to `daemon.g` and any affects it has on the functionality of MOS is unsupported.
+
+## RRF Config
+You need to configure your Toolsetter and optionally, Touch Probe, in RRF before trying to use them in MillenniumOS.
+
+This involves configuring both of them as Z probes, which can be done with the `M950` command.
+
+You would add a line similar to these to your RRF `config.g` file, above where the MillenniumOS file (`mos.g`) is included.
+
+```gcode
+; Configure the toolsetter as Z-Probe 1 on pin "xstopmax" - mainboard specific, DO NOT COPY AND PASTE!
+
+; Type P8             = unfiltered digital
+; Dive Height H10     = back-off 10mm before repeat probing
+; Max Retries A10     = retry probe a maximum of 10 times
+; Tolerance S0.01     = when tolerance is reached, stop probing
+; Travel Speed T1200  = travel moves run at this speed to the start of the probing location
+; Probe Speed F300:60 = initial probe speed runs at 300mm/min, subsequent at 60mm/min
+M558 K1 P8 C"xstopmax" H10 A10 S0.01 T1200 F300:60
+
+; Configure the touch probe as Z-Probe 2 on pin "probe" - mainboard specific, DO NOT COPY AND PASTE!
+
+; Type P8             = unfiltered digital
+; Dive Height H2      = back-off 2mm before repeat probing
+; Max Retries A10     = retry probe a maximum of 10 times
+; Tolerance S0.01     = when tolerance is reached, stop probing
+; Travel Speed T1200  = travel moves run at this speed to the start of the probing location
+; Probe Speed F300:50 = initial probe speed runs at 300mm/min, subsequent at 50mm/min
+M558 K2 P8 C"probe" H2 A10 S0.01 T1200 F300:50
+```
+
+*NOTE*: You must configure at least `A2` on your probes - the first rough probe we perform is not
+used to calculate a position, it is just used to find out where subsequent probes should aim for at a lower speed when positions are being recorded.
 
 ## Bugs, Issues, Support
 If you find any bugs or issues, please report them on this repository. Best-effort support is available via our Discord.
