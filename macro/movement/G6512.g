@@ -130,8 +130,8 @@ if { var.manualProbe }
     if { var.sZ > var.safeZ }
         G53 G1 Z{ var.sZ }
 
-    ; Move to starting position in X
-    G53 G1 X{ var.sX }
+    ; Move to starting position in X and Y
+    G53 G1 X{ var.sX } Y{ var.sY }
 
     ; And then Y
     G53 G1 Y{ var.sY }
@@ -158,11 +158,8 @@ else
     if { var.sZ > var.safeZ }
         G6550 I{ param.I } Z{ var.sZ }
 
-    ; Move to starting position in X
-    G6550 I{ param.I } X{ var.sX }
-
-    ; And then Y
-    G6550 I{ param.I } Y{ var.sY }
+    ; Move to starting position in X and Y
+    G6550 I{ param.I } X{ var.sX } Y{ var.sY }
 
     ; Move to probe height.
     ; No-op if we already moved above.

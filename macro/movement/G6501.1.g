@@ -24,13 +24,35 @@ if { !exists(param.H) }
 
 var probeId = { global.mosFeatureTouchProbe ? global.mosTouchProbeID : null }
 
-var clearance = {(exists(param.T) ? param.T : global.mosProbeClearance)}
-var overtravel = {(exists(param.O) ? param.O : global.mosProbeOvertravel)}
-
 ; Switch to probe tool if necessary
 var needsProbeTool = { global.mosProbeToolID != state.currentTool }
 if { var.needsProbeTool }
     T T{global.mosProbeToolID}
+
+; Tool Radius. We need to offset probe start and target
+; positions to account for the fact that all probe tools
+; have a radius. If we probe with a 10mm diameter dowel
+; and 5mm clearance, then the edge of the tool would be
+; touching the probed surface so we have to account for
+; that.
+; Our tool radius (var.tR) is applied to the clearance
+; and overtravel distances
+var tR = { global.mosToolTable[state.currentTool][0] }
+
+; Apply tool radius to clearance. We want to make sure
+; the surface of the tool and the workpiece are the
+; clearance distance apart, rather than less than that.
+var clearance = { (exists(param.T) ? param.T : global.mosProbeClearance) + var.tR }
+
+; Apply tool radius to overtravel. We want to allow
+; less movement past the expected point of contact
+; with the surface based on the tool radius.
+; For big tools and low overtravel values, this value
+; might end up being negative. This is fine, as long
+; as the configured tool radius is accurate.
+var overtravel = { (exists(param.O) ? param.O : global.mosProbeOvertravel) - var.tR }
+
+M7500 S{"Distance Modifiers adjusted for Tool Radius - Clearance=" ^ var.clearance ^ " Overtravel=" ^ var.overtravel }
 
 ; We add the clearance distance to the boss
 ; radius to ensure we move clear of the boss

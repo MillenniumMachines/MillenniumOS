@@ -29,11 +29,18 @@ var tPX = { exists(param.X)? param.X : var.sX }
 var tPY = { exists(param.Y)? param.Y : var.sY }
 var tPZ = { exists(param.Z)? param.Z : var.sZ }
 
+; Our target positions do not take probe tool radius
+; into account on the X and Y axes. We need to account
+; for this so that when say, we move to a position that
+; should be 10mm away from the target, we actually move
+; the edge of the tool 10mm away from the target rather
+; than the center. This becomes important if
+
 ; Successively approach target position until operator is happy that there is contact.
 ; We choose the increments based on the distance to the target position.
 
-var distanceNames = { "50mm", "10mm", "5mm", "1mm", "0.1mm", "0.01mm", "0.001mm", "Finish" }
-var distances     = { 50, 10, 5, 1, 0.1, 0.01, 0.001, 0 }
+var distanceNames = { "50mm", "10mm", "5mm", "1mm", "0.1mm", "0.01mm", "0.001mm", "Finish", "Back-Off 1mm" }
+var distances     = { 50, 10, 5, 1, 0.1, 0.01, 0.001, 0, -1 }
 
 ; This is the index of the speed in the distances array to switch to fine probing speed
 var slowSpeed     = 3
@@ -42,6 +49,8 @@ var slowSpeed     = 3
 var cP = { var.sX, var.sY, var.sZ }
 
 while { true }
+
+    ; TODO: We need to account for the tool radius in our target position.
 
     ; Distance between current position and target in each axis
     var dX = { var.cP[0] - var.tPX }
@@ -116,8 +125,11 @@ while { true }
 
     ; Break if operator picks the 'zero' distance.
     if { var.dD == 0 }
-        M7500 S{"Operator indicated that surface is being touched by tool"}
+        M7500 S{"Operator indicated that surface is being touched by tool."}
         break
+
+    if { var.dD == -1 }
+        M7500 S{"Operator indicated that probe needs to be backed away from the surface."}
 
     ; Use a lower movement speed for the smallest increments
     var moveSpeed = { (var.dI >= var.slowSpeedIndex) ? global.mosManualProbeSpeed[2] : global.mosManualProbeSpeed[1] }
@@ -127,7 +139,7 @@ while { true }
     var nPY = { var.cP[1] - ((var.dY / var.mag) * var.dD) }
     var nPZ = { var.cP[2] - ((var.dZ / var.mag) * var.dD) }
 
-    ; Move towards probe point in increment chosen by operator
+    ; Move towards (or away from) the target point in increment chosen by operator
     G53 G1 X{ var.nPX } Y{ var.nPY } Z{ var.nPZ } F{var.moveSpeed}
 
     ; Wait for all moves in the queue to finish
