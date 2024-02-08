@@ -24,6 +24,9 @@ if { !exists(param.H) }
 
 var probeId = { global.mosFeatureTouchProbe ? global.mosTouchProbeID : null }
 
+set global.mosWorkPieceCenterPos = { null, null }
+set global.mosWorkPieceRadius = { null }
+
 ; Make sure probe tool is selected
 if { global.mosProbeToolID != state.currentTool }
     T T{global.mosProbeToolID}
@@ -146,12 +149,13 @@ G6550 I{var.probeId} Z{var.safeZ}
 ; Move to the calculated center of the boss
 G6550 I{var.probeId} X{var.cX} Y{var.cY}
 
-if { !global.mosExpertMode }
-    echo { "Boss - Center X=" ^ global.mosWorkPieceCenterPos[0] ^ " Y=" ^ global.mosWorkPieceCenterPos[1] ^ " R=" ^ global.mosWorkPieceRadius }
-else
-    echo { "global.mosWorkPieceCenterPos=" ^ global.mosWorkPieceCenterPos }
-    echo { "global.mosWorkPieceRadius=" ^ global.mosWorkPieceRadius }
-    echo { "global.mosWorkPieceBoundingBox=" ^ global.mosWorkPieceBoundingBox }
+if { !exists(param.R) || param.R != 0 }
+    if { !global.mosExpertMode }
+        echo { "Boss - Center X=" ^ global.mosWorkPieceCenterPos[0] ^ " Y=" ^ global.mosWorkPieceCenterPos[1] ^ " R=" ^ global.mosWorkPieceRadius }
+    else
+        echo { "global.mosWorkPieceCenterPos=" ^ global.mosWorkPieceCenterPos }
+        echo { "global.mosWorkPieceRadius=" ^ global.mosWorkPieceRadius }
+        echo { "global.mosWorkPieceBoundingBox=" ^ global.mosWorkPieceBoundingBox }
 
 ; Set WCS origin to the probed boss center, if requested
 if { exists(param.W) && param.W != null }

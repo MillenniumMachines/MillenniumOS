@@ -39,8 +39,8 @@ var tPZ = { exists(param.Z)? param.Z : var.sZ }
 ; Successively approach target position until operator is happy that there is contact.
 ; We choose the increments based on the distance to the target position.
 
-var distanceNames = { "50mm", "10mm", "5mm", "1mm", "0.1mm", "0.01mm", "0.001mm", "Finish", "Back-Off 1mm" }
-var distances     = { 50, 10, 5, 1, 0.1, 0.01, 0.001, 0, -1 }
+var distanceNames = { "50mm", "10mm", "5mm", "1mm", "0.1mm", "0.01mm", "Finish", "Back-Off 1mm" }
+var distances     = { 50, 10, 5, 1, 0.1, 0.01, 0, -1 }
 
 ; This is the index of the speed in the distances array to switch to fine probing speed
 var slowSpeed     = 3
@@ -49,9 +49,6 @@ var slowSpeed     = 3
 var cP = { var.sX, var.sY, var.sZ }
 
 while { true }
-
-    ; TODO: We need to account for the tool radius in our target position.
-
     ; Distance between current position and target in each axis
     var dX = { var.cP[0] - var.tPX }
     var dY = { var.cP[1] - var.tPY }
@@ -108,7 +105,7 @@ while { true }
     set var.slowSpeedIndex = { var.slowSpeed - (#var.distances - var.vDistC) }
 
     ; Ask operator to select a distance to move towards the target point.
-    M291 P{"Current Position: X=" ^ var.cP[0] ^ " Y=" ^ var.cP[1] ^ " Z=" ^ var.cP[2] ^ "<br/>Approx Distance to target: " ^ (ceil(var.dist*100)/100) ^ "mm.<br/>Select distance to move towards target."} R"MillenniumOS: Manual Probe" S4 K{ var.vDistN } D{var.vDistC} T0 J1
+    M291 P{"Position: X=" ^ var.cP[0] ^ " Y=" ^ var.cP[1] ^ " Z=" ^ var.cP[2] ^ "<br/>Distance to target: " ^ (ceil(var.dist*100)/100) ^ "mm.<br/>Select distance to move towards target."} R"MillenniumOS: Manual Probe" S4 K{ var.vDistN } D{var.vDistC} T0 J1
     if { result != 0 }
         abort { "Operator cancelled probing!" }
 
@@ -149,7 +146,9 @@ while { true }
     set var.cP = { move.axes[0].machinePosition, move.axes[1].machinePosition, move.axes[2].machinePosition }
 
 ; Set the probe coordinates to the current position
-set global.mosProbeCoordinate = var.cP
+set global.mosProbeCoordinate = { var.cP }
+
+M7500 S{"Probe coordinate: X=" ^ var.cP[0] ^ " Y=" ^ var.cP[1] ^ " Z=" ^ var.cP[2]}
 
 ; Probe variance makes no sense for manual probes that are done once
 set global.mosProbeVariance = { 0 }

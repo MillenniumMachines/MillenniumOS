@@ -15,4 +15,4 @@ if { !global.mosStartupMsgsDisplayed }
         M99
     else
         if { !global.mosExpertMode }
-            echo { "MillenniumOS: Loaded v" ^ global.mosVersion }
+            echo { "MillenniumOS: Loaded " ^ global.mosVersion }

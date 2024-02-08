@@ -26,7 +26,6 @@ global mosOriginAll={"Front Left","Front Right","Rear Right","Rear Left","Center
 ; None means do not set origins on a work offset.
 global mosWorkOffsetCodes={"None","G54","G55","G56","G57","G58","G59","G59.1","G59.2","G59.3"}
 
-;global mosProbeCycleNames = {"Vise Corner (X,Y,Z)", "Circular Bore (X,Y)", "Circular Boss (X,Y)", "Rectangle Pocket (X,Y)", "Rectangle Boss (X,Y)", "Outside Corner (X,Y)", "Single Surface (X/Y/Z)" }
 global mosProbeCycleNames = { "Vise Corner (X,Y,Z)", "Circular Bore (X,Y)", "Circular Boss (X,Y)", "Rectangle Block (X,Y)", "Single Surface (X/Y/Z)" }
 
 ; Friendly names to indicate the location of a surface to be probed, relative to the tool.
@@ -35,10 +34,10 @@ global mosProbeCycleNames = { "Vise Corner (X,Y,Z)", "Circular Bore (X,Y)", "Cir
 ; If your machine is configured with the axes in a different orientation, you can override
 ; these names in mos-user-vars.g but there is no way to override the "Below" option (which)
 ; is a Z axis, and always probes towards Z minimum. On the Milo, Z Max is 0 and Z min is 60 or 120.
-global mosSurfaceLocationNames = {"Left","Right","In Front","Behind","Below"}
+global mosSurfaceLocationNames = {"Left","Right","Front","Back","Top"}
 
 ; Relative to the tool, where is the corner to be probed?
-global mosOutsideCornerNames = {"Behind, Right","Behind, Left","In Front, Right","In Front, Left"}
+global mosOutsideCornerNames = {"Front Left", "Front Right", "Back Right", "Back Left"}
 
 global mosTouchProbeToolName = "Touch Probe"
 global mosDatumToolName = "Datum Tool"
@@ -98,16 +97,20 @@ global mosWorkPieceRadius = null
 ; Stores the calculated dimensions of the last rectangular workpiece probed.
 global mosWorkPieceDimensions = { null, null }
 
+; Stores the calculated dimensional error of the last dimensions versus
+; what the operator inputted.
+; This can be used to set a touch probe deflection value.
+global mosWorkPieceDimensionalError = { null, null }
+
 ; Stores the calculated rotation of the workpiece in relation to the
 ; X axis. This value can be applied as a G68 rotation value to align
 ; the workpiece with the machine axes.
 global mosWorkPieceRotationAngle = null
 
-
 ; Stores the calculated bounding box of the last workpiece probed.
 ; in X and Y dimensions. Each entry is a min, max pair for X and
 ; Y dimensions respectively.
-global mosWorkPieceBoundingBox = { {null, null}, {null, null}}
+global mosWorkPieceBoundingBox = { {null, null}, {null, null} }
 
 ; This is the corner number that was picked by the
 ; operator for the most recent outside or inside
@@ -116,11 +119,11 @@ global mosWorkPieceCornerNum = null
 
 ; These are the X and Y coordinates of the most recent
 ; corner probe.
-global mosWorkPieceCornerPos = {null, null}
+global mosWorkPieceCornerPos = { null, null }
 
 ; This is the angle of the corner of the most recent
 ; outside corner probe.
-global mosWorkPieceCornerAngle = null
+global mosWorkPieceCornerAngle = { null, null }
 
 ; This is the Co-ordinate along the chosen axis of the
 ; most recent single surface probe
@@ -184,4 +187,9 @@ global mosProbeDetected = {vector(limits.zProbes, false)}
 ; Last canned probe cycle executed
 global mosLastProbeCycle = null
 
-global mosDescDisplayed = { vector(9, false) }
+; Tracks whether description messages have been
+; displayed during this session. The first 2 indexes
+; are used by the G6600 macro, the others are used by
+; G6500 to G6509, one each, in order. G6520 uses the
+; last index.
+global mosDescDisplayed = { vector(12, false) }

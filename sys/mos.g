@@ -7,9 +7,9 @@
 
 ; MOS Release version
 if { exists(global.mosVersion) }
-    set global.mosVersion="0.0.1"
+    set global.mosVersion = { "%%MOS_VERSION%%" }
 else
-    global mosVersion="0.0.1"
+    global mosVersion = { "%%MOS_VERSION%%" }
 
 ; Load internal / default variables
 if { !exists(global.mosVarsLoaded) }

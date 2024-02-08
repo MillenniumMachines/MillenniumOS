@@ -118,61 +118,30 @@ G94
 ; If we can get G6550 to handle protected and unprotected
 ; moves then we can simply call the same code for both.
 
-if { var.manualProbe }
-    ; If manual probing, use normal machine moves to approach starting
-    ; position.
 
-    ; Set rough feedrate to approach starting position
-    G53 G1 F{global.mosManualProbeSpeed[0]}
-
-    ; If starting probe height is above safe height (current Z),
-    ; then move to the starting probe height first.
-    if { var.sZ > var.safeZ }
-        G53 G1 Z{ var.sZ }
-
-    ; Move to starting position in X and Y
-    G53 G1 X{ var.sX } Y{ var.sY }
-
-    ; And then Y
-    G53 G1 Y{ var.sY }
-
-    ; Move to probe height.
-    ; No-op if we already moved above.
-    G53 G1 Z{ var.sZ }
-
-    ; Run manual probing cycle
-    G6512.2 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
-
-    ; Move to safe height
-    ; If probing move is called with D parameter,
-    ; we stay at the same height.
-    if { !exists(param.D) }
-        G53 G1 Z{ var.safeZ }
-
-else
-    ; For automated probes, use protected moves to
-    ; approach start position.
-
-    ; If starting probe height is above safe height (current Z),
-    ; then move to the starting probe height first.
-    if { var.sZ > var.safeZ }
-        G6550 I{ param.I } Z{ var.sZ }
-
-    ; Move to starting position in X and Y
-    G6550 I{ param.I } X{ var.sX } Y{ var.sY }
-
-    ; Move to probe height.
-    ; No-op if we already moved above.
+; If starting probe height is above safe height (current Z),
+; then move to the starting probe height first.
+if { var.sZ > var.safeZ }
     G6550 I{ param.I } Z{ var.sZ }
 
-    ; Run automated probing cycle
+; Move to starting position in X and Y
+G6550 I{ param.I } X{ var.sX } Y{ var.sY }
+
+; Move to probe height.
+; No-op if we already moved above.
+G6550 I{ param.I } Z{ var.sZ }
+
+; Run automated probing cycle
+if { var.manualProbe }
+    G6512.2 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
+else
     G6512.1 I{ param.I } X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
-    ; Move to safe height
-    ; If probing move is called with D parameter,
-    ; we stay at the same height.
-    if { !exists(param.D) }
-        G6550 I{ param.I } Z{ var.safeZ }
+; Move to safe height
+; If probing move is called with D parameter,
+; we stay at the same height.
+if { !exists(param.D) }
+    G6550 I{ param.I } Z{ var.safeZ }
 
 ; Calculate tool radius and round the output.
 ; We round to 3 decimal places (0.001mm) which is

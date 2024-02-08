@@ -15,6 +15,11 @@ if { !exists(param.H) || !exists(param.I) }
 
 var probeId = { global.mosFeatureTouchProbe ? global.mosTouchProbeID : null }
 
+set global.mosWorkPieceDimensions = { null, null }
+set global.mosWorkPieceCenterPos = { null, null }
+set global.mosWorkPieceRotationAngle = null
+set global.mosWorkPieceDimensionalError = null
+
 ; Make sure probe tool is selected
 if { global.mosProbeToolID != state.currentTool }
     T T{global.mosProbeToolID}
@@ -86,11 +91,12 @@ set var.pY[1] = { global.mosProbeCoordinate[1] }
 set global.mosWorkPieceDimensions[1] = { var.pY[1] - var.pY[0] }
 set global.mosWorkPieceCenterPos[1] = { (var.pY[0] + var.pY[1]) / 2 }
 
-if { !global.mosExpertMode }
-    echo { "Rectangle Pocket - Center X=" ^ global.mosWorkPieceCenterPos[0] ^ " Y=" ^ global.mosWorkPieceCenterPos[1] ^ " Dimensions X=" ^ global.mosWorkPieceDimensions[0] ^ " Y=" ^ global.mosWorkPieceDimensions[1] }
-else
-    echo { "global.mosWorkPieceCenterPos=" ^ global.mosWorkPieceCenterPos }
-    echo { "global.mosWorkPieceDimensions=" ^ global.mosWorkPieceDimensions }
+if { !exists(param.R) || param.R != 0 }
+    if { !global.mosExpertMode }
+        echo { "Rectangle Pocket - Center X=" ^ global.mosWorkPieceCenterPos[0] ^ " Y=" ^ global.mosWorkPieceCenterPos[1] ^ " Dimensions X=" ^ global.mosWorkPieceDimensions[0] ^ " Y=" ^ global.mosWorkPieceDimensions[1] }
+    else
+        echo { "global.mosWorkPieceCenterPos=" ^ global.mosWorkPieceCenterPos }
+        echo { "global.mosWorkPieceDimensions=" ^ global.mosWorkPieceDimensions }
 
 ; Set WCS origin to the probed center, if requested
 if { exists(param.W) && param.W != null }
