@@ -3,8 +3,9 @@ WD="${PWD}"
 TMP_DIR=$(mktemp -d -t mos-release-XXXXX)
 ZIP_NAME="${1:-mos-release}.zip"
 SYNC_CMD="rsync -a --exclude=README.md"
+COMMIT_ID=$(git describe --tags --always --dirty)
 
-echo "Building release ${ZIP_NAME}..."
+echo "Building release ${ZIP_NAME} for ${COMMIT_ID}..."
 
 # Make stub folder-structure
 mkdir -p ${TMP_DIR}/{sys,macros,sys/mos}
@@ -21,6 +22,11 @@ find ${TMP_DIR}
 
 [[ -f ${ZIP_NAME} ]] && rm ${ZIP_NAME}
 
-cd "${TMP_DIR}" && mv sys/daemon.g sys/daemon.install && zip -x 'README.md' -r "${WD}/${ZIP_NAME}" * && cd "${WD}"
+cd "${TMP_DIR}" && {
+    mv sys/daemon.g sys/daemon.install &&
+    sed -i -e "s/%%MOS_VERSION%%/${COMMIT_ID}/" sys/mos.g
+    zip -x 'README.md' -r "${WD}/${ZIP_NAME}" * &&
+    cd "${WD}"
+}
 
 rm -rf "${TMP_DIR}"

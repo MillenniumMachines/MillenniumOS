@@ -29,11 +29,15 @@ if { global.mosProbeToolID != state.currentTool }
 ; after the M291 has been acknowledged.
 
 ; Prompt for bore diameter
-M291 P"Please enter approximate bore diameter in mm." R"MillenniumOS: Probe Bore" J1 T0 S6 F6.0
+M291 P"Please enter approximate bore diameter in mm." R"MillenniumOS: Probe Bore" J1 T0 S6 F{(global.mosWorkPieceRadius != null) ? global.mosWorkPieceRadius : 0}
 if { result != 0 }
     abort { "Bore probe aborted!" }
 else
     var boreDiameter = { input }
+
+    if { var.boreDiameter < 1 }
+        abort { "Bore diameter too low!" }
+
 
     ; Prompt for overtravel distance
     M291 P"Please enter overtravel distance in mm." R"MillenniumOS: Probe Bore" J1 T0 S6 F{global.mosProbeOvertravel}
@@ -41,7 +45,10 @@ else
         abort { "Bore probe aborted!" }
     else
         var overTravel = { input }
-        M291 P"Please jog the probe OVER the approximate center of the bore and press OK." R"MillenniumOS: Probe Bore" X1 Y1 Z1 J1 T0 S3
+        if { var.overTravel < 0.1 }
+            abort { "Overtravel distance too low!" }
+
+        M291 P"Please jog the probe <b>OVER</b> the center of the bore and press <b>OK</b>." R"MillenniumOS: Probe Bore" X1 Y1 Z1 J1 T0 S3
         if { result != 0 }
             abort { "Bore probe aborted!" }
         else

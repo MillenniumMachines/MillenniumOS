@@ -20,14 +20,14 @@ G27 Z1
 ; Touchprobe tool ID is only set if the touchprobe feature is enabled.
 if { var.tI == global.mosProbeToolID }
     if { global.mosFeatureTouchProbe }
+        M291 P{"<b>Touch Probe Detected</b>.<br/>We will now probe the reference surface. Move away from the machine <b>BEFORE</b> pressing <b>OK</b>!"} R"MillenniumOS: Tool Change" S2
+        G6511
         if { global.mosToolSetterActivationPos == null }
-            M291 P{"<b>Touch Probe Detected</b>.<br/>We will now probe the reference surface. Move away from the machine!"} R"MillenniumOS: Tool Change" S2
-            G6511
-        elif { !global.mosExpertMode }
-            echo { "MillenniumOS: Touch probe active, reference surface already probed." }
+            echo { "Touch probe reference surface probing failed." }
+            M99
     else
         if { !global.mosExpertMode }
-            M291 P{"<b>Datum Tool Installed</b>.<br/>We will now probe the tool length. Move away from the machine!"} R"MillenniumOS: Tool Change" S2
+            M291 P{"<b>Datum Tool Installed</b>.<br/>We will now probe the tool length. Move away from the machine <b>BEFORE</b> pressing <b>OK</b>!"} R"MillenniumOS: Tool Change" S2
 
         ; Probe datum tool length
         G37
@@ -35,8 +35,11 @@ else
     ; Probe non-probe tool length
     G37
 
-    ; Continue after operator confirmation if necessary
-    if { !global.mosExpertMode }
+; Continue after operator confirmation if necessary
+if { !global.mosExpertMode }
+    if { job.file.fileName != null }
         M291 P{"Tool change complete. Press Continue to start the next operation, or Pause to perform further manual tasks (e.g. workpiece fixture changes)"} R"MillenniumOS: Tool Change" S4 K{"Continue", "Pause"}
         if { input != 0 }
             M25.9 S{"Operator paused job after tool change complete." }
+    else
+        M291 P{"Tool change complete. Press <b>OK</b> to continue!"} R"MillenniumOS: Tool Change" S2 T0

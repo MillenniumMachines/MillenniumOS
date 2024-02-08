@@ -28,6 +28,7 @@ if { !global.mosExpertMode && !global.mosDescDisplayed[0] }
     M291 P{"You will need to select an appropriate probe cycle type (or types!) based on the shape of your workpiece."} R"MillenniumOS: Probe Workpiece" T0 S2
     M291 P{"For a square or rectangular workpiece, you should start with the <b>Vise Corner</b> probing cycle to identify your origin corner and Z height."} R"MillenniumOS: Probe Workpiece" T0 S2
     M291 P{"For a round workpiece, you should start with the <b>Circular Boss</b> and <b>Single Surface (Z)</b> cycle to identify the center of the circle as your origin and Z height."} R"MillenniumOS: Probe Workpiece" T0 S2
+    M291 P{"<b>NOTE</b>: Surfaces are named assuming that you (the operator) are standing in front of the machine, with the Z column at the <b>BACK</b>."} R"MillenniumOS: Probe Workpiece" T0 S2
 
     ; If user does not have a touch probe configured,
     ; walk them through the manual probing procedure.

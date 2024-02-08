@@ -21,4 +21,4 @@ M5.9
 ; moved.
 if { !exists(param.Z) }
     ; Move table to center of X, and front of Y
-    G53 G0 X{(move.axes[0].max - move.axes[0].min)/2} Y{(move.axes[1].max - move.axes[1].min)/2}
+    G53 G0 X{(move.axes[0].max - move.axes[0].min)/2} Y{move.axes[1].max}

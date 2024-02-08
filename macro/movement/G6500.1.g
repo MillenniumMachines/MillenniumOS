@@ -27,6 +27,9 @@ var probeId = { global.mosFeatureTouchProbe ? global.mosTouchProbeID : null }
 ; TODO: Validate minimum bore diameter we can probe based on
 ; dive height and back-off distance.
 
+set global.mosWorkPieceCenterPos = { null, null }
+set global.mosWorkPieceRadius = { null }
+
 ; Make sure probe tool is selected
 if { global.mosProbeToolID != state.currentTool }
     T T{global.mosProbeToolID}
@@ -115,11 +118,12 @@ G6550 I{var.probeId} X{var.cX} Y{var.cY}
 ; Move back to safe Z height
 G6550 I{var.probeId} Z{var.safeZ}
 
-if { !global.mosExpertMode }
-    echo { "Bore - Center X=" ^ global.mosWorkPieceCenterPos[0] ^ " Y=" ^ global.mosWorkPieceCenterPos[1] ^ ", R=" ^ global.mosWorkPieceRadius }
-else
-    echo { "global.mosWorkPieceCenterPos=" ^ global.mosWorkPieceCenterPos }
-    echo { "global.mosWorkPieceRadius=" ^ global.mosWorkPieceRadius }
+if { !exists(param.R) || param.R != 0 }
+    if { !global.mosExpertMode }
+        echo { "Bore - Center X=" ^ global.mosWorkPieceCenterPos[0] ^ " Y=" ^ global.mosWorkPieceCenterPos[1] ^ ", R=" ^ global.mosWorkPieceRadius }
+    else
+        echo { "global.mosWorkPieceCenterPos=" ^ global.mosWorkPieceCenterPos }
+        echo { "global.mosWorkPieceRadius=" ^ global.mosWorkPieceRadius }
 
 ; Set WCS origin to the probed corner, if requested
 if { exists(param.W) && param.W != null }

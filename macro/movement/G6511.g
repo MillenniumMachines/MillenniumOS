@@ -26,13 +26,13 @@ if { !global.mosFeatureTouchProbe || global.mosProbeToolID == null }
 if { state.currentTool != global.mosProbeToolID }
     abort { "Switching to the touch probe (<b>T" ^ global.mosProbeToolID ^ "</b>) will automatically probe the reference surface if not already probed!" }
 
+set global.mosToolSetterActivationPos = null
+
 ; Using the touch probe, probe downwards until the probe is triggered.
 G6512 I{global.mosTouchProbeID} J{global.mosTouchProbeReferencePos[0]} K{global.mosTouchProbeReferencePos[1]} L{move.axes[2].max} Z{move.axes[2].min}
 
 ; Reference surface to toolsetter activation point distance
-var dtS = { (global.mosTouchProbeReferencePos[2] - global.mosToolSetterPos[2])}
-
-set global.mosToolSetterActivationPos = { global.mosProbeCoordinate[2] - var.dtS }
+set global.mosToolSetterActivationPos = { global.mosProbeCoordinate[2] - (global.mosTouchProbeReferencePos[2] - global.mosToolSetterPos[2]) }
 
 if { !global.mosExpertMode }
     echo { "MillenniumOS: Probed reference surface Z=" ^ global.mosProbeCoordinate[2] ^ ", expected toolsetter activation point is Z=" ^ global.mosToolSetterActivationPos }

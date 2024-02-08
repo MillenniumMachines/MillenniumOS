@@ -25,6 +25,10 @@ We build _on top of_ RepRapFirmware, providing operators of the Millennium Machi
   - MOS includes its own `daemon.g` file to implement repetitive tasks, such as VSSC. If you already have a `daemon.g` file, you will need to rename it and include it into the MOS `daemon.g`. This will require modifying your existing code to work smoothly with the MOS `daemon.g`, and is outside of the scope of this documentation. Anything you add to `daemon.g` and any affects it has on the functionality of MOS is unsupported.
 
 ## RRF Config
+You need a working RRF config with all of your machine axes moving in the right direction before you start.
+
+If you can't home your machine, sort that out first - following the MillenniumOS configuration wizard will be impossible without a machine that moves correctly.
+
 You need to configure your Toolsetter and optionally, Touch Probe, in RRF before trying to use them in MillenniumOS.
 
 This involves configuring both of them as Z probes, which can be done with the `M558` command.
@@ -53,11 +57,8 @@ M558 K1 P8 C"xstopmax" H10 A10 S0.01 T1200 F300:60
 M558 K2 P8 C"probe" H2 A10 S0.01 T1200 F300:50
 ```
 
-*NOTE*: You must configure at least `A2` on your probes - the first rough probe we perform is not
-used to calculate a position, it is just used to find out where subsequent probes should aim for at a lower speed when positions are being recorded.
-
 ## Bugs, Issues, Support
-If you find any bugs or issues, please report them on this repository. Best-effort support is available via our Discord.
+If you find any bugs or issues, please report them on this repository. Best-effort support is available via our [Discord](https://discord.gg/ya4UUj7ax2).
 
 ---
 
@@ -99,7 +100,7 @@ G56
 M7000 P2000 V100
 
 (TC: 3mm Flat Endmill L=12)
-T2 M6
+T2
 
 (Start spindle and wait for it to accelerate)
 M3.9 S19000

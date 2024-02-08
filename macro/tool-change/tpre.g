@@ -28,7 +28,7 @@ if { var.tI == global.mosProbeToolID }
     ; If touch probe is enabled, prompt the operator to install
     ; it and check for activation.
     if { global.mosFeatureTouchProbe }
-        M291 P{"Please install your " ^ var.tD ^ " into the spindle and make sure it is connected.<br/>When ready, press <b>OK</b>, and then manually activate your " ^ var.tD ^ " until it is detected."} R"MillenniumOS: Touch Probe" S2 T0
+        M291 P{"Please install your " ^ var.tD ^ " into the spindle and make sure it is connected.<br/>When ready, press <b>OK</b>, and then manually activate your " ^ var.tD ^ " until it is detected."} R"MillenniumOS: Probe Tool" S2 T0
 
         echo { "Waiting for touch probe activation... "}
 
@@ -39,13 +39,13 @@ if { var.tI == global.mosProbeToolID }
         var touchProbeConnected = { exists(global.mosProbeDetected[global.mosTouchProbeID]) ? global.mosProbeDetected[global.mosTouchProbeID] : false }
 
         if { !var.touchProbeConnected }
-            abort {"Did not detect a " ^ var.tD ^ " with ID " ^ global.mosTouchProbeID ^ "! Please check your " ^ var.tD ^ " and run <b>T" ^ global.mosProbeToolID ^ "</b> again to verify it is connected."}
-
+            echo {"Did not detect a " ^ var.tD ^ " with ID " ^ global.mosTouchProbeID ^ "! Please check your " ^ var.tD ^ " and run <b>T" ^ global.mosProbeToolID ^ "</b> again to verify it is connected."}
+            M99
         ; Touch probe is now active.
 
     else
         ; If no touch probe enabled, ask user to install datum tool.
-        M291 P{"Please install your " ^ var.tD ^ " into the spindle."} R"MillenniumOS: Touch Probe" S2 T0
+        M291 P{"Please install your " ^ var.tD ^ " into the spindle. When ready, press <b>OK</b>."} R"MillenniumOS: Probe Tool" S2 T0
         echo { "Touch probe feature disabled, manual probing will use an installed datum tool." }
     M99
 else
@@ -63,5 +63,6 @@ else
     ; Prompt user to change tool
     M291 P{"Insert Tool <b>#" ^ var.tI ^ "</b>: " ^ var.tD ^ " and press <b>Continue</b> when ready. <b>Cancel</b> will abort the running job!"} R"MillenniumOS: Tool Change" S4 K{"Continue", "Cancel"}
     if { input != 0 }
-        abort { "Tool change aborted by operator, aborting job!" }
+        echo { "Tool change aborted by operator, aborting job!" }
+        M99
 

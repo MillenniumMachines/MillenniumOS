@@ -75,7 +75,7 @@ if { var.wizFeatureSpindleFeedback == null }
     ; Do not display this if the setting was not changed
     if { var.wizFeatureSpindleFeedback }
         M291 P"Spindle Feedback feature not yet implemented, falling back to manual timing of spindle acceleration and deceleration." R"MillenniumOS: Configuration Wizard" S2 T0
-        var.wizFeatureSpindleFeedback = false
+        set var.wizFeatureSpindleFeedback = false
 
 ; TODO: Do not display this when spindle speed feedback enabled and configured
 if { var.wizSpindleAccelSeconds == null || var.wizSpindleDecelSeconds == null }
@@ -144,9 +144,76 @@ if { var.wizFeatureTouchProbe && var.wizTouchProbeRadius == null }
     M291 P{"Please enter the radius of the touch probe tip. You should measure this with calipers or a micrometer."} R"MillenniumOS: Configuration Wizard" S6 L0.1 H5 F1.0
     set var.wizTouchProbeRadius = { input }
 
-; TODO: Probe a workpiece with a known dimension to calculate the deflection.
-; For the moment, just set to 0
-set var.wizTouchProbeDeflection = 0
+; Probe a rectangular block to calculate the deflection if the touch probe is enabled
+if { var.wizFeatureTouchProbe && var.wizTouchProbeDeflection == null }
+    M291 P{"We now need to measure the deflection of the touch probe.We will do this by probing a <b>1-2-3 block</b> or other rectangular item of <b>accurate and known dimensions</b> (greater than 10mm per side)."} R"MillenniumOS: Configuration Wizard" S2 T0
+
+    if { (!move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed) }
+        M291 P{"One or more axes are not homed.<br/>Press <b>OK</b> to home the machine and continue."} R"MillenniumOS: Configuration Wizard" S3 T0
+        if { result != 0 }
+            abort { "MillenniumOS: Operator aborted machine homing!" }
+        G28
+
+    M291 P{"Please secure your 1-2-3 block or chosen rectangular item onto the table, largest face on top.<br/><b>CAUTION</b>: Please make sure all 4 side surfaces are free of obstructions!"} R"MillenniumOS: Configuration Wizard" S2 T0
+    M291 P{"Please enter the exact <b>surface length</b> of the rectangular item along the X axis in mm.<br/><b>NOTE</b>: Along the X axis means the surface facing towards the operator."} R"MillenniumOS: Configuration Wizard" J1 T0 S6 F50.8
+    if { result != 0 }
+        abort { "MillenniumOS: Operator aborted configuration wizard!" }
+
+    var measuredX = { input }
+
+    if { var.measuredX < 10 }
+        abort { "MillenniumOS: Measured X length is too short, must be at least 10mm!" }
+
+    M291 P{"Please enter the exact <b>surface length</b> of the rectangular item along the Y axis in mm.<br/><b>NOTE</b>: Along the Y axis means the surface facing to the left or right."} R"MillenniumOS: Configuration Wizard" J1 T0 S6 F76.2
+    if { result != 0 }
+        abort { "MillenniumOS: Operator aborted configuration wizard!" }
+
+    var measuredY = { input }
+
+    if { var.measuredY < 10 }
+        abort { "MillenniumOS: Measured Y length is too short, must be at least 10mm!" }
+
+    M291 P{"Jog the touch probe within 5mm of the center of the item and press <b>OK</b>.<br/><b>CAUTION</b>: The probe height when clicking <b>OK</b> is assumed to be safe for horizontal moves!"} R"MillenniumOS: Configuration Wizard" X1 Y1 Z1 S3 T0
+
+    M291 P"Please enter the depth to probe at in mm, relative to the current location. A value of 10 will move the probe downwards 10mm before probing towards the item." R"MillenniumOS: Configuration Wizard" J1 T0 S6 F{global.mosProbeOvertravel}
+    if { result != 0 }
+        abort { "MillenniumOS: Operator aborted configuration wizard!" }
+
+    var probingDepth = { input }
+
+    if { var.probingDepth < 0 }
+        abort { "Probing depth must not be negative!" }
+
+    if { !global.mosExpertMode }
+        M291 P{"We will now probe the item from 15mm outside each surface, at 2 points along each surface, at a depth of " ^ var.probingDepth ^ "mm.<br/>Press <b>OK</b> to proceed!"} R"MillenniumOS: Configuration Wizard" S3 T0
+        if { result != 0 }
+            abort { "MillenniumOS: Operator aborted configuration wizard!" }
+
+    ; It is possible that our settings have been reset, but the touch probe already
+    ; has a deflection value applied to its' tool radius. We must reset the tool radius
+    ; back to the wizard value before probing to calculate the deflection.
+    var oldRadius = { global.mosToolTable[global.mosProbeToolID][0] }
+    set global.mosToolTable[global.mosProbeToolID][0] = { var.wizTouchProbeRadius }
+
+    G6503.1 W{null} H{var.measuredX} I{var.measuredY} T15 O5 J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
+    if { global.mosWorkPieceDimensions[0] == null || global.mosWorkPieceDimensions[1] == null }
+        abort { "MillenniumOS: Rectangular block probing failed!" }
+
+    var deflectionX = { var.measuredX - global.mosWorkPieceDimensions[0] }
+    var deflectionY = { var.measuredY - global.mosWorkPieceDimensions[1] }
+
+    ; We divide the deflection value by 4, as this gives us the deflection value
+    ; that we would need to apply to each probe point.
+    set var.wizTouchProbeDeflection = { (var.deflectionX + var.deflectionY) / 4 }
+
+    ; Reset the tool radius back to the existing, possibly-deflected value
+    ; as we cannot guarantee that the rest of the configuration wizard will
+    ; be completed successfully.
+    ; On completion, the deflection value will be written to file and will be
+    ; applied at the next reboot.
+    set global.mosToolTable[global.mosProbeToolID][0] = { var.oldRadius }
+
+    M291 P{"Measured deflection is <b>" ^ var.wizTouchProbeDeflection ^ "mm</b>.<br/>This will be applied to your touch probe on reboot or reload."} R"MillenniumOS: Configuration Wizard" S2 T0
 
 if { var.wizDatumToolRadius == null }
     M291 P{"We now need to choose a <b>datum tool</b>, which can be a metal dowel, a gauge pin or flat tipped endmill."} R"MillenniumOS: Configuration Wizard" S2 T0

@@ -15,9 +15,23 @@ if { !exists(param.H) || !exists(param.I) }
 
 var probeId = { global.mosFeatureTouchProbe ? global.mosTouchProbeID : null }
 
+set global.mosWorkPieceDimensions = { null, null }
+set global.mosWorkPieceCenterPos = { null, null }
+set global.mosWorkPieceRotationAngle = null
+set global.mosWorkPieceDimensionalError = null
+
 ; Make sure probe tool is selected
 if { global.mosProbeToolID != state.currentTool }
     T T{global.mosProbeToolID}
+
+; Store our own safe Z position as the current position. We return to
+; this position where necessary to make moves across the workpiece to
+; the next probe point.
+; We do this _after_ any switch to the touch probe, because while the
+; original position may have been safe with a different tool installed,
+; the touch probe may be longer. After a tool change the spindle
+; will be parked, so essentially our safeZ is at the parking location.
+var safeZ = { move.axes[2].machinePosition }
 
 ; J = start position X
 ; K = start position Y
@@ -85,18 +99,13 @@ var pY = { null, null, null, null }
 ; macro does not automatically move back to its' safe Z position after
 ; probing, and we must manage this ourselves.
 
-; Store our own safe Z position as the current position. We return to
-; this position where necessary to make moves across the workpiece to
-; the next probe point.
-var safeZ = { move.axes[2].machinePosition }
-
 ; First probe point - left edge, inwards from front face by clearance distance
 ; towards the face plus overtravel distance.
 G6512 I{var.probeId} D1 J{(var.sX - var.hW - var.clearance)} K{(var.sY - var.hL + var.clearance)} L{param.L} X{(var.sX - var.hW + var.overtravel)}
 set var.pX[0] = { global.mosProbeCoordinate[0] }
 
 ; Return to our starting position
-G6550 X{(var.sX - var.hW - var.clearance)}
+G6550 I{var.probeId} X{(var.sX - var.hW - var.clearance)}
 
 ; Second probe point - left edge, inwards from rear face by clearance distance
 ; towards the face minus overtravel distance.
@@ -104,8 +113,8 @@ G6512 I{var.probeId} D1 J{(var.sX - var.hW - var.clearance)} K{(var.sY + var.hL 
 set var.pX[1] = { global.mosProbeCoordinate[0] }
 
 ; Return to our starting position and then raise the probe
-G6550 X{(var.sX - var.hW - var.clearance)}
-G6550 Z{var.safeZ}
+G6550 I{var.probeId} X{(var.sX - var.hW - var.clearance)}
+G6550 I{var.probeId} Z{var.safeZ}
 
 ; NOTE: Second surface probes from the rear first
 ; as this shortens the movement distance.
@@ -116,7 +125,7 @@ G6512 I{var.probeId} D1 J{(var.sX + var.hW + var.clearance)} K{(var.sY + var.hL 
 set var.pX[2] = { global.mosProbeCoordinate[0] }
 
 ; Return to our starting position
-G6550 X{(var.sX + var.hW + var.clearance)}
+G6550 I{var.probeId} X{(var.sX + var.hW + var.clearance)}
 
 ; Fourth probe point - right edge, inwards from front face by clearance distance
 ; towards the face plus overtravel distance.
@@ -124,8 +133,8 @@ G6512 I{var.probeId} D1 J{(var.sX + var.hW + var.clearance)} K{(var.sY - var.hL 
 set var.pX[3] = { global.mosProbeCoordinate[0] }
 
 ; Return to our starting position and then raise the probe
-G6550 X{(var.sX + var.hW + var.clearance)}
-G6550 Z{var.safeZ}
+G6550 I{var.probeId} X{(var.sX + var.hW + var.clearance)}
+G6550 I{var.probeId} Z{var.safeZ}
 
 ; Okay, we now have 2 'lines' representing the X edges of the block.
 ; Line 1: var.pX[0] to var.pX[1]
@@ -152,9 +161,9 @@ G6550 Z{var.safeZ}
 ; the angle of the Y edges of the block.
 
 ; Calculate the angle difference of each line.
-var xA1 = { atan((var.pX[1] - var.pX[0]) / (var.fL - (2*var.clearance))) }
-var xA2 = { atan((var.pX[2] - var.pX[3]) / (var.fL - (2*var.clearance))) }
-var xAngleDiff = { degrees(abs(var.xA1 - var.xA2)) }
+var aX1 = { atan((var.pX[1] - var.pX[0]) / (var.fL - (2*var.clearance))) }
+var aX2 = { atan((var.pX[2] - var.pX[3]) / (var.fL - (2*var.clearance))) }
+var xAngleDiff = { degrees(abs(var.aX1 - var.aX2)) }
 
 M7500 S{"X Surface Angle difference: " ^ var.xAngleDiff ^ " Threshold: " ^ global.mosProbeSquareAngleThreshold }
 
@@ -184,7 +193,7 @@ G6512 I{var.probeId} D1 K{(var.sY - var.hL - var.clearance)} J{(var.sX + var.hW 
 set var.pY[0] = { global.mosProbeCoordinate[1] }
 
 ; Return to our starting position
-G6550 Y{(var.sY - var.hL - var.clearance)}
+G6550 I{var.probeId} Y{(var.sY - var.hL - var.clearance)}
 
 ; Second probe point - front edge, inwards from left face by clearance distance
 ; towards the face plus overtravel distance.
@@ -192,8 +201,8 @@ G6512 I{var.probeId} D1 K{(var.sY - var.hL - var.clearance)} J{(var.sX - var.hW 
 set var.pY[1] = { global.mosProbeCoordinate[1] }
 
 ; Return to our starting position and then raise the probe
-G6550 Y{(var.sY - var.hL - var.clearance)}
-G6550 Z{var.safeZ}
+G6550 I{var.probeId} Y{(var.sY - var.hL - var.clearance)}
+G6550 I{var.probeId} Z{var.safeZ}
 
 ; Third probe point - rear edge, inwards from left face by clearance distance
 ; towards the face plus overtravel distance.
@@ -201,7 +210,7 @@ G6512 I{var.probeId} D1 K{(var.sY + var.hL + var.clearance)} J{(var.sX - var.hW 
 set var.pY[2] = { global.mosProbeCoordinate[1] }
 
 ; Return to our starting position
-G6550 Y{(var.sY + var.hL + var.clearance)}
+G6550 I{var.probeId} Y{(var.sY + var.hL + var.clearance)}
 
 ; Fourth probe point - rear edge, inwards from right face by clearance distance
 ; towards the face minus overtravel distance.
@@ -209,17 +218,17 @@ G6512 I{var.probeId} D1 K{(var.sY + var.hL + var.clearance)} J{(var.sX + var.hW 
 set var.pY[3] = { global.mosProbeCoordinate[1] }
 
 ; Return to our starting position and then raise the probe
-G6550 Y{(var.sY + var.hL + var.clearance)}
-G6550 Z{var.safeZ}
+G6550 I{var.probeId} Y{(var.sY + var.hL + var.clearance)}
+G6550 I{var.probeId} Z{var.safeZ}
 
 ; Okay like before, we now have 2 'lines' representing the Y edges of the block.
 ; Line 1: var.pY[0] to var.pY[1]
 ; Line 2: var.pY[2] to var.pY[3]
 
 ; Calculate the angle of each line.
-var yA1 = { atan((var.pY[1] - var.pY[0]) / (var.fW - (2*var.clearance))) }
-var yA2 = { atan((var.pY[2] - var.pY[3]) / (var.fW - (2*var.clearance))) }
-var yAngleDiff = { degrees(abs(var.yA1 - var.yA2)) }
+var aY1 = { atan((var.pY[1] - var.pY[0]) / (var.fW - (2*var.clearance))) }
+var aY2 = { atan((var.pY[2] - var.pY[3]) / (var.fW - (2*var.clearance))) }
+var yAngleDiff = { degrees(abs(var.aY1 - var.aY2)) }
 
 M7500 S{"Y Surface Angle difference: " ^ var.yAngleDiff ^ " Threshold: " ^ global.mosProbeSquareAngleThreshold }
 
@@ -228,7 +237,7 @@ M7500 S{"Y Surface Angle difference: " ^ var.yAngleDiff ^ " Threshold: " ^ globa
 if { var.yAngleDiff > global.mosProbeSquareAngleThreshold }
     abort { "Rectangular block surfaces on Y axis are not parallel - this block does not appear to be square. (" ^ var.yAngleDiff ^ " degrees difference in surface angle and our threshold is " ^ global.mosProbeSquareAngleThreshold ^ " degrees!)" }
 
-M7500 S{"Surface Angles X1=" ^ degrees(var.xA1) ^ " X2=" ^ degrees(var.xA2) ^ " Y1=" ^ degrees(var.yA1) ^ " Y2=" ^ degrees(var.yA2) }
+M7500 S{"Surface Angles X1=" ^ degrees(var.aX1) ^ " X2=" ^ degrees(var.aX2) ^ " Y1=" ^ degrees(var.aY1) ^ " Y2=" ^ degrees(var.aY2) }
 
 ; Okay, we have now validated that the block surfaces are square in both X and Y.
 ; But this does not mean they are square to each other, so we need to calculate
@@ -241,7 +250,9 @@ M7500 S{"Surface Angles X1=" ^ degrees(var.xA1) ^ " X2=" ^ degrees(var.xA2) ^ " 
 ; The angles are between the line and their respective axis, so
 ; a perfect 90 degree corner with completely squared machine axes
 ; would report an error of 0 degrees.
-var cornerAngleError = { abs(degrees(var.xA1 - var.yA1)) }
+set global.mosWorkPieceCornerAngle = { abs(degrees(var.aX1 - var.aY1)) }
+
+var cornerAngleError = { abs(90 - global.mosWorkPieceCornerAngle) }
 
 M7500 S{"Rectangle Block Corner Angle Error: " ^ var.cornerAngleError }
 
@@ -259,8 +270,16 @@ set global.mosWorkPieceCenterPos[1] = { var.sY }
 set global.mosWorkPieceDimensions[0] = { ((var.pX[2] + var.pX[3]) / 2) - ((var.pX[0] + var.pX[1]) / 2) }
 set global.mosWorkPieceDimensions[1] = { ((var.pY[2] + var.pY[3]) / 2) - ((var.pY[0] + var.pY[1]) / 2) }
 
+; Calculate error in dimensions from expected
+var dimErrorX = { abs(var.fW - global.mosWorkPieceDimensions[0]) }
+var dimErrorY = { abs(var.fL - global.mosWorkPieceDimensions[1]) }
+
+; Set the global error in dimensions
+; This can be used by other macros to configure the touch probe deflection.
+set global.mosWorkPieceDimensionalError = { abs(var.fW - global.mosWorkPieceDimensions[0]), abs(var.fL - global.mosWorkPieceDimensions[1]) }
+
 ; Make sure we're at the safeZ height
-G6550 I{var.probeId} Z{var.safeZ}
+G6550 I{var.probeId} I{var.probeId} Z{var.safeZ}
 
 ; Move to the calculated center of the block
 G6550 I{var.probeId} X{global.mosWorkPieceCenterPos[0]} Y{global.mosWorkPieceCenterPos[1]}
@@ -273,22 +292,23 @@ G6550 I{var.probeId} X{global.mosWorkPieceCenterPos[0]} Y{global.mosWorkPieceCen
 ; as the angle of the first X line.
 
 ; Calculate the slope and angle of the first X line.
-set global.mosWorkPieceRotationAngle = var.xA1
+set global.mosWorkPieceRotationAngle = var.aX1
 
 M7500 S{"Rectangle Block Rotation from X axis: " ^ global.mosWorkPieceRotationAngle ^ " degrees" }
 
-if { !global.mosExpertMode }
-    ; Save as local variables because these variable names are
-    ; hella long and the echo would otherwise exceed the
-    ; maximum command length.
-    var ctr = { global.mosWorkPieceCenterPos }
-    var dim = { global.mosWorkPieceDimensions }
-    var rot = { global.mosWorkPieceRotationAngle }
-    echo { "Rectangle Block - Center X=" ^ var.ctr[0] ^ " Y=" ^ var.ctr[1] ^ " Dimensions X=" ^ var.dim[0] ^ " Y=" ^ var.dim[1] ^ " Rotation=" ^ var.rot ^ " degrees" }
-else
-    echo { "global.mosWorkPieceCenterPos=" ^ global.mosWorkPieceCenterPos }
-    echo { "global.mosWorkPieceDimensions=" ^ global.mosWorkPieceDimensions }
-    echo { "global.mosWorkPieceRotationAngle=" ^ global.mosWorkPieceRotationAngle }
+if { !exists(param.R) || param.R != 0 }
+    if { !global.mosExpertMode }
+        ; Save as local variables because these variable names are
+        ; hella long and the echo would otherwise exceed the
+        ; maximum command length.
+        var ctr = { global.mosWorkPieceCenterPos }
+        var dim = { global.mosWorkPieceDimensions }
+        var rot = { global.mosWorkPieceRotationAngle }
+        echo { "Rectangle Block - Center X=" ^ var.ctr[0] ^ " Y=" ^ var.ctr[1] ^ " Dimensions X=" ^ var.dim[0] ^ " Y=" ^ var.dim[1] ^ " Rotation=" ^ var.rot ^ " degrees" }
+    else
+        echo { "global.mosWorkPieceCenterPos=" ^ global.mosWorkPieceCenterPos }
+        echo { "global.mosWorkPieceDimensions=" ^ global.mosWorkPieceDimensions }
+        echo { "global.mosWorkPieceRotationAngle=" ^ global.mosWorkPieceRotationAngle }
 
 ; Set WCS origin to the probed center, if requested
 if { exists(param.W) && param.W != null }
