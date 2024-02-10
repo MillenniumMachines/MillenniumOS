@@ -18,7 +18,7 @@
 ; the probe cycle.
 
 ; Display description of vise corner probe if not already displayed this session
-if { !global.mosExpertMode && !global.mosDescDisplayed[10] }
+if { !global.mosExpertMode && !global.mosDescDisplayed[11] }
     M291 P"This probe cycle finds the X, Y and Z co-ordinates of the corner of a workpiece by probing the top surface and twice each along the 2 edges that form the corner." R"MillenniumOS: Probe Vise Corner" T0 S2
     M291 P"You will be asked to enter approximate <b>surface lengths</b> for the surfaces forming the corner, a <b>clearance distance</b> and an <b>overtravel distance</b>." R"MillenniumOS: Probe Vise Corner" T0 S2
     M291 P"These define how far the probe will move along the surfaces from the corner location before probing, and how far inwards from the expected surface the probe can move before erroring if not triggered." R"MillenniumOS: Probe Vise Corner" T0 S2
