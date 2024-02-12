@@ -3,6 +3,16 @@
 ## Intro
 The Fusion360 post-processor for MillenniumOS outputs a relatively basic gcode flavour that is designed to work with the RRF 3.5+ gcode format. It also targets some custom gcodes implemented by MillenniumOS, used for workpiece probing, reference surface probing and tool length probing.
 
+## Installation
+1. Switch to the **"MANUFACTURE"** workbench in Fusion360.
+2. Under the **"Milling"** tab, click the **"NC Program"** icon (the one with a G at the top of a document).
+3. Click the **"Folder"** icon to the right of Post (**"Select post from the library"**).
+4. Hit the **"Import"** button (Document with Arrow on the left, facing right).
+5. Select the `millennium-os.cps` file from your filesystem.
+6. Select the `millennium-os.cps` file in the Post Library.
+7. Configure the post-processor in the **"Post properties"** section of the **"NC Program"** window to your liking. The default settings should work fine unless you have more advanced needs.
+8. Create a setup, add some toolpaths and then run the Post to generate MillenniumOS flavoured output gcode.
+
 ## Usage
 By default, the post-processor will wrap your operations with a number of commands that are designed to make life easier for novice machinists. In short, these make your programs feel slightly more like they're running on a 3D printer than a CNC mill.
 
