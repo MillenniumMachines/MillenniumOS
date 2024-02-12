@@ -44,7 +44,9 @@ global mosDatumToolName = "Datum Tool"
 
 ; Store additional tool information.
 ; Values are: [radius]
-global mosEmptyTool = { 0.0 }
+; DO NOT REMOVE THE COMMA, OTHERWISE THIS WILL CREATE A SCALAR
+; RATHER THAN A VECTOR VALUE.
+global mosEmptyTool = { 0.0, }
 global mosToolTable = { vector(limits.tools, global.mosEmptyTool) }
 
 ; Coordinates returned by the most recent probing operation.

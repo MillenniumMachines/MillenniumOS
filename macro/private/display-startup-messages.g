@@ -10,7 +10,7 @@ if { !exists(global.mosStartupMsgsDisplayed) }
 if { !global.mosStartupMsgsDisplayed }
     set global.mosStartupMsgsDisplayed = true
     if {(!exists(global.mosLoaded) || !global.mosLoaded)}
-        var startupError = { (exists(global.mosStartupError) && global.mosStartupError != null) ? global.mosStartupError : "Unknown error. Have you added <b>M98 P""mos.g""</b> tat the bottom of your <b>config.g</b>?" }
+        var startupError = { (exists(global.mosStartupError) && global.mosStartupError != null) ? global.mosStartupError : "Unknown error. Have you added <b>M98 P""mos.g""</b> at the bottom of your <b>config.g</b>?" }
         M291 P{ var.startupError } R"MillenniumOS: Startup Error" S2 T10
         M99
     else
