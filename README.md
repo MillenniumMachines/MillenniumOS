@@ -22,12 +22,12 @@ We build _on top of_ RepRapFirmware, providing operators of the Millennium Machi
 
 ## Notes
   - You _must_ be using RRF `v3.5.0-rc.2` or above. MOS uses many 'meta gcode' features that do not exist in earlier versions.
-  - MOS includes its own `daemon.g` file to implement repetitive tasks, such as VSSC. If you already have a `daemon.g` file, you will need to rename it and include it into the MOS `daemon.g`. This will require modifying your existing code to work smoothly with the MOS `daemon.g`, and is outside of the scope of this documentation. Anything you add to `daemon.g` and any affects it has on the functionality of MOS is unsupported.
+  - MOS includes its own `daemon.g` file to implement repetitive tasks, such as VSSC. If you want to implement your own repetitive tasks, you should create a `user-daemon.g` file in the `/sys` directory, which MillenniumOS will run during its' own daemon loop. Disabling the MOS daemon tasks will also disable any `user-daemon.g` tasks. Do not use any long-running loops inside `user-daemon.g` as this will interfere with MOS's own daemon behaviour.
 
 ## RRF Config
 You need a working RRF config with all of your machine axes moving in the right direction before you start.
 
-If you can't home your machine, sort that out first - following the MillenniumOS configuration wizard will be impossible without a machine that moves correctly.
+If you can't home your machine, make that work first - following the MillenniumOS configuration wizard will be impossible without a machine that moves correctly.
 
 You need to configure your Toolsetter and optionally, Touch Probe, in RRF before trying to use them in MillenniumOS.
 
@@ -58,7 +58,7 @@ M558 K2 P8 C"probe" H2 A10 S0.01 T1200 F300:50
 ```
 
 ## Bugs, Issues, Support
-If you find any bugs or issues, please report them on this repository. Best-effort support is available via our [Discord](https://discord.gg/ya4UUj7ax2).
+If you find any bugs or issues, please create an issue on this repository. Best-effort support is available via our [Discord](https://discord.gg/ya4UUj7ax2).
 
 ---
 
@@ -68,9 +68,9 @@ If you find any bugs or issues, please report them on this repository. Best-effo
 See [GCODE.md](GCODE.md) for a description of all MOS implemented G- and M- codes.
 
 ### Post-processor
-MOS is designed to work with a specific gcode dialect, designed for the Millennium Machines Milo. It does not support any other gcode dialects.
+MillenniumOS is designed to work with a specific gcode dialect, designed for the Millennium Machines Milo. It does not support any other gcode dialects.
 
-The following is an example preamble that MOS is designed to understand:
+The following is an example gcode style that MOS is designed to understand:
 
 ```gcode
 (Exported by Fusion360)
