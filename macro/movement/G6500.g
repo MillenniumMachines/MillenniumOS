@@ -29,7 +29,7 @@ if { global.mosProbeToolID != state.currentTool }
 ; after the M291 has been acknowledged.
 
 ; Prompt for bore diameter
-M291 P"Please enter approximate bore diameter in mm." R"MillenniumOS: Probe Bore" J1 T0 S6 F{(global.mosWorkPieceRadius != null) ? global.mosWorkPieceRadius : 0}
+M291 P"Please enter approximate bore diameter in mm." R"MillenniumOS: Probe Bore" J1 T0 S6 F{(global.mosWorkPieceRadius != null) ? global.mosWorkPieceRadius*2 : 0}
 if { result != 0 }
     abort { "Bore probe aborted!" }
 else

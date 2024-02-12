@@ -60,8 +60,8 @@ while { true }
     ; Calculate the magnitude of the direction vector
     var mag = { sqrt(pow(var.dX, 2) + pow(var.dY, 2) + pow(var.dZ, 2)) }
 
-    ; Calculate straight-line distance to target
-    var dist = { sqrt(pow(var.dX, 2) + pow(var.dY, 2) + pow(var.dZ, 2)) }
+    ; Calculate straight-line distance to target, round to 3dp
+    var dist = { floor(sqrt(pow(var.dX, 2) + pow(var.dY, 2) + pow(var.dZ, 2))*1000)/1000 }
 
     ; Find the v distances less than the distance to the target
     var vDistC = null
@@ -71,7 +71,7 @@ while { true }
     var vDistIndex = 0
     var slowSpeedIndex = null
 
-    M7500 S{"Distance to target: " ^ var.dist}
+    M7500 S{ "Distance to target: " ^ var.dist }
 
     ; Calculate the v distances
     while { iterations < #var.distances }
@@ -85,28 +85,30 @@ while { true }
             if { !var.seenvDists }
                 set var.vDistIndex = { iterations }
                 ; The number of v distances is the total number of distances
-                ; minus the number of iterations before seeing a v distance.
+                ; minus the number of iterations before seeing a valid distance.
                 set var.vDistC = { #var.distances - iterations }
-                ; With a v distanceCount, we can instantiate new lists for
-                ; v distances and v distance names.
+                ; With a valid distanceCount, we can instantiate new lists for
+                ; valid distances and valid distance names.
                 set var.vD = { vector(var.vDistC, 0) }
-                set var.vDistN = { vector(var.vDistC, "Unknown") }
+                set var.vDistN = { vector(var.vDistC+1, "Unknown") }
 
-                ; Only run the above when seeing the first v distance
+                ; Only run the above when seeing the first valid distance
                 set var.seenvDists = true
 
-            ; Append the v distance to the list of v distances
+            ; Append the valid distance to the list of valid distances
             set var.vD[iterations - var.vDistIndex] = { var.distances[iterations] }
             set var.vDistN[iterations - var.vDistIndex] = { var.distanceNames[iterations] }
 
 
+    ; Add cancel button
+    set var.vDistN[#var.vDistN-1] = "Cancel"
 
     ; Calculate the index where we switch to slow speed.
     set var.slowSpeedIndex = { var.slowSpeed - (#var.distances - var.vDistC) }
 
     ; Ask operator to select a distance to move towards the target point.
-    M291 P{"Position: X=" ^ var.cP[0] ^ " Y=" ^ var.cP[1] ^ " Z=" ^ var.cP[2] ^ "<br/>Distance to target: " ^ (ceil(var.dist*100)/100) ^ "mm.<br/>Select distance to move towards target."} R"MillenniumOS: Manual Probe" S4 K{ var.vDistN } D{var.vDistC} T0 J1
-    if { result != 0 }
+    M291 P{"Position: X=" ^ var.cP[0] ^ " Y=" ^ var.cP[1] ^ " Z=" ^ var.cP[2] ^ "<br/>Distance to target: " ^ var.dist ^ "mm.<br/>Select distance to move towards target."} R"MillenniumOS: Manual Probe" S4 K{ var.vDistN } D{var.vDistC} T0
+    if { result != 0 || input == (#var.vDistN-1) }
         abort { "Operator cancelled probing!" }
 
     var dI = { input }
@@ -114,7 +116,7 @@ while { true }
     M7500 S{"Selected distance index: " ^ var.dI}
 
     ; Validate selected distance
-    if { var.dI < 0 || var.dI > #var.vDistN }
+    if { var.dI < 0 || var.dI >= (#var.vDistN-1) }
         abort { "Invalid distance selected!" }
 
     ; Otherwise, pick the operator selected distance

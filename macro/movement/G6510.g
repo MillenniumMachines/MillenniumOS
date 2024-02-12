@@ -24,6 +24,10 @@ if { !global.mosExpertMode && !global.mosDescDisplayed[4] }
 
     set global.mosDescDisplayed[4] = true
 
+; Make sure probe tool is selected
+if { global.mosProbeToolID != state.currentTool }
+    T T{global.mosProbeToolID}
+
 ; Prompt for overtravel distance
 M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far far in we move from the expected surface to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{global.mosProbeOvertravel}
 if { result != 0 }
@@ -68,8 +72,14 @@ else
                 abort { "Probe distance was negative!" }
 
             if { !global.mosExpertMode }
-                M291 P{"Probe will now move down <b>" ^ var.probeDepth ^ "</b> mm and probe towards the <b>" ^ global.mosSurfaceLocationNames[var.probeAxis] ^ "</b> surface." } R"MillenniumOS: Probe Surface" T0 S3
-                if { result != 0 }
-                    abort { "Single Surface probe aborted!" }
+                if { !var.isZProbe }
+                    M291 P{"Probe will now move down <b>" ^ var.probeDepth ^ "</b> mm and probe towards the <b>" ^ global.mosSurfaceLocationNames[var.probeAxis] ^ "</b> surface." } R"MillenniumOS: Probe Surface" T0 S3
+                    if { result != 0 }
+                        abort { "Single Surface probe aborted!" }
+                else
+                    M291 P{"Probe will now move towards the <b>" ^ global.mosSurfaceLocationNames[var.probeAxis] ^ "</b> surface." } R"MillenniumOS: Probe Surface" T0 S3
+                    if { result != 0 }
+                        abort { "Single Surface probe aborted!" }
+
 
             G6510.1 W{exists(param.W)? param.W : null} H{var.probeAxis} I{var.probeDist} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probeDepth}

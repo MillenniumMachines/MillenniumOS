@@ -17,9 +17,9 @@ if { !exists(param.N) || param.N < 0 || param.N >= (#global.mosOutsideCornerName
 
 var probeId = { global.mosFeatureTouchProbe ? global.mosTouchProbeID : null }
 
-set global.mosWorkPieceCornerNum = { null }
+set global.mosWorkPieceCornerNum =  null
+set global.mosWorkPieceCornerAngle = null
 set global.mosWorkPieceCornerPos = { null, null }
-set global.mosWorkPieceCornerAngle = { null }
 
 ; Make sure probe tool is selected
 if { global.mosProbeToolID != state.currentTool }

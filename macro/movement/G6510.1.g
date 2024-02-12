@@ -35,13 +35,12 @@ var sX   = { param.J }
 var sY   = { param.K }
 var sZ   = { param.L }
 
-; Apply tool radius to overtravel. We want to allow
-; less movement past the expected point of contact
-; with the surface based on the tool radius.
-; For big tools and low overtravel values, this value
-; might end up being negative. This is fine, as long
-; as the configured tool radius is accurate.
-var overtravel = { (exists(param.O) ? param.O : global.mosProbeOvertravel) - global.mosToolTable[state.currentTool][0] }
+; We do not apply tool radius to overtravel, because we need overtravel for
+; Z probes as well as X/Y. Tool radius only applies for X/Y probes.
+var overtravel = { exists(param.O) ? param.O : global.mosProbeOvertravel }
+
+; Tool Radius
+var tR = { global.mosToolTable[state.currentTool][0] }
 
 ; Set target positions
 var tPX = { var.sX }
@@ -52,22 +51,22 @@ var probeAxis = { param.H }
 var probeDist = { param.I }
 
 if { var.probeAxis == 0 }
-    set var.tPX = { var.tPX + var.probeDist }
+    set var.tPX = { var.tPX + var.probeDist + var.overtravel - var.tR }
 elif { var.probeAxis == 1 }
-    set var.tPX = { var.tPX - var.probeDist }
+    set var.tPX = { var.tPX - var.probeDist - var.overtravel + var.tR }
 elif { var.probeAxis == 2 }
-    set var.tPY = { var.tPY + var.probeDist }
+    set var.tPY = { var.tPY + var.probeDist + var.overtravel - var.tR }
 elif { var.probeAxis == 3 }
-    set var.tPY = { var.tPY - var.probeDist }
+    set var.tPY = { var.tPY - var.probeDist - var.overtravel + var.tR }
 elif { var.probeAxis == 4 }
-    set var.tPZ = { var.tPZ - var.probeDist }
+    set var.tPZ = { var.tPZ - var.probeDist - var.overtravel }
 
 ; Check if the positions are within machine limits
 G6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
 
 ; Run probing operation
-G6512 I{var.probeId} L{var.sZ} X{var.tPX} Y{var.tPY} Z{var.tPZ}
+G6512 I{var.probeId} J{var.sX} K{var.sY} L{var.sZ} X{var.tPX} Y{var.tPY} Z{var.tPZ}
 
 var sAxis = { (var.probeAxis <= 1)? "X" : (var.probeAxis <= 3)? "Y" : "Z" }
 

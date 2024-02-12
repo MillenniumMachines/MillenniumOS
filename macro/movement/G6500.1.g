@@ -27,8 +27,8 @@ var probeId = { global.mosFeatureTouchProbe ? global.mosTouchProbeID : null }
 ; TODO: Validate minimum bore diameter we can probe based on
 ; dive height and back-off distance.
 
+set global.mosWorkPieceRadius = null
 set global.mosWorkPieceCenterPos = { null, null }
-set global.mosWorkPieceRadius = { null }
 
 ; Make sure probe tool is selected
 if { global.mosProbeToolID != state.currentTool }

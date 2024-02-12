@@ -19,6 +19,7 @@ We build _on top of_ RepRapFirmware, providing operators of the Millennium Machi
   - Add `M98 P"mos.g"` to the bottom of your `config.g` file.
   - Restart RRF (`M999`)
   - Follow the configuration wizard in Duet Web Control that will guide you through the necessary configuration settings.
+  - Install one of the post-processors from [here](./post-processors/) into your CAM tool of choice.
 
 ## Notes
   - You _must_ be using RRF `v3.5.0-rc.2` or above. MOS uses many 'meta gcode' features that do not exist in earlier versions.
@@ -56,6 +57,13 @@ M558 K1 P8 C"xstopmax" H10 A10 S0.01 T1200 F300:60
 ; Probe Speed F300:50 = initial probe speed runs at 300mm/min, subsequent at 50mm/min
 M558 K2 P8 C"probe" H2 A10 S0.01 T1200 F300:50
 ```
+
+## Warnings
+Due to a some issues with RRF as it currently stands, there are a small number of situations where you can shoot yourself in the foot when running MillenniumOS macros outside of a print file these are:
+
+ - Clicking Cancel on a messagebox to abort a probing routine may trigger undesired behaviour when running a probe **outside** of a print file. This is because clicking cancel on a message box, if outside of a print, simply returns from the file that created the box. There is no way to easily detect this from any calling macros so we could end up running moves that were unexpected. This is something that ideally will need to be fixed by the RRF devs and is documented [here](https://forum.duet3d.com/topic/34945/meta-gcode-result-variable-inconsistent-with-docs?_=1707734672834). When clicking cancel from _within_ a print, the whole print is aborted from that point so this behaviour should not be an issue when executing actual CAM code produced by our post-processor.
+
+ - Toolchanges cannot currently be cancelled, so if a touch probe is not detected during the touch probe installation routine, then the active tool number will still be set to the probing tool. This will not affect print files because an aborted toolchange aborts the print (but still sets the active tool number). We use the tool number as a guard to not execute probing routines unless the touch probe is installed, so this leaves some window of vulnerability where it could _appear_ like a touch probe is connected when it actually wasn't detected. Again, this is likely something that should be fixed in RRF but if we absolutely _have_ to work around it by tracking touchprobe connectivity ourselves then we can implement this.
 
 ## Bugs, Issues, Support
 If you find any bugs or issues, please create an issue on this repository. Best-effort support is available via our [Discord](https://discord.gg/ya4UUj7ax2).
