@@ -21,14 +21,15 @@ var maxIterations = { var.maxWait / (var.delay/1000) }
 ; Generate vector of previous values for each probe
 var previousValues = { vector(#sensors.probes, null) }
 
-; Loop until a probe is detected or the maximum number of iterations is reached
+; Loop until a probe status change is detected or the maximum number
+; of iterations is reached.
 while { iterations < var.maxIterations && global.mosDetectedProbeID == null }
     G4 P{ var.delay }
 
     ; Loop through all configured probes
     while { iterations < #sensors.probes }
-        ; Skip incompatible probe types
-        if { sensors.probes[iterations].type < 5 || sensors.probes[iterations].type > 8 }
+        ; Skip non-existent probes or incompatible probe types
+        if { sensors.probes[iterations] == null || sensors.probes[iterations].type < 5 || sensors.probes[iterations].type > 8 }
             continue
 
         ; If probe value has changed and we had a previous iteration value, treat this as a detected probe and return.
