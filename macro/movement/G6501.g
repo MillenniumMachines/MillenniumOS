@@ -23,7 +23,7 @@ if { global.mosProbeToolID != state.currentTool }
     T T{global.mosProbeToolID}
 
 ; Prompt for boss diameter
-M291 P"Please enter approximate boss diameter in mm." R"MillenniumOS: Probe Boss" J1 T0 S6
+M291 P"Please enter approximate boss diameter in mm." R"MillenniumOS: Probe Boss" J1 T0 S6 F{(global.mosWorkPieceRadius != null) ? global.mosWorkPieceRadius*2 : 0}
 if { result != 0 }
     abort { "Boss probe aborted!" }
 else

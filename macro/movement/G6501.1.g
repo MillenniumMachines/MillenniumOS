@@ -24,8 +24,8 @@ if { !exists(param.H) }
 
 var probeId = { global.mosFeatureTouchProbe ? global.mosTouchProbeID : null }
 
+set global.mosWorkPieceRadius = null
 set global.mosWorkPieceCenterPos = { null, null }
-set global.mosWorkPieceRadius = { null }
 
 ; Make sure probe tool is selected
 if { global.mosProbeToolID != state.currentTool }

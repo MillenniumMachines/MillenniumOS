@@ -35,13 +35,9 @@ if { var.tI == global.mosProbeToolID }
         ; Wait for a 100ms activation of the touch probe for a maximum of 30s
         M8002 K{global.mosTouchProbeID} D100 W30
 
-        ; Check if requested probe ID was detected.
-        var touchProbeConnected = { exists(global.mosProbeDetected[global.mosTouchProbeID]) ? global.mosProbeDetected[global.mosTouchProbeID] : false }
-
-        if { !var.touchProbeConnected }
-            echo {"Did not detect a " ^ var.tD ^ " with ID " ^ global.mosTouchProbeID ^ "! Please check your " ^ var.tD ^ " and run <b>T" ^ global.mosProbeToolID ^ "</b> again to verify it is connected."}
-            M99
-        ; Touch probe is now active.
+        ; Touch probe may now be active or not.
+        ; We check the touch probe status in tpost, as checking
+        ; it here cannot abort the tool change anyway.
 
     else
         ; If no touch probe enabled, ask user to install datum tool.

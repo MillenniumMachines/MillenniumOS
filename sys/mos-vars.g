@@ -43,11 +43,12 @@ global mosTouchProbeToolName = "Touch Probe"
 global mosDatumToolName = "Datum Tool"
 
 ; Store additional tool information.
-; Values are: [radius, inToolChanger, toolChangerPos]
-global mosEmptyTool = { 0.0, false, {0, 0} }
+; Values are: [radius]
+global mosEmptyTool = { 0.0 }
 global mosToolTable = { vector(limits.tools, global.mosEmptyTool) }
 
 ; Coordinates returned by the most recent probing operation.
+global mosProbeComplete=false
 global mosProbeCoordinate={ null, null, null }
 global mosProbeVariance={ null, null, null }
 
@@ -73,7 +74,7 @@ global mosProbeOvertravel=2.0
 ; corner or parallel surface. Surfaces or corners that are
 ; not within this threshold will be considered to be non-parallel
 ; or perpendicular.
-global mosProbeSquareAngleThreshold=0.1
+global mosProbeSquareAngleThreshold=0.2
 
 ; Delay in ms after probing operation completes before recording position.
 ; Do not override this unless you are seeing false protected move triggers

@@ -15,10 +15,10 @@ if { !exists(param.H) || !exists(param.I) }
 
 var probeId = { global.mosFeatureTouchProbe ? global.mosTouchProbeID : null }
 
-set global.mosWorkPieceDimensions = { null, null }
-set global.mosWorkPieceCenterPos = { null, null }
 set global.mosWorkPieceRotationAngle = null
 set global.mosWorkPieceDimensionalError = null
+set global.mosWorkPieceDimensions = { null, null }
+set global.mosWorkPieceCenterPos = { null, null }
 
 ; Make sure probe tool is selected
 if { global.mosProbeToolID != state.currentTool }
@@ -99,6 +99,9 @@ var pY = { null, null, null, null }
 ; macro does not automatically move back to its' safe Z position after
 ; probing, and we must manage this ourselves.
 
+; Move outwards on X first
+G6550 I{var.probeId} X{(var.sX - var.hW - var.clearance)}
+
 ; First probe point - left edge, inwards from front face by clearance distance
 ; towards the face plus overtravel distance.
 G6512 I{var.probeId} D1 J{(var.sX - var.hW - var.clearance)} K{(var.sY - var.hL + var.clearance)} L{param.L} X{(var.sX - var.hW + var.overtravel)}
@@ -132,9 +135,10 @@ G6550 I{var.probeId} X{(var.sX + var.hW + var.clearance)}
 G6512 I{var.probeId} D1 J{(var.sX + var.hW + var.clearance)} K{(var.sY - var.hL + var.clearance)} L{param.L} X{(var.sX + var.hW - var.overtravel)}
 set var.pX[3] = { global.mosProbeCoordinate[0] }
 
-; Return to our starting position and then raise the probe
+; Return to our starting position. Our first Y probe will
+; move around the edge we just probed so we don't need to
+; lift the probe here.
 G6550 I{var.probeId} X{(var.sX + var.hW + var.clearance)}
-G6550 I{var.probeId} Z{var.safeZ}
 
 ; Okay, we now have 2 'lines' representing the X edges of the block.
 ; Line 1: var.pX[0] to var.pX[1]
@@ -184,6 +188,10 @@ set var.sX = { (var.pX[0] + var.pX[1] + var.pX[2] + var.pX[3]) / 4 }
 set global.mosWorkPieceCenterPos[0] = { var.sX }
 
 ; Use the recalculated center of the block to probe Y surfaces.
+
+; Move outwards on Y first
+; Any movement on X here will crash the probe, DO NOT.
+G6550 I{var.probeId} Y{(var.sY - var.hL - var.clearance)}
 
 ; Probe Y surfaces
 
@@ -250,9 +258,10 @@ M7500 S{"Surface Angles X1=" ^ degrees(var.aX1) ^ " X2=" ^ degrees(var.aX2) ^ " 
 ; The angles are between the line and their respective axis, so
 ; a perfect 90 degree corner with completely squared machine axes
 ; would report an error of 0 degrees.
-set global.mosWorkPieceCornerAngle = { abs(degrees(var.aX1 - var.aY1)) }
+set global.mosWorkPieceCornerAngle = { 90 + degrees(var.aX1 - var.aY1) }
 
-var cornerAngleError = { abs(90 - global.mosWorkPieceCornerAngle) }
+; Square corners should be 90 degrees
+var cornerAngleError = { 90 - global.mosWorkPieceCornerAngle }
 
 M7500 S{"Rectangle Block Corner Angle Error: " ^ var.cornerAngleError }
 
