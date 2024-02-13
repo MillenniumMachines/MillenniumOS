@@ -34,16 +34,13 @@ set global.mosWorkPieceCenterPos = { null, null }
 if { global.mosProbeToolID != state.currentTool }
     T T{global.mosProbeToolID}
 
-; Tool Radius is the first entry for each value in
-; our extended tool table.
-
 ; Apply tool radius to overtravel. We want to allow
 ; less movement past the expected point of contact
 ; with the surface based on the tool radius.
 ; For big tools and low overtravel values, this value
 ; might end up being negative. This is fine, as long
 ; as the configured tool radius is accurate.
-var overtravel = { (exists(param.O) ? param.O : global.mosProbeOvertravel) - global.mosToolTable[state.currentTool][0] }
+var overtravel = { (exists(param.O) ? param.O : global.mosProbeOvertravel) - ((state.currentTool <= limits.tools-1 && state.currentTool >= 0) ? global.mosToolTable[state.currentTool][0] : 0) }
 
 M7500 S{"Distance Modifiers adjusted for Tool Radius - Overtravel=" ^ var.overtravel }
 

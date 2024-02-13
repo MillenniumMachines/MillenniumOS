@@ -37,7 +37,7 @@ if { global.mosProbeToolID != state.currentTool }
 ; Apply tool radius to clearance. We want to make sure
 ; the surface of the tool and the workpiece are the
 ; clearance distance apart, rather than less than that.
-var clearance = { (exists(param.T) ? param.T : global.mosProbeClearance) + global.mosToolTable[state.currentTool][0] }
+var clearance = { (exists(param.T) ? param.T : global.mosProbeClearance) + ((state.currentTool <= limits.tools-1 && state.currentTool >= 0) ? global.mosToolTable[state.currentTool][0] : 0) }
 
 ; Apply tool radius to overtravel. We want to allow
 ; less movement past the expected point of contact
@@ -45,7 +45,7 @@ var clearance = { (exists(param.T) ? param.T : global.mosProbeClearance) + globa
 ; For big tools and low overtravel values, this value
 ; might end up being negative. This is fine, as long
 ; as the configured tool radius is accurate.
-var overtravel = { (exists(param.O) ? param.O : global.mosProbeOvertravel) - global.mosToolTable[state.currentTool][0] }
+var overtravel = { (exists(param.O) ? param.O : global.mosProbeOvertravel) - ((state.currentTool <= limits.tools-1 && state.currentTool >= 0) ? global.mosToolTable[state.currentTool][0] : 0) }
 
 M7500 S{"Distance Modifiers adjusted for Tool Radius - Clearance=" ^ var.clearance ^ " Overtravel=" ^ var.overtravel }
 
