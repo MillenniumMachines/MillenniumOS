@@ -139,140 +139,13 @@ if { var.wizFeatureTouchProbe == null }
     M291 P"Would you like to enable the <b>Touch Probe</b> feature and detect your touch probe?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"}
     set var.wizFeatureTouchProbe = { (input == 0) ? true : false }
 
-if { var.wizFeatureTouchProbe && var.wizTouchProbeRadius == null }
-    ; Ask the operator to measure and enter the touch probe radius.
-    M291 P{"Please enter the radius of the touch probe tip. You should measure the diameter with calipers or a micrometer and divide by 2."} R"MillenniumOS: Configuration Wizard" S6 L0.1 H5 F1.0
-    set var.wizTouchProbeRadius = { input }
-
-; Touch Probe ID Detection and deflection calibration.
-; We must trigger this prompt if deflection is not set, since we actually need to use the
-; touch probe. We cannot use tool number guards to check if the touch probe is already
-; inserted because that requires a fully configured touch probe!
-if { var.wizFeatureTouchProbe && (var.wizTouchProbeID == null || var.wizTouchProbeDeflection == null) }
-    M291 P"<b>CAUTION</b>: Please insert your touch probe into the spindle and make sure it is connected.<br/>When ready, press <b>OK</b>, and then manually activate your touch probe until it is detected." R"MillenniumOS: Configuration Wizard" S2 T0
-
-    echo { "Waiting for touch probe activation... "}
-
-    ; Wait for a 100ms activation of any probe for a maximum of 30s
-    M8001 D100 W30
-
-    if { global.mosDetectedProbeID == null }
-        M291 P"MillenniumOS: Touch probe not detected! Please make sure your probe is configured correctly in RRF." R"MillenniumOS: Configuration Wizard" S2 T0
-        abort { "MillenniumOS: Touch probe not detected!" }
-
-    set var.wizTouchProbeID    = global.mosDetectedProbeID
-    set global.mosTouchProbeID = var.wizTouchProbeID
-
-    M291 P{"Touch probe detected with ID " ^ var.wizTouchProbeID ^ "!"} R"MillenniumOS: Configuration Wizard" S2 T0
-
-    ; Probe a rectangular block to calculate the deflection if the touch probe is enabled
-    M291 P{"We now need to measure the deflection of the touch probe. We will do this by probing a <b>1-2-3 block</b> or other rectangular item of <b>accurate and known dimensions</b> (greater than 10mm per side)."} R"MillenniumOS: Configuration Wizard" S2 T0
-
-    if { (!move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed) }
-        M291 P{"One or more axes are not homed.<br/>Press <b>OK</b> to home the machine and continue."} R"MillenniumOS: Configuration Wizard" S3 T0
-        if { result != 0 }
-            abort { "MillenniumOS: Operator aborted machine homing!" }
-        G28
-
-
-    ; Park centrally to enable the 1-2-3 block installation
-    G27
-
-    M291 P{"Please secure your 1-2-3 block or chosen rectangular item onto the table, largest face on top.<br/><b>CAUTION</b>: Please make sure all 4 side surfaces are free of obstructions!"} R"MillenniumOS: Configuration Wizard" S2 T0
-    M291 P{"Please enter the exact <b>surface length</b> of the rectangular item along the X axis in mm.<br/><b>NOTE</b>: Along the X axis means the surface facing towards the operator."} R"MillenniumOS: Configuration Wizard" J1 T0 S6 F50.8
-    if { result != 0 }
-        abort { "MillenniumOS: Operator aborted configuration wizard!" }
-
-    var measuredX = { input }
-
-    if { var.measuredX < 10 }
-        abort { "MillenniumOS: Measured X length is too short, must be at least 10mm!" }
-
-    M291 P{"Please enter the exact <b>surface length</b> of the rectangular item along the Y axis in mm.<br/><b>NOTE</b>: Along the Y axis means the surface facing to the left or right."} R"MillenniumOS: Configuration Wizard" J1 T0 S6 F76.2
-    if { result != 0 }
-        abort { "MillenniumOS: Operator aborted configuration wizard!" }
-
-    var measuredY = { input }
-
-    if { var.measuredY < 10 }
-        abort { "MillenniumOS: Measured Y length is too short, must be at least 10mm!" }
-
-    M291 P{"Jog the touch probe within 5mm of the center of the item and press <b>OK</b>.<br/><b>CAUTION</b>: The probe height when clicking <b>OK</b> is assumed to be safe for horizontal moves!"} R"MillenniumOS: Configuration Wizard" X1 Y1 Z1 S3 T0
-
-    M291 P"Please enter the depth to probe at in mm, relative to the current location. A value of 10 will move the probe downwards 10mm before probing towards the item." R"MillenniumOS: Configuration Wizard" J1 T0 S6 F{global.mosProbeOvertravel}
-    if { result != 0 }
-        abort { "MillenniumOS: Operator aborted configuration wizard!" }
-
-    var probingDepth = { input }
-
-    if { var.probingDepth < 0 }
-        abort { "Probing depth must not be negative!" }
-
-    if { !global.mosExpertMode }
-        M291 P{"We will now probe the item from 15mm outside each surface, at 2 points along each surface, at a depth of " ^ var.probingDepth ^ "mm.<br/>Press <b>OK</b> to proceed!"} R"MillenniumOS: Configuration Wizard" S3 T0
-        if { result != 0 }
-            abort { "MillenniumOS: Operator aborted configuration wizard!" }
-
-    ; Enable the feature temporarily so we can use the touch probe later.
-    set global.mosFeatureTouchProbe = var.wizFeatureTouchProbe
-
-    ; It is possible that our settings have been reset, but the touch probe already
-    ; has a deflection value applied to its' tool radius. We must reset the tool radius
-    ; back to the wizard value before probing to calculate the deflection.
-
-    ; Remove any existing probe tool so
-    ; it can be redefined.
-    M4001 P{global.mosProbeToolID}
-
-    ; Add a wizard touch probe using the provided radius
-    ; Use a temporary spindle ID for the wizard spindle
-    M4000 S{"Wizard Touch Probe"} P{global.mosProbeToolID} R{ var.wizTouchProbeRadius } I{var.wizSpindleID}
-
-    ; Switch to the probe tool.
-    T{global.mosProbeToolID} P0
-
-    G6503.1 W{null} H{var.measuredX} I{var.measuredY} T15 O5 J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
-    ; Reset after probing so we don't override wizard
-    ; settings if it needs to run again.
-    set global.mosFeatureTouchProbe = null
-
-    if { global.mosWorkPieceDimensions[0] == null || global.mosWorkPieceDimensions[1] == null }
-        T-1 P0
-        M4001 P{global.mosProbeToolID}
-        abort { "MillenniumOS: Rectangular block probing failed!" }
-
-    M291 P{"Measured block dimensions are <b>X=" ^ global.mosWorkPieceDimensions[0] ^ " Y=" ^ global.mosWorkPieceDimensions[1] ^ "</b>.<br/>Current probe location is over the center of the item."} R"MillenniumOS: Configuration Wizard" S2 T0
-
-    var deflectionX = { var.measuredX - global.mosWorkPieceDimensions[0] }
-    var deflectionY = { var.measuredY - global.mosWorkPieceDimensions[1] }
-
-    ; We divide the deflection value by 4, as this gives us the deflection value
-    ; that we would need to apply to each probe point.
-    set var.wizTouchProbeDeflection = { (var.deflectionX + var.deflectionY) / 4 }
-
-    ; Reset the tool radius back to the existing, possibly-deflected value
-    ; as we cannot guarantee that the rest of the configuration wizard will
-    ; be completed successfully.
-    ; On completion, the deflection value will be written to file and will be
-    ; applied at the next reboot.
-
-    M291 P{"Measured deflection is <b>" ^ var.wizTouchProbeDeflection ^ "mm</b>.<br/>This will be applied to your touch probe on reboot or reload."} R"MillenniumOS: Configuration Wizard" S2 T0
-
-    ; Switch away from the wizard touch probe.
-    T-1 P0
-
-    ; Park the spindle to ease the removal of the probe.
-    G27 Z1
-
-    M291 P{"Please remove the touch probe now and stow it safely away from the machine. Click <b>OK</b> when stowed safely."} R{"MillenniumOS: Configuration Wizard"} S2
-
-    ; Remove the temporary probe tool.
-    M4001 P{global.mosProbeToolID}
-
 ; Toolsetter Feature Enable / Disable
 if { var.wizFeatureToolSetter == null }
     M291 P"Would you like to enable the <b>Toolsetter</b> feature and detect your toolsetter?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"}
     set var.wizFeatureToolSetter = { (input == 0) ? true : false }
+
+; We configure the toolsetter first. We configure the touch probe reference surface
+; directly after this, as the datum tool will still be installed.
 
 ; Toolsetter ID Detection
 if { var.wizFeatureToolSetter }
@@ -385,6 +258,137 @@ if { var.wizFeatureToolSetter }
         M4001 P{global.mosProbeToolID}
 
         M291 P{"You may now remove the <b>datum tool</b> from the spindle."} R"MillenniumOS: Configuration Wizard" S2 T0
+
+
+if { var.wizFeatureTouchProbe && var.wizTouchProbeRadius == null }
+    ; Ask the operator to measure and enter the touch probe radius.
+    M291 P{"Please enter the radius of the touch probe tip. You should measure the diameter with calipers or a micrometer and divide by 2."} R"MillenniumOS: Configuration Wizard" S6 L0.1 H5 F1.0
+    set var.wizTouchProbeRadius = { input }
+
+; Touch Probe ID Detection and deflection calibration.
+; We must trigger this prompt if deflection is not set, since we actually need to use the
+; touch probe. We cannot use tool number guards to check if the touch probe is already
+; inserted because that requires a fully configured touch probe!
+if { var.wizFeatureTouchProbe && (var.wizTouchProbeID == null || var.wizTouchProbeDeflection == null) }
+    M291 P"<b>CAUTION</b>: Please insert your touch probe into the spindle and make sure it is connected.<br/>When ready, press <b>OK</b>, and then manually activate your touch probe until it is detected." R"MillenniumOS: Configuration Wizard" S2 T0
+
+    echo { "Waiting for touch probe activation... "}
+
+    ; Wait for a 100ms activation of any probe for a maximum of 30s
+    M8001 D100 W30
+
+    if { global.mosDetectedProbeID == null }
+        M291 P"MillenniumOS: Touch probe not detected! Please make sure your probe is configured correctly in RRF." R"MillenniumOS: Configuration Wizard" S2 T0
+        abort { "MillenniumOS: Touch probe not detected!" }
+
+    set var.wizTouchProbeID    = global.mosDetectedProbeID
+    set global.mosTouchProbeID = var.wizTouchProbeID
+
+    M291 P{"Touch probe detected with ID " ^ var.wizTouchProbeID ^ "!"} R"MillenniumOS: Configuration Wizard" S2 T0
+
+    ; Probe a rectangular block to calculate the deflection if the touch probe is enabled
+    M291 P{"We now need to measure the deflection of the touch probe. We will do this by probing a <b>1-2-3 block</b> or other rectangular item of <b>accurate and known dimensions</b> (greater than 10mm per side)."} R"MillenniumOS: Configuration Wizard" S2 T0
+
+    if { (!move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed) }
+        M291 P{"One or more axes are not homed.<br/>Press <b>OK</b> to home the machine and continue."} R"MillenniumOS: Configuration Wizard" S3 T0
+        if { result != 0 }
+            abort { "MillenniumOS: Operator aborted machine homing!" }
+        G28
+
+    ; Park centrally to enable the 1-2-3 block installation
+    G27
+
+    M291 P{"Please secure your 1-2-3 block or chosen rectangular item onto the table, largest face on top.<br/><b>CAUTION</b>: Please make sure all 4 side surfaces are free of obstructions!"} R"MillenniumOS: Configuration Wizard" S2 T0
+    M291 P{"Please enter the exact <b>surface length</b> of the rectangular item along the X axis in mm.<br/><b>NOTE</b>: Along the X axis means the surface facing towards the operator."} R"MillenniumOS: Configuration Wizard" J1 T0 S6 F50.8
+    if { result != 0 }
+        abort { "MillenniumOS: Operator aborted configuration wizard!" }
+
+    var measuredX = { input }
+
+    if { var.measuredX < 10 }
+        abort { "MillenniumOS: Measured X length is too short, must be at least 10mm!" }
+
+    M291 P{"Please enter the exact <b>surface length</b> of the rectangular item along the Y axis in mm.<br/><b>NOTE</b>: Along the Y axis means the surface facing to the left or right."} R"MillenniumOS: Configuration Wizard" J1 T0 S6 F76.2
+    if { result != 0 }
+        abort { "MillenniumOS: Operator aborted configuration wizard!" }
+
+    var measuredY = { input }
+
+    if { var.measuredY < 10 }
+        abort { "MillenniumOS: Measured Y length is too short, must be at least 10mm!" }
+
+    M291 P{"Jog the touch probe within 5mm of the center of the item and press <b>OK</b>.<br/><b>CAUTION</b>: The probe height when clicking <b>OK</b> is assumed to be safe for horizontal moves!"} R"MillenniumOS: Configuration Wizard" X1 Y1 Z1 S3 T0
+
+    M291 P"Please enter the depth to probe at in mm, relative to the current location. A value of 10 will move the probe downwards 10mm before probing towards the item." R"MillenniumOS: Configuration Wizard" J1 T0 S6 F{global.mosProbeOvertravel}
+    if { result != 0 }
+        abort { "MillenniumOS: Operator aborted configuration wizard!" }
+
+    var probingDepth = { input }
+
+    if { var.probingDepth < 0 }
+        abort { "Probing depth must not be negative!" }
+
+    if { !global.mosExpertMode }
+        M291 P{"We will now probe the item from 15mm outside each surface, at 2 points along each surface, at a depth of " ^ var.probingDepth ^ "mm.<br/>Press <b>OK</b> to proceed!"} R"MillenniumOS: Configuration Wizard" S3 T0
+        if { result != 0 }
+            abort { "MillenniumOS: Operator aborted configuration wizard!" }
+
+    ; Enable the feature temporarily so we can use the touch probe later.
+    set global.mosFeatureTouchProbe = var.wizFeatureTouchProbe
+
+    ; It is possible that our settings have been reset, but the touch probe already
+    ; has a deflection value applied to its' tool radius. We must reset the tool radius
+    ; back to the wizard value before probing to calculate the deflection.
+
+    ; Remove any existing probe tool so
+    ; it can be redefined.
+    M4001 P{global.mosProbeToolID}
+
+    ; Add a wizard touch probe using the provided radius
+    ; Use a temporary spindle ID for the wizard spindle
+    M4000 S{"Wizard Touch Probe"} P{global.mosProbeToolID} R{ var.wizTouchProbeRadius } I{var.wizSpindleID}
+
+    ; Switch to the probe tool.
+    T{global.mosProbeToolID} P0
+
+    G6503.1 W{null} H{var.measuredX} I{var.measuredY} T15 O5 J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
+    ; Reset after probing so we don't override wizard
+    ; settings if it needs to run again.
+    set global.mosFeatureTouchProbe = null
+
+    if { global.mosWorkPieceDimensions[0] == null || global.mosWorkPieceDimensions[1] == null }
+        T-1 P0
+        M4001 P{global.mosProbeToolID}
+        abort { "MillenniumOS: Rectangular block probing failed!" }
+
+    M291 P{"Measured block dimensions are <b>X=" ^ global.mosWorkPieceDimensions[0] ^ " Y=" ^ global.mosWorkPieceDimensions[1] ^ "</b>.<br/>Current probe location is over the center of the item."} R"MillenniumOS: Configuration Wizard" S2 T0
+
+    var deflectionX = { var.measuredX - global.mosWorkPieceDimensions[0] }
+    var deflectionY = { var.measuredY - global.mosWorkPieceDimensions[1] }
+
+    ; We divide the deflection value by 4, as this gives us the deflection value
+    ; that we would need to apply to each probe point.
+    set var.wizTouchProbeDeflection = { (var.deflectionX + var.deflectionY) / 4 }
+
+    ; Reset the tool radius back to the existing, possibly-deflected value
+    ; as we cannot guarantee that the rest of the configuration wizard will
+    ; be completed successfully.
+    ; On completion, the deflection value will be written to file and will be
+    ; applied at the next reboot.
+
+    M291 P{"Measured deflection is <b>" ^ var.wizTouchProbeDeflection ^ "mm</b>.<br/>This will be applied to your touch probe on reboot or reload."} R"MillenniumOS: Configuration Wizard" S2 T0
+
+    ; Switch away from the wizard touch probe.
+    T-1 P0
+
+    ; Park the spindle to ease the removal of the probe.
+    G27 Z1
+
+    M291 P{"Please remove the touch probe now and stow it safely away from the machine. Click <b>OK</b> when stowed safely."} R{"MillenniumOS: Configuration Wizard"} S2
+
+    ; Remove the temporary probe tool.
+    M4001 P{global.mosProbeToolID}
+
 
 ; Overwrite the mos-user-vars.g file with the first line
 echo >{var.wizUserVarsFile} "; mos-user-vars.g: MillenniumOS User Variables"
