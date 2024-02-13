@@ -18,12 +18,12 @@ if { !exists(param.I) }
 
 var probeId = { global.mosFeatureTouchProbe ? global.mosTouchProbeID : null }
 
+set global.mosWorkPieceSurfacePos = null
+set global.mosWorkPieceSurfaceAxis = null
+
 ; Make sure probe tool is selected
 if { global.mosProbeToolID != state.currentTool }
     T T{global.mosProbeToolID}
-
-set global.mosWorkPieceSurfacePos = null
-set global.mosWorkPieceSurfaceAxis = null
 
 var safeZ = { move.axes[2].machinePosition }
 
@@ -39,8 +39,8 @@ var sZ   = { param.L }
 ; Z probes as well as X/Y. Tool radius only applies for X/Y probes.
 var overtravel = { exists(param.O) ? param.O : global.mosProbeOvertravel }
 
-; Tool Radius
-var tR = { global.mosToolTable[state.currentTool][0] }
+; Tool Radius if tool is selected
+var tR = { ((state.currentTool <= limits.tools-1 && state.currentTool >= 0) ? global.mosToolTable[state.currentTool][0] : 0) }
 
 ; Set target positions
 var tPX = { var.sX }

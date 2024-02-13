@@ -23,9 +23,13 @@ if { #tools > 0 && tools[param.P].spindle != -1 }
     abort { "Tool #" ^ param.P ^ " is already defined." }
 
 ; Define RRF tool against spindle.
-M563 P{param.P} S{param.S} R{global.mosSpindleID}
+; Allow spindle ID to be overridden where necessary using I parameter.
+M563 P{param.P} S{param.S} R{(exists(param.I)) ? param.I : global.mosSpindleID}
 
 ; Store tool description in zero-indexed array.
-set global.mosToolTable[param.P] = {param.R, false, {0, 0}}
+set global.mosToolTable[param.P] = { global.mosEmptyTool }
+
+; Set tool radius
+set global.mosToolTable[param.P][0] = { param.R }
 
 M7500 S{"Stored tool #" ^ param.P ^ " R=" ^ param.R ^ " S=" ^ param.S}

@@ -7,6 +7,11 @@ if { global.mosFeatureTouchProbe }
     if { result == -1 }
         M99
 
+; These 3 values are required for touch probe use.
+if { global.mosTouchProbeID == null || global.mosTouchProbeReferencePos == null || global.mosTouchProbeRadius == null  }
+    M291 R"MillenniumOS: Toggle Touch Probe" P"Touch Probe has not been configured. Please configure the touch probe using the Configuration Wizard first." S2
+    M99
+
 set global.mosFeatureTouchProbe = {!global.mosFeatureTouchProbe}
 
 ; Switch probe tool name and configuration when toggling touch probe
