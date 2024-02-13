@@ -26,7 +26,7 @@ jobs:
           tag_name: release-${{ github.sha }}
           release_name: MillenniumOS ${{ github.ref_name }}
           body: ${{ github.event.head_commit.message }}
-          draft: false
+          draft: true
           prerelease: false
       - name: Upload Release Zip
         id: upload-release-asset
