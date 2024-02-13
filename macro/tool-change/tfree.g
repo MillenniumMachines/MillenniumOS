@@ -13,7 +13,7 @@ G27 Z1
 var tI = { state.currentTool }
 
 ; If probe tool is selected
-if { var.tI == global.mosProbeToolID }
+if { state.currentTool == global.mosProbeToolID }
     if { global.mosFeatureTouchProbe }
         M291 P{"Please remove the touch probe now and stow it safely away from the machine. Click <b>OK</b> when stowed safely."} R{"MillenniumOS: Touch Probe"} S2
     else

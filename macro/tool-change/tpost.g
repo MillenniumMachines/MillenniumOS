@@ -4,8 +4,7 @@
 ; to probe tool length or reference surface
 ; position if touch probe is installed.
 
-var tI = { state.currentTool }
-if { var.tI < 0 }
+if { state.currentTool < 0 }
     M99
 
 if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
@@ -14,13 +13,13 @@ if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
 ; Stop and park the spindle
 G27 Z1
 
-var tD = {(exists(tools[var.tI])) ? tools[var.tI].name : "Unknown Tool" }
+var tD = {(exists(tools[state.currentTool])) ? tools[state.currentTool].name : "Unknown Tool" }
 
 ; If touch probe is current tool, and enabled, and we have not calculated
 ; the toolsetter activation position yet, then run G6511 to probe the
 ; reference surface so we can make this calculation.
 ; Touchprobe tool ID is only set if the touchprobe feature is enabled.
-if { var.tI == global.mosProbeToolID }
+if { state.currentTool == global.mosProbeToolID }
     if { global.mosFeatureTouchProbe }
         ; Check if requested probe ID was detected.
         var touchProbeConnected = { exists(global.mosProbeDetected[global.mosTouchProbeID]) ? global.mosProbeDetected[global.mosTouchProbeID] : false }

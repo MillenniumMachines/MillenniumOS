@@ -19,7 +19,7 @@ if { param.P > var.maxTools || param.P < 0 }
 
 ; Check if tool already exists. If no tools are defined, the
 ; length of the tools array is 0.
-if { #tools > 0 && tools[param.P].spindle != -1 }
+if { #tools > 0 && exists(tools[param.P]) && tools[param.P].spindle != -1 }
     abort { "Tool #" ^ param.P ^ " is already defined." }
 
 ; Define RRF tool against spindle.
