@@ -143,6 +143,8 @@ else
 if { !exists(param.D) }
     G6550 I{ param.I } Z{ var.safeZ }
 
+M400
+
 ; Calculate tool radius and round the output.
 ; We round to 3 decimal places (0.001mm) which is
 ; way more than we actually need, because 1.8 degree
@@ -154,15 +156,11 @@ if { !exists(param.D) }
 ; tool radius and deflection.
 
 ; The tool radius we use here already includes a deflection value
-; which is deemed to be the same for each axis.
+; which is deemed to be the same for each X/Y axis.
 ; TODO: Is this a safe assumption?
-
-var tI = { state.currentTool }
-var validTool = { var.tI <= limits.tools-1 && var.tI >= 0 }
-
-if { var.validTool }
-    ; Get tool radius minus applicable deflection from tool table, or 0 if no tool is selected
-    var toolRadius = { (var.validTool)? global.mosToolTable[state.currentTool][0] : 0 }
+if { state.currentTool <= limits.tools-1 && state.currentTool >= 0 }
+    ; Get tool radius minus applicable deflection from tool table
+    var toolRadius = { global.mosToolTable[state.currentTool][0] }
 
     M7500 S{"Compensating for tool radius of " ^ var.toolRadius ^ "mm."}
 
@@ -184,9 +182,8 @@ if { var.validTool }
     ; in X/Y, _or_ Z, and we have some control over this as we're writing the higher
     ; level macros.
 
-else
-    if { !global.mosExpertMode }
-        echo { "No tool selected, cannot compensate for tool radius. Select a tool before probing to apply tool radius compensation." }
+elif { !global.mosExpertMode }
+    echo { "No tool selected, cannot compensate for tool radius. Select a tool before probing to apply tool radius compensation." }
 
 ; Multiply, ceil then divide by this number
 ; to achieve 3 decimal places of accuracy.

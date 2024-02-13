@@ -50,7 +50,6 @@ global mosEmptyTool = { 0.0, }
 global mosToolTable = { vector(limits.tools, global.mosEmptyTool) }
 
 ; Coordinates returned by the most recent probing operation.
-global mosProbeComplete=false
 global mosProbeCoordinate={ null, null, null }
 global mosProbeVariance={ null, null, null }
 

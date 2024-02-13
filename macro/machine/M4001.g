@@ -6,13 +6,18 @@
 if { !exists(param.P) }
     abort "Must provide tool number (P...) to remove from tool list!"
 
+; Before any tools are defined, the tool table is empty.
+if { #tools < 1 }
+    M99
+
 var maxTools = { limits.tools-1 }
 
 if { param.P > var.maxTools || param.P < 0 }
     abort { "Tool index must be between 0 and " ^  var.maxTools ^ "!" }
 
-if { #tools > 0 && tools[param.P].spindle != global.mosSpindleID }
-    abort { "Tool #" ^ param.P ^ " is not assigned to the configured spindle, ID #" ^ global.mosSpindleID ^ "!" }
+; Check if the tool exists
+if { tools[param.P] == null }
+    M99
 
 ; Reset RRF Tool
 M563 P{param.P} R-1 S"Unknown Tool"
