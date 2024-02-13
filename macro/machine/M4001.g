@@ -16,7 +16,7 @@ if { param.P > var.maxTools || param.P < 0 }
     abort { "Tool index must be between 0 and " ^  var.maxTools ^ "!" }
 
 ; Check if the tool exists
-if { tools[param.P] == null }
+if { !exists(tools[param.P]) || tools[param.P] == null }
     M99
 
 ; Reset RRF Tool

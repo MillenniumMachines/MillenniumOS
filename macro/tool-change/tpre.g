@@ -8,8 +8,7 @@
 ; executing T<n> without any additional parameters
 ; to block tool change macros.
 
-var tI = { state.nextTool }
-if { var.tI < 0 }
+if { state.nextTool < 0 }
     abort {"No tool selected!"}
     M99
 
@@ -21,10 +20,10 @@ if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
 ; Stop and park the spindle
 G27 Z1
 
-var tD = {(exists(tools[var.tI])) ? tools[var.tI].name : "Unknown Tool" }
+var tD = {(exists(tools[state.nextTool])) ? tools[state.nextTool].name : "Unknown Tool" }
 
 ; Check if we're switching to a probe.
-if { var.tI == global.mosProbeToolID }
+if { state.nextTool == global.mosProbeToolID }
     ; If touch probe is enabled, prompt the operator to install
     ; it and check for activation.
     if { global.mosFeatureTouchProbe }
@@ -57,7 +56,7 @@ else
         M291 P{"A tool change is required. You will be asked to insert the correct tool, and then the tool length will be probed using " ^ var.toolLengthProbeMethod} R"MillenniumOS: Tool Change" S2 T0
 
     ; Prompt user to change tool
-    M291 P{"Insert Tool <b>#" ^ var.tI ^ "</b>: " ^ var.tD ^ " and press <b>Continue</b> when ready. <b>Cancel</b> will abort the running job!"} R"MillenniumOS: Tool Change" S4 K{"Continue", "Cancel"}
+    M291 P{"Insert Tool <b>#" ^ state.nextTool ^ "</b>: " ^ var.tD ^ " and press <b>Continue</b> when ready. <b>Cancel</b> will abort the running job!"} R"MillenniumOS: Tool Change" S4 K{"Continue", "Cancel"}
     if { input != 0 }
         echo { "Tool change aborted by operator, aborting job!" }
         M99
