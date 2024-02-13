@@ -92,6 +92,9 @@ if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
 if { !exists(param.L) }
     abort { "G6512: Must provide Z height to begin probing at (L..)!" }
 
+if { state.currentTool > limits.tools-1 || state.currentTool < 0 || !exists(global.mosToolTable[state.currentTool]) }
+    abort { "G6512: No tool selected, or MillenniumOS tool table is invalid. Select a probe tool before probing."}
+
 var sZ = { param.L }
 
 ; Set target positions - if not provided, use start positions.
@@ -158,32 +161,25 @@ M400
 ; The tool radius we use here already includes a deflection value
 ; which is deemed to be the same for each X/Y axis.
 ; TODO: Is this a safe assumption?
-if { state.currentTool <= limits.tools-1 && state.currentTool >= 0 }
-    ; Get tool radius minus applicable deflection from tool table
-    var toolRadius = { global.mosToolTable[state.currentTool][0] }
+M7500 S{"Compensating for tool radius of " ^ global.mosToolTable[state.currentTool][0] ^ "mm."}
 
-    M7500 S{"Compensating for tool radius of " ^ var.toolRadius ^ "mm."}
+; Calculate the magnitude of the direction vector of probe movement
+var mag = { sqrt(pow(global.mosProbeCoordinate[0] - var.sX, 2) + pow(global.mosProbeCoordinate[1] - var.sY, 2)) }
 
-    ; Calculate the magnitude of the direction vector of probe movement
-    var mag = { sqrt(pow(global.mosProbeCoordinate[0] - var.sX, 2) + pow(global.mosProbeCoordinate[1] - var.sY, 2)) }
+; Adjust the final position along the direction of movement in X and Y by the tool radius.
+set global.mosProbeCoordinate[0] = { global.mosProbeCoordinate[0] + global.mosToolTable[state.currentTool][0] * ((global.mosProbeCoordinate[0] - var.sX) / var.mag) }
+set global.mosProbeCoordinate[1] = { global.mosProbeCoordinate[1] + global.mosToolTable[state.currentTool][0] * ((global.mosProbeCoordinate[1] - var.sY) / var.mag) }
 
-    ; Adjust the final position along the direction of movement in X and Y by the tool radius.
-    set global.mosProbeCoordinate[0] = { global.mosProbeCoordinate[0] + var.toolRadius * ((global.mosProbeCoordinate[0] - var.sX) / var.mag) }
-    set global.mosProbeCoordinate[1] = { global.mosProbeCoordinate[1] + var.toolRadius * ((global.mosProbeCoordinate[1] - var.sY) / var.mag) }
+; We do not adjust by the tool radius in Z.
 
-    ; We do not adjust by the tool radius in Z.
+; This does bring up an interesting conundrum though. If you're probing in 2 axes where
+; one is Z, then you have no way of knowing whether the probe was triggered by the Z
+; movement or the X/Y movement. If the probe is triggered by Z then we would end up
+; compensating on the X/Y axes which would not necessarily be correct.
 
-    ; This does bring up an interesting conundrum though. If you're probing in 2 axes where
-    ; one is Z, then you have no way of knowing whether the probe was triggered by the Z
-    ; movement or the X/Y movement. If the probe is triggered by Z then we would end up
-    ; compensating on the X/Y axes which would not necessarily be correct.
-
-    ; For these purposes, we have to assume that it is most likely for probes to be run
-    ; in X/Y, _or_ Z, and we have some control over this as we're writing the higher
-    ; level macros.
-
-elif { !global.mosExpertMode }
-    echo { "No tool selected, cannot compensate for tool radius. Select a tool before probing to apply tool radius compensation." }
+; For these purposes, we have to assume that it is most likely for probes to be run
+; in X/Y, _or_ Z, and we have some control over this as we're writing the higher
+; level macros.
 
 ; Multiply, ceil then divide by this number
 ; to achieve 3 decimal places of accuracy.

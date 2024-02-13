@@ -22,7 +22,8 @@ We build _on top of_ RepRapFirmware, providing operators of the Millennium Machi
   - Install one of the post-processors from [here](./post-processors/) into your CAM tool of choice.
 
 ## Notes
-  - You _must_ be using RRF `v3.5.0-rc.2` or above. MOS uses many 'meta gcode' features that do not exist in earlier versions.
+  - You _must_ be using RRF `v3.5.0-rc.1` or above. MOS uses many 'meta gcode' features that do not exist in earlier versions.
+  - If you are using RRF `v3.5.0-rc.2` or below and cannot easily upgrade, you should add `set global.mosProbePositionDelay=350` to the bottom of your `mos-user-vars.g` file after running the Configuration Wizard. There is a bug in v3.5.0-rc.2 and below that causes machine positions to not be reported accurately without at least a 200ms delay after the machine stops moving. This will cause protected probe moves and probe positions to be innaccurate. The simpler fix is just to update RRF.
   - MOS includes its own `daemon.g` file to implement repetitive tasks, such as VSSC. If you want to implement your own repetitive tasks, you should create a `user-daemon.g` file in the `/sys` directory, which MillenniumOS will run during its' own daemon loop. Disabling the MOS daemon tasks will also disable any `user-daemon.g` tasks. Do not use any long-running loops inside `user-daemon.g` as this will interfere with MOS's own daemon behaviour.
 
 ## RRF Config
@@ -58,6 +59,8 @@ M558 K1 P8 C"xstopmax" H10 A10 S0.01 T1200 F300:60
 M558 K2 P8 C"probe" H2 A10 S0.01 T1200 F300:50
 ```
 
+You will also want to remove any manual tool definitions from your configuration, as MillenniumOS manages tools through the `M4000` and `M4001` custom M-codes - remove any lines in your config.g that use the `M563` command, and also any lines which refer to tools which would have been created by these commands (e.g. `G10 P<toolnumber>`).
+
 ## Warnings
 Due to a some issues with RRF as it currently stands, there are a small number of situations where you can shoot yourself in the foot when running MillenniumOS macros outside of a print file these are:
 
@@ -67,6 +70,9 @@ Due to a some issues with RRF as it currently stands, there are a small number o
 
 ## Bugs, Issues, Support
 If you find any bugs or issues, please create an issue on this repository. Best-effort support is available via our [Discord](https://discord.gg/ya4UUj7ax2).
+
+### Troubleshooting
+To help us work out any issues, please run `M7600 D1` and paste the whole output into any issue you create, or attach with any help request in Discord. This output includes the value of MOS specific variables and also the contents of the RRF object model - specifically the limits, move, sensors, spindles, state and tool keys which are essential for debugging MillenniumOS functionality (or lack thereof).
 
 ---
 
