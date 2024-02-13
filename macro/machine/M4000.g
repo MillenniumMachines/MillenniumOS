@@ -11,16 +11,12 @@
 if { !exists(param.P) || !exists(param.R) || !exists(param.S) }
     abort { "Must provide tool number (P...), radius (R...) and description (S...) to register tool!" }
 
-var maxTools = { limits.tools-1 }
-
 ; Validate tool index
-if { param.P > var.maxTools || param.P < 0 }
-    abort { "Tool index must be between 0 and " ^  var.maxTools ^ "!" }
+if { param.P >= limits.tools || param.P < 0 }
+    abort { "Tool index must be between 0 and " ^ limits.tools-1 ^ "!" }
 
-; Check if tool already exists. If no tools are defined, the
-; length of the tools array is 0.
-if { #tools > 0 && exists(tools[param.P]) && tools[param.P].spindle != -1 }
-    abort { "Tool #" ^ param.P ^ " is already defined." }
+if { param.P < #tools && tools[param.P].spindle != -1 }
+    abort { "Tool #" ^ param.P ^ " is already defined on spindle " ^ tools[param.P].spindle ^ "!" }
 
 ; Define RRF tool against spindle.
 ; Allow spindle ID to be overridden where necessary using I parameter.

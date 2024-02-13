@@ -4,16 +4,19 @@
 ; to probe tool length or reference surface
 ; position if touch probe is installed.
 
+; Abort if no tool selected
 if { state.currentTool < 0 }
     M99
 
+; Abort if not homed
 if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
     M99
 
 ; Stop and park the spindle
 G27 Z1
 
-var tD = {(exists(tools[state.currentTool])) ? tools[state.currentTool].name : "Unknown Tool" }
+; Retrieve tool name
+var tD = { (state.currentTool < #tools) ? tools[state.currentTool].name : "Unknown Tool" }
 
 ; If touch probe is current tool, and enabled, and we have not calculated
 ; the toolsetter activation position yet, then run G6511 to probe the
@@ -22,12 +25,8 @@ var tD = {(exists(tools[state.currentTool])) ? tools[state.currentTool].name : "
 if { state.currentTool == global.mosProbeToolID }
     if { global.mosFeatureTouchProbe }
         ; Check if requested probe ID was detected.
-        var touchProbeConnected = { exists(global.mosProbeDetected[global.mosTouchProbeID]) ? global.mosProbeDetected[global.mosTouchProbeID] : false }
-
-        if { !var.touchProbeConnected }
-            ; TODO: This doesn't work outside of a print file, the target
+        if { global.mosProbeToolID < #global.mosProbeDetected && global.mosProbeToolID >= 0 && global.mosProbeDetected[global.mosTouchProbeID] }
             abort {"Did not detect a " ^ var.tD ^ " with ID " ^ global.mosTouchProbeID ^ "! Please check your " ^ var.tD ^ " and run T" ^ global.mosProbeToolID ^ " again to verify it is connected."}
-            T-1 P0
             M99
         else
             M291 P{"<b>Touch Probe Detected</b>.<br/>We will now probe the reference surface. Move away from the machine <b>BEFORE</b> pressing <b>OK</b>!"} R"MillenniumOS: Tool Change" S2
