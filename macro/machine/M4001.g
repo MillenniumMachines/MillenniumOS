@@ -6,17 +6,19 @@
 if { !exists(param.P) }
     abort "Must provide tool number (P...) to remove from tool list!"
 
+if { param.P >= limits.tools || param.P < 0 }
+    abort { "Tool index must be between 0 and " ^ (limits.tools-1) ^ "!" }
+
 ; Before any tools are defined, the tool table is empty.
+; Abort, because we cannot check existence of any tools.
 if { #tools < 1 }
     M99
 
-var maxTools = { limits.tools-1 }
-
-if { param.P > var.maxTools || param.P < 0 }
-    abort { "Tool index must be between 0 and " ^  var.maxTools ^ "!" }
-
 ; Check if the tool exists
-if { !exists(tools[param.P]) || tools[param.P] == null }
+; The tool array is lazily-extended by RRF, so if the
+; number of tools is less than the requested tool number
+; then the tool cannot exist.
+if { #tools < param.P || tools[param.P] == null }
     M99
 
 ; Reset RRF Tool

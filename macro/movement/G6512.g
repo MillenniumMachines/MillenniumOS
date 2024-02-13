@@ -92,7 +92,7 @@ if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
 if { !exists(param.L) }
     abort { "G6512: Must provide Z height to begin probing at (L..)!" }
 
-if { state.currentTool > limits.tools-1 || state.currentTool < 0 || !exists(global.mosToolTable[state.currentTool]) }
+if { state.currentTool >= #tools || state.currentTool < 0 }
     abort { "G6512: No tool selected, or MillenniumOS tool table is invalid. Select a probe tool before probing."}
 
 var sZ = { param.L }
