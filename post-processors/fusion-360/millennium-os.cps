@@ -31,11 +31,11 @@ String.prototype.supplant = function (o) {
 };
 
 // Set display configuration of Postprocessor in Fusion360
-description = "MillenniumOS v1.0 for Milo v1.5";
-longDescription = "MillenniumOS v1.0 Post Processor for Milo v1.5.";
+description = "MillenniumOS %%MOS_VERSION%% for Milo v1.5";
+longDescription = "MillenniumOS %%MOS_VERSION%% Post Processor for Milo v1.5.";
 vendor = "Millennium Machines";
 vendorUrl = "https://www.millennium-machines.com/";
-legal = "Copyright (C) 2012-2018 by Autodesk, Inc. 2022-2023 Millenium Machines";
+legal = "Copyright (C) 2012-2018 by Autodesk, Inc. 2023-2024 Millennium Machines";
 
 // Postprocessor engine settings
 certificationLevel = 2;
