@@ -76,7 +76,7 @@ if { var.wizSpindleID == null }
 
 ; Spindle Feedback Feature Enable / Disable
 if { var.wizFeatureSpindleFeedback == null }
-    M291 P"Would you like to enable the <b>Spindle Feedback</b> feature and detect the feedback input?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"}
+    M291 P"Would you like to enable the <b>Spindle Feedback</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"}
     set var.wizFeatureSpindleFeedback = { (input == 0) ? true : false }
 
     ; Do not display this if the setting was not changed
@@ -136,12 +136,12 @@ if { var.wizDatumToolRadius == null }
 
 ; Touch Probe Feature Enable / Disable
 if { var.wizFeatureTouchProbe == null }
-    M291 P"Would you like to enable the <b>Touch Probe</b> feature and detect your touch probe?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"}
+    M291 P"Would you like to enable the <b>Touch Probe</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"}
     set var.wizFeatureTouchProbe = { (input == 0) ? true : false }
 
 ; Toolsetter Feature Enable / Disable
 if { var.wizFeatureToolSetter == null }
-    M291 P"Would you like to enable the <b>Toolsetter</b> feature and detect your toolsetter?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"}
+    M291 P"Would you like to enable the <b>Toolsetter</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"}
     set var.wizFeatureToolSetter = { (input == 0) ? true : false }
 
 ; We configure the toolsetter first. We configure the touch probe reference surface
@@ -150,7 +150,7 @@ if { var.wizFeatureToolSetter == null }
 ; Toolsetter ID Detection
 if { var.wizFeatureToolSetter }
     if { var.wizToolSetterID == null }
-        M291 P"<b>CAUTION</b>: Please make sure your toolsetter is connected to the machine.<br/>When ready, press <b>OK</b>, and then manually activate your toolsetter until it is detected." R"MillenniumOS: Configuration Wizard" S2 T0
+        M291 P"We now need to detect your toolsetter.<br/><b>CAUTION</b>: Make sure it is connected to the machine.<br/>When ready, press <b>OK</b>, and then manually activate your toolsetter until it is detected." R"MillenniumOS: Configuration Wizard" S2 T0
 
         echo { "Waiting for toolsetter activation... "}
 
@@ -270,7 +270,7 @@ if { var.wizFeatureTouchProbe && var.wizTouchProbeRadius == null }
 ; touch probe. We cannot use tool number guards to check if the touch probe is already
 ; inserted because that requires a fully configured touch probe!
 if { var.wizFeatureTouchProbe && (var.wizTouchProbeID == null || var.wizTouchProbeDeflection == null) }
-    M291 P"<b>CAUTION</b>: Please insert your touch probe into the spindle and make sure it is connected.<br/>When ready, press <b>OK</b>, and then manually activate your touch probe until it is detected." R"MillenniumOS: Configuration Wizard" S2 T0
+    M291 P"We now need to detect your touch probe.<br/><b>CAUTION</b>: Please connect and install the probe.<br/>When ready, press <b>OK</b>, and then manually activate your touch probe until it is detected." R"MillenniumOS: Configuration Wizard" S2 T0
 
     echo { "Waiting for touch probe activation... "}
 
