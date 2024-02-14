@@ -8,9 +8,15 @@ global mosFeatureTouchProbe=false
 global mosFeatureSpindleFeedback=false
 global mosFeatureVSSC=true
 
-; Expert mode skips descriptor steps during tool changes and probing operations. It does not skip
-; safety checks, but assumes the operator knows how the probing operation they are performing works.
+; Expert mode skips certain operator confirmation checks during tool changes and probing operations.
+; Anything deemed to be safety critical is still executed, but the operator will not be prompted to
+; confirm completed tool changes, or starting probe operations.
 global mosExpertMode=false
+
+; Tutorial mode explains in detail the operation of a probe or tool change operation prior to the
+; actual operation being executed. This is useful for those new to machining who might need a little
+; more guidance before feeling happy pushing 'the button'.
+global mosTutorialMode=true
 
 ; Debut mode emits additional debug information during usage.
 global mosDebug=false

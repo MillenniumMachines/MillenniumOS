@@ -66,4 +66,4 @@ if { !global.mosFeatureSpindleFeedback }
 set global.mosLoaded = true
 
 if { global.mosExpertMode }
-    echo { "WARNING: Expert mode is enabled! You will not see any modals describing what MillenniumOS is about to do, and will not be asked to confirm any actions!" }
+    echo { "WARNING: Expert mode is enabled! You will not be asked to confirm any actions. Be careful!" }
