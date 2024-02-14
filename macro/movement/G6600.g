@@ -22,7 +22,7 @@ G27 Z1
 ; on a work offset.
 var workOffset = null
 
-if { !global.mosExpertMode && !global.mosDescDisplayed[0] }
+if { global.mosTutorialMode && !global.mosDescDisplayed[0] }
     M291 P{"Before executing cutting operations, it is necessary to identify where the workpiece for a part is. We will do this by probing and setting a work co-ordinate system (WCS) origin point."} R"MillenniumOS: Probe Workpiece" T0 S2
     M291 P{"The origin of a WCS is the reference point for subsequent cutting operations, and must match the chosen reference point in your CAM software."} R"MillenniumOS: Probe Workpiece" T0 S2
     M291 P{"You will need to select an appropriate probe cycle type (or types!) based on the shape of your workpiece."} R"MillenniumOS: Probe Workpiece" T0 S2
@@ -52,12 +52,12 @@ else
     set var.workOffset = { param.W }
 
 ; Warn about null work offset
-if { var.workOffset == null && !global.mosExpertMode && !global.mosDescDisplayed[1] }
+if { var.workOffset == null && global.mosTutorialMode && !global.mosDescDisplayed[1] }
     M291 P{"Probing can still run without a WCS origin being set. The output of the probing cycle will be available in the global variables specific to the probe cycle."} R"MillenniumOS: Probe Workpiece" T0 S2
     set global.mosDescDisplayed[1]=true
 
 ; If WCS is set via parameter, warn about setting WCS origin
-if { exists(param.W) && !global.mosExpertMode }
+if { exists(param.W) && global.mosTutorialMode }
     M291 P{"Probing will set the origin of WCS " ^ var.workOffset ^ " (" ^ global.mosWorkOffsetCodes[var.workOffset] ^ ") to the probed location."} R"MillenniumOS: Probe Workpiece" T0 S3
     if { result != 0 }
         abort {"Operator cancelled probe cycle, please set WCS origin manually or restart probing with <b>G6600</b>"}
@@ -71,8 +71,8 @@ if { var.workOffset != null }
     var pdY = { move.axes[1].workplaceOffsets[var.workOffset-1] }
     var pdZ = { move.axes[2].workplaceOffsets[var.workOffset-1] }
 
-    ; If not expert mode, show operator the WCS origin if any axes are set.
-    if { !global.mosExpertMode && (var.pdX != 0 || var.pdY != 0 || var.pdZ != 0) }
+    ; If tutorial mode, show operator the WCS origin if any axes are set.
+    if { global.mosTutorialMode && (var.pdX != 0 || var.pdY != 0 || var.pdZ != 0) }
         M291 P{"WCS " ^ var.workOffset ^ " (" ^ var.workOffsetName ^ ") has origin:<br/>X=" ^ var.pdX ^ " Y=" ^ var.pdY ^ " Z=" ^ var.pdZ} R"MillenniumOS: Probe Workpiece" T0 S2
 
     ; If work offset origin is already set

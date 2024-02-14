@@ -17,7 +17,7 @@
 ; the probe cycle.
 
 ; Display description of rectangle block probe if not already displayed this session
-if { !global.mosExpertMode && !global.mosDescDisplayed[10] }
+if { global.mosTutorialMode && !global.mosDescDisplayed[10] }
     M291 P"This probe cycle finds the X and Y co-ordinates of the corner of a rectangular workpiece by probing twice each along the 2 edges that form the corner." R"MillenniumOS: Probe Outside Corner " T0 S2
     M291 P"You will be asked to enter approximate <b>surface lengths</b> for the surfaces forming the corner, a <b>clearance distance</b> and an <b>overtravel distance</b>." R"MillenniumOS: Probe Outside Corner" T0 S2
     M291 P"These define how far the probe will move along the surfaces from the corner location before probing, and how far inwards from the expected surface the probe can move before erroring if not triggered." R"MillenniumOS: Probe Outside Corner" T0 S2
@@ -91,7 +91,7 @@ else
                                 abort { "Probing depth must not be negative!" }
 
                             ; Run the block probe cycle
-                            if { !global.mosExpertMode }
+                            if { global.mosTutorialMode }
                                 var cN = { global.mosOutsideCornerNames[var.corner] }
                                 M291 P{"Probe will now move outside the <b>" ^ var.cN ^ "</b> corner and down by " ^ var.probingDepth ^ "mm, before probing 2 points " ^ var.clearance ^ "mm from each end of the surfaces." } R"MillenniumOS: Probe Outside Corner" T0 S3
                                 if { result != 0 }

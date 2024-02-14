@@ -20,5 +20,4 @@ if { !global.mosStartupMsgsDisplayed }
             M291 P{ var.startupError } R"MillenniumOS: Startup Error" S2 T10
             M99
     else
-        if { !global.mosExpertMode }
-            echo { "MillenniumOS: Loaded " ^ global.mosVersion }
+        echo { "MillenniumOS: Loaded " ^ global.mosVersion }

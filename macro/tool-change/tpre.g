@@ -51,7 +51,7 @@ else
     ; All other tools cannot be detected so we just have to
     ; trust the operator did the right thing given the
     ; information :)
-    if { !global.mosExpertMode }
+    if { global.mosTutorialMode }
         var toolLengthProbeMethod = { (global.featureToolSetter) ? "your Toolsetter." : "a Guided Manual probing procedure." }
         M291 P{"A tool change is required. You will be asked to insert the correct tool, and then the tool length will be probed using " ^ var.toolLengthProbeMethod} R"MillenniumOS: Tool Change" S2 T0
 

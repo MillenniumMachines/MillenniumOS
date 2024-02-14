@@ -9,7 +9,7 @@
 ; to G6500.1 to execute the bore probe cycle.
 
 ; Display description of bore probe if not already displayed this session
-if { !global.mosExpertMode && !global.mosDescDisplayed[2] }
+if { global.mosTutorialMode && !global.mosDescDisplayed[2] }
     M291 P"This probe cycle finds the X and Y co-ordinates of the center of a circular bore (hole) in a workpiece by moving downwards into the bore and probing outwards in 3 directions." R"MillenniumOS: Probe Bore" T0 S2
     M291 P"You will be asked to enter an approximate <b>bore diameter</b> and <b>overtravel distance</b>.<br/>These define how far the probe will move from the centerpoint, without being triggered, before erroring." R"MillenniumOS: Probe Bore" T0 S2
     M291 P"You will then jog the tool over the approximate center of the bore.<br/><b>CAUTION</b>: Jogging in RRF does not watch the probe status, so you could cause damage if moving in the wrong direction!" R"MillenniumOS: Probe Bore" T0 S2
@@ -62,7 +62,7 @@ else
                 abort { "Probing depth was negative!" }
             else
                 ; Run the bore probe cycle
-                if { !global.mosExpertMode }
+                if { global.mosTutorialMode }
                     M291 P{"Probe will now move downwards " ^ var.probingDepth ^ "mm into the bore and probe towards the edge in 3 directions."} R"MillenniumOS: Probe Bore" J1 T0 S3
                     if { result != 0 }
                         abort { "Bore probe aborted!" }
