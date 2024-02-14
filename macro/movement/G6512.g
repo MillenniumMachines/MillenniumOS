@@ -161,14 +161,14 @@ M400
 ; The tool radius we use here already includes a deflection value
 ; which is deemed to be the same for each X/Y axis.
 ; TODO: Is this a safe assumption?
-M7500 S{"Compensating for tool radius of " ^ global.mosToolTable[state.currentTool][0] ^ "mm."}
+M7500 S{"Compensating for Tool # " ^ state.currentTool ^ " R=" ^ global.mosToolTable[state.currentTool][0] ^ " dX=" ^ global.mosToolTable[state.currentTool][1][0] ^ " dY=" ^ global.mosToolTable[state.currentTool][1][1]}
 
 ; Calculate the magnitude of the direction vector of probe movement
 var mag = { sqrt(pow(global.mosProbeCoordinate[0] - var.sX, 2) + pow(global.mosProbeCoordinate[1] - var.sY, 2)) }
 
 ; Adjust the final position along the direction of movement in X and Y by the tool radius.
-set global.mosProbeCoordinate[0] = { global.mosProbeCoordinate[0] + global.mosToolTable[state.currentTool][0] * ((global.mosProbeCoordinate[0] - var.sX) / var.mag) }
-set global.mosProbeCoordinate[1] = { global.mosProbeCoordinate[1] + global.mosToolTable[state.currentTool][0] * ((global.mosProbeCoordinate[1] - var.sY) / var.mag) }
+set global.mosProbeCoordinate[0] = { global.mosProbeCoordinate[0] + (global.mosToolTable[state.currentTool][0] - global.mosToolTable[state.currentTool][1][0]) * ((global.mosProbeCoordinate[0] - var.sX) / var.mag) }
+set global.mosProbeCoordinate[1] = { global.mosProbeCoordinate[1] + (global.mosToolTable[state.currentTool][0] - global.mosToolTable[state.currentTool][1][1]) * ((global.mosProbeCoordinate[1] - var.sY) / var.mag) }
 
 ; We do not adjust by the tool radius in Z.
 
