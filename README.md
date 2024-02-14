@@ -23,7 +23,6 @@ We build _on top of_ RepRapFirmware, providing operators of the Millennium Machi
 
 ## Notes
   - You _must_ be using RRF `v3.5.0-rc.1` or above. MOS uses many 'meta gcode' features that do not exist in earlier versions.
-  - If you are using RRF `v3.5.0-rc.2` or below and cannot easily upgrade, you should add `set global.mosProbePositionDelay=350` to the bottom of your `mos-user-vars.g` file after running the Configuration Wizard. There is a bug in v3.5.0-rc.2 and below that causes machine positions to not be reported accurately without at least a 200ms delay after the machine stops moving. This will cause protected probe moves and probe positions to be innaccurate. The simpler fix is just to update RRF.
   - MOS includes its own `daemon.g` file to implement repetitive tasks, such as VSSC. If you want to implement your own repetitive tasks, you should create a `user-daemon.g` file in the `/sys` directory, which MillenniumOS will run during its' own daemon loop. Disabling the MOS daemon tasks will also disable any `user-daemon.g` tasks. Do not use any long-running loops inside `user-daemon.g` as this will interfere with MOS's own daemon behaviour.
 
 ## RRF Config
@@ -35,7 +34,7 @@ You need to configure your Toolsetter and optionally, Touch Probe, in RRF before
 
 This involves configuring both of them as Z probes, which can be done with the `M558` command.
 
-You would add a line similar to these to your RRF `config.g` file, above where the MillenniumOS file (`mos.g`) is included.
+You would add line(s) similar to these to your RRF `config.g` file, above where the MillenniumOS file (`mos.g`) is included.
 
 ```gcode
 ; Configure the toolsetter as Z-Probe 1 on pin "xstopmax" - mainboard specific, DO NOT COPY AND PASTE!
@@ -59,14 +58,16 @@ M558 K1 P8 C"xstopmax" H10 A10 S0.01 T1200 F300:60
 M558 K2 P8 C"probe" H2 A10 S0.01 T1200 F300:50
 ```
 
-You will also want to remove any manual tool definitions from your configuration, as MillenniumOS manages tools through the `M4000` and `M4001` custom M-codes - remove any lines in your config.g that use the `M563` command, and also any lines which refer to tools which would have been created by these commands (e.g. `G10 P<toolnumber>`).
+You will also want to remove any manual tool definitions from your configuration, as MillenniumOS manages tools through the `M4000` and `M4001` custom M-codes - remove any lines in your `config.g` that use the `M563` command, and also any lines which refer to tools which would have been created by these commands (e.g. `G10 P<toolnumber>`).
 
-## Warnings
-Due to a some issues with RRF as it currently stands, there are a small number of situations where you can shoot yourself in the foot when running MillenniumOS macros outside of a print file these are:
+## Warnings and Known Issues
+Due to some issues with RRF as it currently stands, there are a small number of situations where you can shoot yourself in the foot when running MillenniumOS macros outside of a print file. These are:
 
- - Clicking Cancel on a messagebox to abort a probing routine may trigger undesired behaviour when running a probe **outside** of a print file. This is because clicking cancel on a message box, if outside of a print, simply returns from the file that created the box. There is no way to easily detect this from any calling macros so we could end up running moves that were unexpected. This is something that ideally will need to be fixed by the RRF devs and is documented [here](https://forum.duet3d.com/topic/34945/meta-gcode-result-variable-inconsistent-with-docs?_=1707734672834). When clicking cancel from _within_ a print, the whole print is aborted from that point so this behaviour should not be an issue when executing actual CAM code produced by our post-processor.
+ - Clicking Cancel on a messagebox to abort a probing routine may trigger undesired behaviour when running a probe **outside** of a print file. This is because clicking cancel on a message box, if outside of a print, simply returns from the macro that created the box. There is no way to easily detect this from any calling macros so we could end up running moves that were unexpected. This is something that ideally will need to be fixed by the RRF devs and is documented [here](https://forum.duet3d.com/topic/34945/meta-gcode-result-variable-inconsistent-with-docs?_=1707734672834). When clicking cancel from _within_ a print, the whole print is aborted from that point so this behaviour should not be an issue when executing actual CAM code produced by our post-processor.
 
  - Toolchanges cannot currently be cancelled, so if a touch probe is not detected during the touch probe installation routine, then the active tool number will still be set to the probing tool. This will not affect print files because an aborted toolchange aborts the print (but still sets the active tool number). We use the tool number as a guard to not execute probing routines unless the touch probe is installed, so this leaves some window of vulnerability where it could _appear_ like a touch probe is connected when it actually wasn't detected. Again, this is likely something that should be fixed in RRF but if we absolutely _have_ to work around it by tracking touchprobe connectivity ourselves then we can implement this.
+
+ - If you are using RRF `v3.5.0-rc.2` or below and cannot easily upgrade, you should add `set global.mosProbePositionDelay=350` to the bottom of your `mos-user-vars.g` file after running the Configuration Wizard. There is a bug in `v3.5.0-rc.2` and below that causes machine positions to not be reported accurately without at least a 200ms delay after the machine stops moving. This will cause protected probe moves and probe positions to be innaccurate. The simpler fix is just to update RRF.
 
 ## Bugs, Issues, Support
 If you find any bugs or issues, please create an issue on this repository. Best-effort support is available via our [Discord](https://discord.gg/ya4UUj7ax2).
