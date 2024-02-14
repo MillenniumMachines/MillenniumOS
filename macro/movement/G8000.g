@@ -363,12 +363,15 @@ if { var.wizFeatureTouchProbe && (var.wizTouchProbeID == null || var.wizTouchPro
 
     M291 P{"Measured block dimensions are <b>X=" ^ global.mosWorkPieceDimensions[0] ^ " Y=" ^ global.mosWorkPieceDimensions[1] ^ "</b>.<br/>Current probe location is over the center of the item."} R"MillenniumOS: Configuration Wizard" S2 T0
 
-    var deflectionX = { var.measuredX - global.mosWorkPieceDimensions[0] }
-    var deflectionY = { var.measuredY - global.mosWorkPieceDimensions[1] }
+    var deflectionX = { (var.measuredX - global.mosWorkPieceDimensions[0])/2 }
+    var deflectionY = { (var.measuredY - global.mosWorkPieceDimensions[1])/2 }
 
-    ; We divide the deflection value by 4, as this gives us the deflection value
-    ; that we would need to apply to each probe point.
-    set var.wizTouchProbeDeflection = { (var.deflectionX + var.deflectionY) / 4 }
+    ; Deflection values are stored separately per axis, as 3d touch probes almost
+    ; always have different deflection values. These are applied during the
+    ; compensation stage of the probe routine (G6512) and are multiplied by
+    ; the direction of movement of the probe to account for the fact that
+    ; probe moves might happen in both X and Y at once.
+    set var.wizTouchProbeDeflection = { var.deflectionX, var.deflectionY }
 
     ; Reset the tool radius back to the existing, possibly-deflected value
     ; as we cannot guarantee that the rest of the configuration wizard will
@@ -376,7 +379,7 @@ if { var.wizFeatureTouchProbe && (var.wizTouchProbeID == null || var.wizTouchPro
     ; On completion, the deflection value will be written to file and will be
     ; applied at the next reboot.
 
-    M291 P{"Measured deflection is <b>" ^ var.wizTouchProbeDeflection ^ "mm</b>.<br/>This will be applied to your touch probe on reboot or reload."} R"MillenniumOS: Configuration Wizard" S2 T0
+    M291 P{"Measured deflection is <b>X=" ^ var.wizTouchProbeDeflection[0] ^ " Y=" ^ var.wizTouchProbeDeflection[1] ^ "</b>.<br/>This will be applied to your touch probe on reboot or reload."} R"MillenniumOS: Configuration Wizard" S2 T0
 
     ; Switch away from the wizard touch probe.
     T-1 P0
