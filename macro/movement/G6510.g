@@ -11,7 +11,7 @@
 var zProbeI = { #global.mosSurfaceLocationNames - 1 }
 
 ; Display description of surface probe if not displayed this session
-if { !global.mosExpertMode && !global.mosDescDisplayed[4] }
+if { global.mosTutorialMode && !global.mosDescDisplayed[4] }
     M291 P"This operation finds the co-ordinate of a surface on a single axis. It is usually used to find the top surface of a workpiece but can be used to find X or Y positions as well." R"MillenniumOS: Probe Surface" T0 S2
     M291 P"<b>CAUTION</b>: This operation will only return accurate results if the surface you are probing is perpendicular to the axis you are probing in." R"MillenniumOS: Probe Surface" T0 S2
     M291 P"You will jog the tool or touch probe to your chosen starting position. Your starting position should be outside and above X or Y surfaces, or directly above the top surface." R"MillenniumOS: Probe Surface" T0 S2
@@ -71,7 +71,7 @@ else
             if { var.probeDist < 0 }
                 abort { "Probe distance was negative!" }
 
-            if { !global.mosExpertMode }
+            if { global.mosTutorialMode}
                 if { !var.isZProbe }
                     M291 P{"Probe will now move down <b>" ^ var.probeDepth ^ "</b> mm and probe towards the <b>" ^ global.mosSurfaceLocationNames[var.probeAxis] ^ "</b> surface." } R"MillenniumOS: Probe Surface" T0 S3
                     if { result != 0 }

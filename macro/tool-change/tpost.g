@@ -29,7 +29,8 @@ if { state.currentTool == global.mosProbeToolID }
             abort {"Did not detect a " ^ var.tD ^ " with ID " ^ global.mosTouchProbeID ^ "! Please check your " ^ var.tD ^ " and run T" ^ global.mosProbeToolID ^ " again to verify it is connected."}
             M99
         else
-            M291 P{"<b>Touch Probe Detected</b>.<br/>We will now probe the reference surface. Move away from the machine <b>BEFORE</b> pressing <b>OK</b>!"} R"MillenniumOS: Tool Change" S2
+            if { !global.mosExpertMode }
+                M291 P{"<b>Touch Probe Detected</b>.<br/>We will now probe the reference surface. Move away from the machine <b>BEFORE</b> pressing <b>OK</b>!"} R"MillenniumOS: Tool Change" S2
             G6511
             if { global.mosToolSetterActivationPos == null }
                 abort { "Touch probe reference surface probing failed." }
