@@ -1,4 +1,4 @@
-; G6502.1.g: RECTANGLE BLOCK - EXECUTE
+; G6503.1.g: RECTANGLE BLOCK - EXECUTE
 ;
 ; Probe the X and Y edges of a rectangular block.
 ; Calculate the dimensions of the block and set the

@@ -253,7 +253,9 @@ var G = {
   PROBE_BORE: 6500.1,
   PROBE_BOSS: 6501.1,
   PROBE_RECTANGLE_POCKET: 6502.1,
+  PROBE_RECTANGLE_BLOCK: 6503.1,
   PROBE_SINGLE_SURFACE: 6510.1,
+  PROBE_VISE_CORNER: 6520.1,
 };
 
 // TODO: Add more probing codes
@@ -306,7 +308,10 @@ var gCodesF = createModalGroup(
         G.PROBE_OPERATOR,
         G.PROBE_BORE,
         G.PROBE_BOSS,
-        G.PROBE_RECTANGLE_POCKET
+        G.PROBE_RECTANGLE_POCKET,
+        G.PROBE_RECTANGLE_BLOCK,
+        G.PROBE_SINGLE_SURFACE,
+        G.PROBE_VISE_CORNER,
       ] // Probe codes
   ],
   gFmt);
@@ -967,7 +972,7 @@ function onClose() {
 
   // Spindle is assumed to be above work piece at this point.
   // Parking will trigger an M5 within the firmware.
-  writeComment("Park at user-defined location");
+  writeComment("Park");
   writeBlock(gCodesF.format(G.PARK));
   writeln("");
 
