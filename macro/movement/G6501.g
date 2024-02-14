@@ -9,7 +9,7 @@
 ; passed to the G6501.1 macro to execute the boss probe.
 
 ; Display description of boss probe if not already displayed this session
-if { !global.mosExpertMode && !global.mosDescDisplayed[3] }
+if { global.mosTutorialMode && !global.mosDescDisplayed[3] }
     M291 P"This probe cycle finds the X and Y co-ordinates of the center of a circular boss (protruding feature) on a workpiece by probing towards the approximate center of the boss in 3 directions." R"MillenniumOS: Probe Boss" T0 S2
     M291 P"You will be asked to enter an approximate <b>boss diameter</b> and <b>clearance distance</b>.<br/>These define how far the probe will move away from the centerpoint before probing back inwards." R"MillenniumOS: Probe Boss" T0 S2
     M291 P"You will then jog the tool over the approximate center of the boss.<br/><b>CAUTION</b>: Jogging in RRF does not watch the probe status, so you could cause damage if moving in the wrong direction!" R"MillenniumOS: Probe Boss" T0 S2
@@ -64,7 +64,7 @@ else
                         abort { "Probing depth was negative!" }
 
                     ; Run the boss probe cycle
-                    if { !global.mosExpertMode }
+                    if { global.mosTutorialMode }
                         M291 P{"Probe will now move outwards by " ^ {(var.bossDiameter/2) + var.clearance} ^ "mm and then downwards " ^ var.probingDepth ^ "mm, before probing towards the edge in 3 directions."} R"MillenniumOS: Probe Boss" T0 S3
                         if { result != 0 }
                             abort { "Boss probe aborted!" }
