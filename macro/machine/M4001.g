@@ -25,6 +25,6 @@ if { #tools < param.P || tools[param.P] == null }
 M563 P{param.P} R-1 S"Unknown Tool"
 
 ; Reset tool description in zero-indexed array
-set global.mosToolTable[param.P] = global.mosEmptyTool
+set global.mosToolTable[param.P] = { global.mosEmptyTool }
 
 M7500 S{"Removed tool #" ^ param.P}

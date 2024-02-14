@@ -33,7 +33,8 @@ if { global.mosFeatureTouchProbe }
         M99
 
     ; Add a touch probe tool at the last index in the tool table.
-    M4000 S{"Touch Probe"} P{global.mosProbeToolID} R{global.mosTouchProbeRadius - global.mosTouchProbeDeflection}
+    ; Make sure to specify deflection values for compensation.
+    M4000 S{"Touch Probe"} P{global.mosProbeToolID} R{global.mosTouchProbeRadius} X{global.mosTouchProbeDeflection[0]} Y{global.mosTouchProbeDeflection[1]}
 else
     if { !exists(global.mosDatumToolRadius) || global.mosDatumToolRadius == null }
         set global.mosStartupError = { "<b>global.mosDatumToolRadius</b> is not set. Run the configuration wizard to fix this (<b>G8000</b>)." }
