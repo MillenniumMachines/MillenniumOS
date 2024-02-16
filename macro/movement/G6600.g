@@ -105,7 +105,7 @@ if { input != null }
     ; going to abort themselves if there is a problem.
     if { input == 0 } ; Vise Corner
         G6520 W{var.workOffset}
-    if { input == 1 } ; Circular Bore
+    elif { input == 1 } ; Circular Bore
         G6500 W{var.workOffset}
     elif { input == 2 } ; Circular Boss
         G6501 W{var.workOffset}

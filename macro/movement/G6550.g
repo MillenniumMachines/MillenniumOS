@@ -67,7 +67,7 @@ if { var.manualProbe }
 
 else
 
-    M7500 S{"Protected move to X=" ^ var.tPX ^ " Y=" ^ var.tPY ^ " Z=" ^ var.tPZ }
+    M7500 S{"Protected move to X=" ^ var.tPX ^ " Y=" ^ var.tPY ^ " Z=" ^ var.tPZ ^ " from X=" ^ move.axes[0].machinePosition ^ " Y=" ^ move.axes[1].machinePosition ^ " Z=" ^ move.axes[2].machinePosition }
 
     ; Note: these must be set as variables as we override the
     ; probe speed below. We need to reset the probe speed
@@ -96,7 +96,8 @@ else
         ; move position
         var tIN = { sqrt(pow(var.tDX, 2) + pow(var.tDY, 2) + pow(var.tDZ, 2)) }
 
-        M7500 S{"Initial move positions X=" ^ var.tDX ^ " Y=" ^ var.tDY ^ " Z=" ^ var.tDZ ^ " Distance to Target: " ^ var.tN ^ " Distance to Initial: " ^ var.tIN }
+        M7500 S{"Probe is triggered at start position. Must back off until probe deactivates."}
+        M7500 S{"Backoff Target position X=" ^ var.tDX ^ " Y=" ^ var.tDY ^ " Z=" ^ var.tDZ ^ " Distance to initial target: " ^ var.tIN }
 
         if { var.tIN >= var.tN }
             abort {"G6550: Probe is triggered and 2 x its radius is greater than the distance to the target position! You will need to manually move the probe out of harms way!" }
@@ -110,6 +111,8 @@ else
 
         ; Wait for moves to complete
         M400
+
+        M7500 S{"Probe back-off deactivated at X=" ^ move.axes[0].machinePosition ^ " Y=" ^ move.axes[1].machinePosition ^ " Z=" ^ move.axes[2].machinePosition }
 
         ; Reset probe speed
         M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
