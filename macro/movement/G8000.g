@@ -146,15 +146,15 @@ if { var.wizDatumToolRadius == null }
     M291 P{"Please enter the <b>radius</b> of your chosen <b>datum tool</b>, in mm. You should measure the diameter with calipers or a micrometer and divide by 2."} R"MillenniumOS: Configuration Wizard" S6 L0.5 H5 F3.0
     set var.wizDatumToolRadius = { input }
 
-; Touch Probe Feature Enable / Disable
-if { var.wizFeatureTouchProbe == null }
-    M291 P"Would you like to enable the <b>Touch Probe</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"}
-    set var.wizFeatureTouchProbe = { (input == 0) ? true : false }
-
 ; Toolsetter Feature Enable / Disable
 if { var.wizFeatureToolSetter == null }
     M291 P"Would you like to enable the <b>Toolsetter</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"}
     set var.wizFeatureToolSetter = { (input == 0) ? true : false }
+
+; Touch Probe Feature Enable / Disable
+if { var.wizFeatureTouchProbe == null }
+    M291 P"Would you like to enable the <b>Touch Probe</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"}
+    set var.wizFeatureTouchProbe = { (input == 0) ? true : false }
 
 ; We configure the toolsetter first. We configure the touch probe reference surface
 ; directly after this, as the datum tool will still be installed.
@@ -274,16 +274,11 @@ if { var.wizFeatureToolSetter }
         M291 P{"You may now remove the <b>datum tool</b> from the spindle."} R"MillenniumOS: Configuration Wizard" S2 T0
 
 
-if { var.wizFeatureTouchProbe && var.wizTouchProbeRadius == null }
-    ; Ask the operator to measure and enter the touch probe radius.
-    M291 P{"Please enter the radius of the touch probe tip. You should measure the diameter with calipers or a micrometer and divide by 2."} R"MillenniumOS: Configuration Wizard" S6 L0.1 H5 F1.0
-    set var.wizTouchProbeRadius = { input }
-
 ; Touch Probe ID Detection and deflection calibration.
 ; We must trigger this prompt if deflection is not set, since we actually need to use the
 ; touch probe. We cannot use tool number guards to check if the touch probe is already
 ; inserted because that requires a fully configured touch probe!
-if { var.wizFeatureTouchProbe && (var.wizTouchProbeID == null || var.wizTouchProbeDeflection == null) }
+if { var.wizFeatureTouchProbe && (var.wizTouchProbeID == null || var.wizTouchProbeDeflection == null || var.wizTouchProbeRadius == null) }
     M291 P"We now need to detect your touch probe.<br/><b>CAUTION</b>: Please connect and install the probe.<br/>When ready, press <b>OK</b>, and then manually activate your touch probe until it is detected." R"MillenniumOS: Configuration Wizard" S2 T0
 
     echo { "Waiting for touch probe activation... "}
@@ -301,16 +296,22 @@ if { var.wizFeatureTouchProbe && (var.wizTouchProbeID == null || var.wizTouchPro
     if { var.wizTutorialMode }
         M291 P{"Touch probe detected with ID " ^ var.wizTouchProbeID ^ "!"} R"MillenniumOS: Configuration Wizard" S2 T0
 
+    if { var.wizTouchProbeRadius == null }
+        ; Ask the operator to measure and enter the touch probe radius.
+        M291 P{"Please enter the radius of the touch probe tip. You should measure the diameter with calipers or a micrometer and divide by 2."} R"MillenniumOS: Configuration Wizard" S6 L0.1 H5 F1.0
+        set var.wizTouchProbeRadius = { input }
+
+    if { var.wizTutorialMode }
         ; Probe a rectangular block to calculate the deflection if the touch probe is enabled
         M291 P{"We now need to measure the deflection of the touch probe. We will do this by probing a <b>1-2-3 block</b> or other rectangular item of <b>accurate and known dimensions</b> (greater than 10mm per side)."} R"MillenniumOS: Configuration Wizard" S2 T0
-    else
-        M291 P{"Please move away from the machine, we will now park to enable calibration block installation."} R"MillenniumOS: Configuration Wizard" S2 T0
 
     if { (!move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed) }
         M291 P{"One or more axes are not homed.<br/>Press <b>OK</b> to home the machine and continue."} R"MillenniumOS: Configuration Wizard" S3 T0
         if { result != 0 }
             abort { "MillenniumOS: Operator aborted machine homing!" }
         G28
+
+    M291 P{"We will now move the table to the front of the machine.<br/><b>CAUTION</b>: Please move away from the machine, and remove any obstructions around the table <b>BEFORE</b> clicking <b>OK</b>."} R"MillenniumOS: Configuration Wizard" S3 T0
 
     ; Park centrally to enable the 1-2-3 block installation
     G27

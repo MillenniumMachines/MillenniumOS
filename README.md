@@ -37,8 +37,17 @@ This involves configuring both of them as Z probes, which can be done with the `
 You would add line(s) similar to these to your RRF `config.g` file, above where the MillenniumOS file (`mos.g`) is included.
 
 ```gcode
-; Configure the toolsetter as Z-Probe 1 on pin "xstopmax" - mainboard specific, DO NOT COPY AND PASTE!
 
+; Configure the touch probe as Z-Probe 0 on pin "probe" - mainboard specific, DO NOT COPY AND PASTE!
+; Type P5             = filtered digital
+; Dive Height H2      = back-off 2mm before repeat probing
+; Max Retries A10     = retry probe a maximum of 10 times
+; Tolerance S0.01     = when tolerance is reached, stop probing
+; Travel Speed T1200  = travel moves run at this speed to the start of the probing location
+; Probe Speed F300:50 = initial probe speed runs at 300mm/min, subsequent at 50mm/min
+M558 K0 P5 C"probe" H2 A10 S0.01 T1200 F300:50
+
+; Configure the toolsetter as Z-Probe 1 on pin "xstopmax" - mainboard specific, DO NOT COPY AND PASTE!
 ; Type P8             = unfiltered digital
 ; Dive Height H10     = back-off 10mm before repeat probing
 ; Max Retries A10     = retry probe a maximum of 10 times
@@ -47,18 +56,17 @@ You would add line(s) similar to these to your RRF `config.g` file, above where 
 ; Probe Speed F300:60 = initial probe speed runs at 300mm/min, subsequent at 60mm/min
 M558 K1 P8 C"xstopmax" H10 A10 S0.01 T1200 F300:60
 
-; Configure the touch probe as Z-Probe 2 on pin "probe" - mainboard specific, DO NOT COPY AND PASTE!
-
-; Type P8             = unfiltered digital
-; Dive Height H2      = back-off 2mm before repeat probing
-; Max Retries A10     = retry probe a maximum of 10 times
-; Tolerance S0.01     = when tolerance is reached, stop probing
-; Travel Speed T1200  = travel moves run at this speed to the start of the probing location
-; Probe Speed F300:50 = initial probe speed runs at 300mm/min, subsequent at 50mm/min
-M558 K2 P8 C"probe" H2 A10 S0.01 T1200 F300:50
 ```
 
+### Tool Definition
 You will also want to remove any manual tool definitions from your configuration, as MillenniumOS manages tools through the `M4000` and `M4001` custom M-codes - remove any lines in your `config.g` that use the `M563` command, and also any lines which refer to tools which would have been created by these commands (e.g. `G10 P<toolnumber>`).
+
+### Touch Probe Type Configuration
+Some touch probes may not filter their outputs, which means they can be subject to bouncing. This is where, when the switch or detection mechanism inside the touch probe changes state, it flaps between the two states before settling into its' final position. This can cause issues in MillenniumOS with protected moves, as we stop moving when the probe is activated or deactivated but by the time we check the probe status, it might have flipped.
+
+The solution for this is to define the touch probe as ID _Zero_ and the probe type as 5 (`M558 K0 P5 C"probe"...`), as in the above example configuration line. This enables filtering in RRF which debounces the probe input. The downside of this is that the probe may respond more slowly, but this is not necessarily a problem as the delay is likely to be accounted for in the deflection values calculated for X and Y. It is also not possible to define more than one probe as type 5, so if you already have a probe that requires type 5 that is _not_ your touch probe then this may be an issue.
+
+Your touch probe may not need filtering, and you can test this by moving it to a different probe ID (2, for example) and changing the type to 8 like the toolsetter definition.
 
 ## Warnings and Known Issues
 Due to some issues with RRF as it currently stands, there are a small number of situations where you can shoot yourself in the foot when running MillenniumOS macros outside of a print file. These are:
@@ -68,6 +76,8 @@ Due to some issues with RRF as it currently stands, there are a small number of 
  - Toolchanges cannot currently be cancelled, so if a touch probe is not detected during the touch probe installation routine, then the active tool number will still be set to the probing tool. This will not affect print files because an aborted toolchange aborts the print (but still sets the active tool number). We use the tool number as a guard to not execute probing routines unless the touch probe is installed, so this leaves some window of vulnerability where it could _appear_ like a touch probe is connected when it actually wasn't detected. Again, this is likely something that should be fixed in RRF but if we absolutely _have_ to work around it by tracking touchprobe connectivity ourselves then we can implement this.
 
  - If you are using RRF `v3.5.0-rc.2` or below and cannot easily upgrade, you should add `set global.mosProbePositionDelay=350` to the bottom of your `mos-user-vars.g` file after running the Configuration Wizard. There is a bug in `v3.5.0-rc.2` and below that causes machine positions to not be reported accurately without at least a 200ms delay after the machine stops moving. This will cause protected probe moves and probe positions to be innaccurate. The simpler fix is just to update RRF.
+
+ - If the touch probe is activated during a protected move, then due to how this is implemented in RRF it is _possible_ that the speeds of the probe were not reset correctly. Subsequent probes will run at the same speed which might be very slow, or very fast (if the interrupted move was a travel move). You should be aware of this when restarting from a collision during a protected move. We are currently looking for options as to how to improve this behaviour, but it may involve underlying changes to RRF to allow this.
 
 ## Bugs, Issues, Support
 If you find any bugs or issues, please create an issue on this repository. Best-effort support is available via our [Discord](https://discord.gg/ya4UUj7ax2).
