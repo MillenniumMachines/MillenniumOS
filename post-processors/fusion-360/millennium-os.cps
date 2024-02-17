@@ -654,13 +654,14 @@ function onSection() {
   // Get start position
   var startPos = getFramePosition(currentSection.getInitialPosition());
 
-  // Move to Z position first
+  // Move laterally from park location to initial positions in X and Y
+  writeComment("Move to starting position in X and Y");
+  writeBlock(gCodesF.format(0), xVar.format(startPos.x), yVar.format(startPos.y));
+
+  // Move to initial Z position (usually clearance height)
   writeComment("Move to starting position in Z");
   writeBlock(gCodesF.format(0), zVar.format(startPos.z));
 
-  // Then move to X and Y positions
-  writeComment("Move to starting position in X and Y");
-  writeBlock(gCodesF.format(0), xVar.format(startPos.x), yVar.format(startPos.y));
 }
 
 // At the end of every section
