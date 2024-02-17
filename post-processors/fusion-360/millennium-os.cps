@@ -589,7 +589,7 @@ function onSection() {
   // Only probe on WCS change if probe mode is set to ONCHANGE
   var doProbe = getProperty("jobWCSProbeMode") === wcsProbeMode.ONCHANGE && !isProbeOperation();
 
-  var wcsF = { wcs: curWCS };
+  var wcsF = { wcs: curWCS + 1 };
 
   // WCS Gcode is the offset from 54 (first work offset).
   var wcsCode = wcsBase + curWCS;
