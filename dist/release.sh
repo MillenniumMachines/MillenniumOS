@@ -23,12 +23,11 @@ find ${TMP_DIR}
 
 [[ -f ${ZIP_NAME} ]] && rm ${ZIP_NAME}
 
-cd "${TMP_DIR}" && {
-    mv sys/daemon.g sys/daemon.install &&
-    sed -i -e "s/%%MOS_VERSION%%/${COMMIT_ID}/" {sys/mos.g,posts/*} &&
-    cp posts/* "${WD}/dist" &&
-    zip -x 'README.md' -x 'posts/' -x 'posts/**' -r "${WD}/dist/${ZIP_NAME}" * &&
-    cd "${WD}"
-}
-
+cd "${TMP_DIR}"
+mv sys/daemon.g sys/daemon.install
+echo "Replacing %%MOS_VERSION%% with ${COMMIT_ID}..."
+sed --debug -si -e "s/%%MOS_VERSION%%/${COMMIT_ID}/g" {sys/mos.g,posts/*}
+cp -v posts/* "${WD}/dist"
+zip -x 'README.md' -x 'posts/' -x 'posts/**' -r "${WD}/dist/${ZIP_NAME}" *
+cd "${WD}"
 rm -rf "${TMP_DIR}"
