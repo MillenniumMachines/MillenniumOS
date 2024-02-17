@@ -7,8 +7,24 @@
 
 var wizUserVarsFile = "mos-user-vars.g"
 
-; Ask user if they want to reset all settings
+
+
+; Do not load existing feature statuses, we should always ask the operator
+; if they want to enable or disable a feature.
+var wizFeatureTouchProbe = null
+var wizFeatureToolSetter = null
+var wizFeatureSpindleFeedback = null
+
+; Do not load mode settings either.
+var wizExpertMode = null
+var wizTutorialMode = null
+
+; Reset options
 var wizReset = false
+var wizSpindleReset = false
+var wizToolSetterReset = false
+var wizTouchProbeReset = false
+var wizDatumToolReset = false
 
 M291 P"Welcome to MillenniumOS! This wizard will walk you through the configuration process.<br/>You can run this wizard again using <b>G8000</b> or clicking the <b>""Run Configuration Wizard""</b> macro." R"MillenniumOS: Configuration Wizard" S3 T0
 if { result == -1 }
@@ -17,51 +33,69 @@ if { result == -1 }
 if { global.mosTutorialMode }
     M291 P"<b>NOTE</b>: No settings will be saved or overwritten until the configuration wizard has been completed." R"MillenniumOS: Configuration Wizard" S2 T0
     M291 P"<b>CAUTION</b>: You can cancel the configuration wizard to finish configuring RRF, but you <b>MUST</b> complete it before trying to use MillenniumOS itself!" R"MillenniumOS: Configuration Wizard" S3 T0
-
-if { global.mosLoaded }
-    M291 P"MillenniumOS is already configured. Click <b>Update</b> to configure any new settings, or change persistent modes or features, or <b>Reset</b> to reset all settings and start again." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Update","Reset"}
-elif { exists(global.mosStartupError) && global.mosStartupError != null }
-    M291 P"MillenniumOS could not be loaded due to a startup error.<br/>Click <b>Update</b> to configure any missing settings or <b>Reset</b> to reset all settings and start again." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Update","Reset"}
-
-; Reset if requested
-set var.wizReset = { (input == 1) }
-
-; Do not load feature statuses, we should always ask the operator
-; if they want to enable or disable a feature.
-var wizFeatureTouchProbe = null
-var wizFeatureToolSetter = null
-var wizFeatureSpindleFeedback = null
-
-; Do not load mode statuses for the same reason.
-var wizExpertMode = null
-var wizTutorialMode = null
-
-; Load existing vars unless reset was clicked
-
-var wizSpindleID = { (exists(global.mosSpindleID) && global.mosSpindleID != null && !var.wizReset) ? global.mosSpindleID : null }
-var wizSpindleAccelSeconds = { (exists(global.mosSpindleAccelSeconds) && global.mosSpindleAccelSeconds != null && !var.wizReset) ? global.mosSpindleAccelSeconds : null }
-var wizSpindleDecelSeconds = { (exists(global.mosSpindleDecelSeconds) && global.mosSpindleDecelSeconds != null && !var.wizReset) ? global.mosSpindleDecelSeconds : null }
-var wizToolSetterID = { (exists(global.mosToolSetterID) && global.mosToolSetterID != null && !var.wizReset) ? global.mosToolSetterID : null }
-var wizTouchProbeID = { (exists(global.mosTouchProbeID) && global.mosTouchProbeID != null && !var.wizReset) ? global.mosTouchProbeID : null }
-var wizToolSetterPos = { (exists(global.mosToolSetterPos) && global.mosToolSetterPos != null && !var.wizReset) ? global.mosToolSetterPos : null }
-var wizTouchProbeRadius = { (exists(global.mosTouchProbeRadius) && global.mosTouchProbeRadius != null && !var.wizReset) ? global.mosTouchProbeRadius : null }
-var wizTouchProbeDeflection = { (exists(global.mosTouchProbeDeflection) && global.mosTouchProbeDeflection != null && !var.wizReset) ? global.mosTouchProbeDeflection : null }
-var wizTouchProbeReferencePos = { (exists(global.mosTouchProbeReferencePos) && global.mosTouchProbeReferencePos != null && !var.wizReset) ? global.mosTouchProbeReferencePos : null }
-var wizDatumToolRadius = { (exists(global.mosDatumToolRadius) && global.mosDatumToolRadius != null && !var.wizReset) ? global.mosDatumToolRadius : null }
-
-if { global.mosTutorialMode }
     ; Note we use the shortest HTML tags we can get away with because RRF commands are length limited.
-    M291 P{"<b>CAUTION</b>: You may need to use small, manual movements using this interface during the configuration process. Please make sure the jog button distances are set appropriately."} R"MillenniumOS: Configuration Wizard" S2 T0
+    M291 P{"<b>CAUTION</b>: You may need to use small, manual movements using this interface during the configuration process. Please make sure the jog button distances are set appropriately before starting!"} R"MillenniumOS: Configuration Wizard" S2 T0
     M291 P{"<b>CAUTION</b>: Follow <b>ALL</b> instructions to the letter, and if you are unsure about any step, please ask for help on our <a target=""_blank"" href=""https://discord.gg/ya4UUj7ax2"">Discord</a>."} R"MillenniumOS: Configuration Wizard" S2 T0
-    M291 P{"<b>NOTE</b>: You will need to configure a spindle and any optional components (touch probe, toolsetter etc) in <b>RRF</b> before continuing.<br/>Press <b>OK</b> to continue, or <b>Cancel</b> to abort!"} R"MillenniumOS: Configuration Wizard" T0 S3
-    if { result != 0 }
-        abort { "MillenniumOS: Operator aborted configuration wizard!" }
 
 M291 P"Would you like to enable <b>Tutorial Mode</b>?<br/><b>Tutorial Mode</b> describes configuration and probing actions in detail before the any action is taken." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F0
 set var.wizTutorialMode = { (input == 0) ? true : false }
 
 M291 P"Would you like to enable <b>Expert Mode</b>?<br/><b>Expert Mode</b> disables some confirmation checks before and after operations to reduce operator interaction." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F1
 set var.wizExpertMode = { (input == 0) ? true : false }
+
+; If MOS is loaded, allow the user to reset all settings in one go.
+; Otherwise, they can choose to reconfigure individual features
+; below.
+if { global.mosLoaded }
+    M291 P"MillenniumOS is already configured. Click <b>Continue</b> to re-configure, change persistent modes or features, or <b>Reset</b> to reset all settings and start again." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Continue","Reset"}
+elif { exists(global.mosStartupError) && global.mosStartupError != null }
+    M291 P"MillenniumOS could not be loaded due to a startup error.<br/>Click <b>Update</b> to configure any missing settings or <b>Reset</b> to reset all settings and start again." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Update","Reset"}
+
+; Reset if requested
+set var.wizReset = { (input == 1) }
+
+; Last chance to abort out of the wizard and configure RRF
+; without wasting any time answering questions.
+if { global.mosTutorialMode }
+    M291 P{"<b>NOTE</b>: You will need to configure a spindle and any optional components (touch probe, toolsetter etc) in <b>RRF</b> before continuing.<br/>Press <b>OK</b> to continue, or <b>Cancel</b> to abort!"} R"MillenniumOS: Configuration Wizard" T0 S3
+    if { result != 0 }
+        abort { "MillenniumOS: Operator aborted configuration wizard!" }
+
+; If MOS already loaded and not resetting the whole configuration,
+; ask if user wants to reconfigure each of the feature sets.
+if { !var.wizReset && global.mosLoaded }
+    M291 P{"Would you like to change the <b>Spindle</b> configuration?"} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"}
+    set var.wizSpindleReset = { (input == 0) }
+
+; If MOS already loaded, ask if user wants to reconfigure datum tool
+if { !var.wizReset && global.mosLoaded }
+    M291 P{"Would you like to change the <b>Datum Tool</b> configuration?"} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"}
+    set var.wizDatumToolReset = { (input == 0) }
+
+if { !var.wizReset && global.mosLoaded }
+    M291 P{"Would you like to change the <b>Toolsetter</b> configuration?"} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"}
+    set var.wizToolSetterReset = { (input == 0) }
+
+if { !var.wizReset && global.mosLoaded }
+    M291 P{"Would you like to change the <b>Touch Probe</b> configuration?"} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"}
+    set var.wizTouchProbeReset = { (input == 0) }
+
+; Nullify settings if reset
+var wizSpindleID = { (exists(global.mosSpindleID) && global.mosSpindleID != null && !var.wizReset && !var.wizSpindleReset) ? global.mosSpindleID : null }
+var wizSpindleAccelSeconds = { (exists(global.mosSpindleAccelSeconds) && global.mosSpindleAccelSeconds != null && !var.wizReset && !var.wizSpindleReset) ? global.mosSpindleAccelSeconds : null }
+var wizSpindleDecelSeconds = { (exists(global.mosSpindleDecelSeconds) && global.mosSpindleDecelSeconds != null && !var.wizReset && !var.wizSpindleReset) ? global.mosSpindleDecelSeconds : null }
+var wizDatumToolRadius = { (exists(global.mosDatumToolRadius) && global.mosDatumToolRadius != null && !var.wizReset && !var.wizDatumToolReset) ? global.mosDatumToolRadius : null }
+var wizToolSetterID = { (exists(global.mosToolSetterID) && global.mosToolSetterID != null && !var.wizReset && !var.wizToolSetterReset) ? global.mosToolSetterID : null }
+var wizToolSetterPos = { (exists(global.mosToolSetterPos) && global.mosToolSetterPos != null && !var.wizReset && !var.wizToolSetterReset) ? global.mosToolSetterPos : null }
+var wizTouchProbeID = { (exists(global.mosTouchProbeID) && global.mosTouchProbeID != null && !var.wizReset && !var.wizTouchProbeReset) ? global.mosTouchProbeID : null }
+var wizTouchProbeRadius = { (exists(global.mosTouchProbeRadius) && global.mosTouchProbeRadius != null && !var.wizReset && !var.wizTouchProbeReset) ? global.mosTouchProbeRadius : null }
+var wizTouchProbeDeflection = { (exists(global.mosTouchProbeDeflection) && global.mosTouchProbeDeflection != null && !var.wizReset && !var.wizTouchProbeReset) ? global.mosTouchProbeDeflection : null }
+
+; Touch Probe Ref Surface is reconfigured if toolsetter _or_
+; touch probe are reconfigured.
+; No need to update this if the datum tool changes since it is
+; a Z calculation, and radius does not apply.
+var wizTouchProbeReferencePos = { (exists(global.mosTouchProbeReferencePos) && global.mosTouchProbeReferencePos != null && !var.wizReset && !var.wizToolSetterReset && !var.wizTouchProbeReset) ? global.mosTouchProbeReferencePos : null }
 
 ; Spindle ID Detection
 if { var.wizSpindleID == null }
