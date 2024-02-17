@@ -60,7 +60,7 @@ allowSpiralMoves      = false;             // Linearize spirals (circular moves 
 allowedCircularPlanes = undefined;         // Allow arcs on all planes
 
 // Base WCS number, offset is added to this
-var wcsBase = 53;
+var wcsBase = 54;
 
 // Define WCS probing modes
 var wcsProbeMode = {
@@ -341,9 +341,6 @@ function resetAll() {
   gCodes.reset();
 }
 
-// Track current WCS setting
-var wcsIndex = 0;
-
 // Regular expression for safe comment characters
 var safeText = /[^0-9a-z\.:,=_\-\s]/gi;
 
@@ -375,11 +372,6 @@ function onOpen() {
   if(getNumberOfSections() > 0) {
     for(var i = 0; i < getNumberOfSections(); i++) {
       var wcs = getSection(i).workOffset;
-      if(wcs === 0) {
-        error("Operation {index} uses WCS 0 (machine co-ordinates!). Using machine co-ordinates directly increases the chances of unexpected collisions!".supplant({
-          index: i
-        }));
-      }
       // Track the WCS we've seen so far
       seenWCS.push(wcs);
     }
@@ -599,7 +591,7 @@ function onSection() {
 
   var wcsF = { wcs: curWCS };
 
-  // WCS Gcode is the offset from 53 (machine co-ordinates).
+  // WCS Gcode is the offset from 54 (first work offset).
   var wcsCode = wcsBase + curWCS;
 
   // If WCS requires changing and probe is required
