@@ -83,7 +83,7 @@ else
 
 echo {"Tool #" ^ state.currentTool ^ " Offset=" ^ var.toolOffset ^ "mm"}
 
-; Park spindle centrally
+; Park spindle in Z ready for next operation
 G27 Z1
 
 G10 P{state.currentTool} X0 Y0 Z{var.toolOffset}
