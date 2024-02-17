@@ -47,7 +47,7 @@ set var.wizExpertMode = { (input == 0) ? true : false }
 ; Otherwise, they can choose to reconfigure individual features
 ; below.
 if { global.mosLoaded }
-    M291 P"MillenniumOS is already configured. Click <b>Update</b> to configure any new settings, or change persistent modes or features, or <b>Reset</b> to reset all settings and start again." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Update","Reset"}
+    M291 P"MillenniumOS is already configured. Click <b>Continue</b> to re-configure, change persistent modes or features, or <b>Reset</b> to reset all settings and start again." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Continue","Reset"}
 elif { exists(global.mosStartupError) && global.mosStartupError != null }
     M291 P"MillenniumOS could not be loaded due to a startup error.<br/>Click <b>Update</b> to configure any missing settings or <b>Reset</b> to reset all settings and start again." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Update","Reset"}
 
