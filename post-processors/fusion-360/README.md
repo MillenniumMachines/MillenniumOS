@@ -14,6 +14,11 @@ The Fusion360 post-processor for MillenniumOS outputs a relatively basic gcode f
 8. Configure the post-processor in the **"Post properties"** section of the **"NC Program"** window to your liking. The default settings should work fine unless you have more advanced needs.
 9. Create a setup, add some toolpaths and then run the Post to generate MillenniumOS flavoured output gcode.
 
+## Notes
+Under **"Machine WCS"** in the **"Post Process"** tab of Fusion360's **"Setup"** configuration is a **"WCS offset"** setting which is where the work offset output is configured. Setting this value to `0` (the default) corresponds to `G54`, which is Work Co-ordinate System 1 in RRF / Duet Web Control terms.
+
+This mismatch might be confusing, but it is done for good reason - if no setup changes are made by the operator, we will still generate code in a work co-ordinate system instead of in machine co-ordinates, which will force probing for the origin. We do not allow generating gcode in machine co-ordinates for safety purposes.
+
 ## Usage
 By default, the post-processor will wrap your operations with a number of commands that are designed to make life easier for novice machinists. In short, these make your programs feel slightly more like they're running on a 3D printer than a CNC mill.
 
@@ -51,7 +56,7 @@ When the operator is prompted to probe the work piece, our default behaviour is 
 
 The default sequential-probing functionality allows you to run operations on a single work piece in multiple planes, by treating each change in work offset as a change in plane.
 
-`G54` (work offset 1) might indicate machining the top of the work piece, while `G55` (work offset 2) might indicate operations that work on the bottom of the work piece.
+`G54` (work offset 0 in Fusion360, work co-ordinate system 1 in Duet Web Control) might indicate machining the top of the work piece, while `G55` (work offset 1 in Fusion360, WCS 2 in DWC) might indicate operations that work on the bottom of the work piece.
 
 As the work offsets are probed just prior to being switched into, the work piece can be rotated manually during the guided probing operation.
 
