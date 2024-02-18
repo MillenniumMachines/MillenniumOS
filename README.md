@@ -85,6 +85,13 @@ If you find any bugs or issues, please create an issue on this repository. Best-
 ### Troubleshooting
 To help us work out any issues, please run `M7600 D1` and paste the whole output into any issue you create, or attach with any help request in Discord. This output includes the value of MOS specific variables and also the contents of the RRF object model - specifically the limits, move, sensors, spindles, state and tool keys which are essential for debugging MillenniumOS functionality (or lack thereof).
 
+## Liability
+You are fully responsible for running the code contained in this library on your own machine. It has been tested on a number of different machines by different people, and is written from a safety-first perspective, but it is a fool who thinks that they can write software without bugs, and it is a (somewhat lesser) fool to _use_ that software and not expect occasional shenanigans.
+
+It is up to you, and only you, to take the relevant precautions when using MillenniumOS - run your tool paths without a workpiece installed and spindle disabled, test the probing routines with soft(er) items (e.g. a roll of tape for bore probe, a cardboard box for block or corner probes), and stay away from the machine when it is moving!
+
+Remember that this is designed for machines that can really hurt you if you're not careful. This software tries its best to protect you but nothing can stand in the way of a really determined idiot :sweat_smile:
+
 ---
 
 ## In Depth
@@ -116,7 +123,7 @@ G21
 G94
 
 (Probe origin corner and save in WCS 3)
-G6508 W3
+G6600 W3
 
 (Switch to WCS 3)
 G56
