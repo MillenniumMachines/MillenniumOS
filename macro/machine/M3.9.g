@@ -24,7 +24,6 @@ else
 
 if { result != 0 }
     abort {"Spindle failed to start!"}
-    M99
 
 var dwellSeconds = { (exists(param.D) ? param.D : global.mosSpindleAccelSeconds) }
 
