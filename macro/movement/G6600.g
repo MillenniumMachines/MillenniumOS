@@ -109,9 +109,11 @@ if { input != null }
         G6500 W{var.workOffset}
     elif { input == 2 } ; Circular Boss
         G6501 W{var.workOffset}
-    elif { input == 3 } ; Rectangle Block
+    elif { input == 3 } ; Rectangle Pocket
+        G6502 W{var.workOffset}
+    elif { input == 4 } ; Rectangle Block
         G6503 W{var.workOffset}
-    elif { input == 4 } ; Single Surface
+    elif { input == 5 } ; Single Surface
         G6510 W{var.workOffset}
     else
         abort { "Invalid probe operation " ^ input ^ " selected!" }

@@ -5,7 +5,7 @@
 ; The macro will explain to the operator what is about to
 ; happen and ask for an approximate length and width of
 ; the block. The macro will then ask the operator to jog
-; the probe to the approximate center of the block, and
+; the probe over the approximate center of the block, and
 ; enter a probe depth. These values will then be passed
 ; to the underlying G6503.1 macro to execute the probe cycle.
 
@@ -47,7 +47,7 @@ else
             abort { "Block length too low!" }
 
         ; Prompt for clearance distance
-        M291 P"Please enter <b>clearance</b> distance in mm.<br/>This is how far far out we move from the expected surface to account for any innaccuracy in the center location." R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{global.mosProbeClearance}
+        M291 P"Please enter <b>clearance</b> distance in mm.<br/>This is how far out we move from the expected surfaces to account for any innaccuracy in the center location." R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{global.mosProbeClearance}
         if { result != 0 }
             abort { "Rectangle block probe aborted!" }
         else
@@ -56,7 +56,7 @@ else
                 abort { "Clearance distance too low!" }
 
             ; Prompt for overtravel distance
-            M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far far in we move from the expected surface to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{global.mosProbeOvertravel}
+            M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far in we move from the expected surfaces to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{global.mosProbeOvertravel}
             if { result != 0 }
                 abort { "Rectangle block probe aborted!" }
             else
