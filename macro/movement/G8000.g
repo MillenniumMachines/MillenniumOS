@@ -90,6 +90,7 @@ var wizToolSetterPos = { (exists(global.mosToolSetterPos) && global.mosToolSette
 var wizTouchProbeID = { (exists(global.mosTouchProbeID) && global.mosTouchProbeID != null && !var.wizReset && !var.wizTouchProbeReset) ? global.mosTouchProbeID : null }
 var wizTouchProbeRadius = { (exists(global.mosTouchProbeRadius) && global.mosTouchProbeRadius != null && !var.wizReset && !var.wizTouchProbeReset) ? global.mosTouchProbeRadius : null }
 var wizTouchProbeDeflection = { (exists(global.mosTouchProbeDeflection) && global.mosTouchProbeDeflection != null && !var.wizReset && !var.wizTouchProbeReset) ? global.mosTouchProbeDeflection : null }
+var wizProtectedMoveBackOff = { (exists(global.mosProtectedMoveBackOff) && global.mosProtectedMoveBackOff != null && !var.wizReset && !var.wizTouchProbeReset && !var.wizToolSetterReset) ? global.mosProtectedMoveBackOff : null }
 
 ; Touch Probe Ref Surface is reconfigured if toolsetter _or_
 ; touch probe are reconfigured.
@@ -446,6 +447,11 @@ if { var.wizFeatureTouchProbe && (var.wizTouchProbeID == null || var.wizTouchPro
     ; Remove the temporary probe tool.
     M4001 P{global.mosProbeToolID}
 
+if { (var.wizFeatureToolSetter || var.wizFeatureTouchProbe) && var.wizProtectedMoveBackOff == null }
+    if { var.wizTutorialMode }
+        M291 P{"We now need to enter a <b>back-off distance</b> for protected moves.<br/>This is the distance we will initially move when a touch probe or toolsetter is activated, to deactivate it."} R"MillenniumOS: Configuration Wizard" S2 T0
+    M291 P{"Please enter the back-off distance for protected moves."} R"MillenniumOS: Configuration Wizard" S6 L0.1 H5 F0.5
+    set var.wizProtectedMoveBackOff = { input }
 
 ; Overwrite the mos-user-vars.g file with the first line
 echo >{var.wizUserVarsFile} "; mos-user-vars.g: MillenniumOS User Variables"
@@ -509,6 +515,10 @@ if { var.wizTouchProbeDeflection != null }
 if { var.wizDatumToolRadius != null }
     echo >>{var.wizUserVarsFile} "; Datum Tool Radius"
     echo >>{var.wizUserVarsFile} {"set global.mosDatumToolRadius = " ^ var.wizDatumToolRadius }
+
+if { var.wizProtectedMoveBackOff != null }
+    echo >>{var.wizUserVarsFile} "; Protected Move Back-Off"
+    echo >>{var.wizUserVarsFile} {"set global.mosProtectedMoveBackOff = " ^ var.wizProtectedMoveBackOff }
 
 if { global.mosLoaded }
     M291 P{"Configuration wizard complete. Your configuration has been saved to " ^ var.wizUserVarsFile ^ ". Press OK to reload!"} R"MillenniumOS: Configuration Wizard" S2 T0

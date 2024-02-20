@@ -15,10 +15,6 @@ if { !exists(param.P) || !exists(param.R) || !exists(param.S) }
 if { param.P >= limits.tools || param.P < 0 }
     abort { "Tool index must be between 0 and " ^ limits.tools-1 ^ "!" }
 
-; Dont allow tools to be overwritten, they must be actively deleted first.
-if { param.P < #tools && tools[param.P].spindle != -1 }
-    abort { "Tool #" ^ param.P ^ " is already defined on spindle " ^ tools[param.P].spindle ^ "!" }
-
 ; Define RRF tool against spindle.
 ; Allow spindle ID to be overridden where necessary using I parameter.
 ; This is mainly used during the configuration wizard.
