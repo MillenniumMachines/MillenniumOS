@@ -26,7 +26,7 @@ find ${TMP_DIR}
 cd "${TMP_DIR}"
 mv sys/daemon.g sys/daemon.install
 echo "Replacing %%MOS_VERSION%% with ${COMMIT_ID}..."
-sed --debug -si -e "s/%%MOS_VERSION%%/${COMMIT_ID}/g" {sys/mos.g,posts/*}
+sed -si -e "s/%%MOS_VERSION%%/${COMMIT_ID}/g" {sys/mos.g,posts/*}
 cp -v posts/* "${WD}/dist"
 zip -x 'README.md' -x 'posts/' -x 'posts/**' -r "${WD}/dist/${ZIP_NAME}" *
 cd "${WD}"

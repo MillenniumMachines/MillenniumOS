@@ -32,7 +32,7 @@ global mosOriginAll={"Front Left","Front Right","Rear Right","Rear Left","Center
 ; None means do not set origins on a work offset.
 global mosWorkOffsetCodes={"None","G54","G55","G56","G57","G58","G59","G59.1","G59.2","G59.3"}
 
-global mosProbeCycleNames = { "Vise Corner (X,Y,Z)", "Circular Bore (X,Y)", "Circular Boss (X,Y)", "Rectangle Block (X,Y)", "Single Surface (X/Y/Z)" }
+global mosProbeCycleNames = { "Vise Corner (X,Y,Z)", "Circular Bore (X,Y)", "Circular Boss (X,Y)", "Rectangle Pocket (X,Y)", "Rectangle Block (X,Y)", "Single Surface (X/Y/Z)" }
 
 ; Friendly names to indicate the location of a surface to be probed, relative to the tool.
 ; Left means 'surface is to the left of the tool', i.e. we will move the table towards the
