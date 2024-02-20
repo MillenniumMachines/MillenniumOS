@@ -171,6 +171,8 @@ global mosTouchProbeDeflection = null
 global mosTouchProbeReferencePos = null
 global mosDatumToolRadius = null
 
+global mosProtectedMoveBackOff = null
+
 global mosManualProbeSpeed = { 1200, 300, 60 }
 global mosManualProbeBackoff=5
 

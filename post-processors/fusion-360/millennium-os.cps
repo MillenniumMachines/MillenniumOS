@@ -255,6 +255,7 @@ var G = {
   PROBE_RECTANGLE_POCKET: 6502.1,
   PROBE_RECTANGLE_BLOCK: 6503.1,
   PROBE_SINGLE_SURFACE: 6510.1,
+  PROBE_REFERENCE_SURFACE: 6511,
   PROBE_VISE_CORNER: 6520.1,
 };
 
@@ -311,6 +312,7 @@ var gCodesF = createModalGroup(
         G.PROBE_RECTANGLE_POCKET,
         G.PROBE_RECTANGLE_BLOCK,
         G.PROBE_SINGLE_SURFACE,
+        G.PROBE_REFERENCE_SURFACE,
         G.PROBE_VISE_CORNER,
       ] // Probe codes
   ],
@@ -432,6 +434,12 @@ function onOpen() {
       writeBlock(gCodesF.format(G.HOME));
       writeln("");
     }
+
+    // We trigger a reference surface probe here. If the surface
+    // is already probed, this is a no-op.
+    writeComment("Probe reference surface if necessary");
+    writeBlock(gCodesF.format(G.PROBE_REFERENCE_SURFACE));
+    writeln("");
 
     writeComment("WCS Probing Mode: {mode}".supplant({mode: getProperty("jobWCSProbeMode")}));
     if(getProperty("jobWCSProbeMode") === wcsProbeMode.ATSTART) {

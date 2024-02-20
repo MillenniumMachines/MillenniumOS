@@ -81,32 +81,31 @@ else
     ; trigger. When the sensor is _NOT_ triggered, it should read a value of
     ; 0.
     if { sensors.probes[param.I].value[0] != 0 }
-        ; We want to move towards the target position by 2 * the probe radius
+        ; We want to move towards the target position by global.mosProtectedMoveBackOff
         ; to ensure that the probe is not triggered when we call G38.3.
 
         ; Calculate target normal
         var tN = { sqrt(pow((var.tPX - move.axes[0].machinePosition), 2) + pow((var.tPY - move.axes[1].machinePosition), 2) + pow((var.tPZ - move.axes[2].machinePosition), 2)) }
 
         ; Calculate X,Y and Z co-ordinates for initial move.
-        var tDX = { (var.tPX - move.axes[0].machinePosition) / (var.tN * (2*global.mosToolTable[state.currentTool][0])) }
-        var tDY = { (var.tPY - move.axes[1].machinePosition) / (var.tN * (2*global.mosToolTable[state.currentTool][0])) }
-        var tDZ = { (var.tPZ - move.axes[2].machinePosition) / (var.tN * (2*global.mosToolTable[state.currentTool][0])) }
+        var tDX = { ((var.tPX - move.axes[0].machinePosition) / var.tN) * (global.mosProtectedMoveBackOff) }
+        var tDY = { ((var.tPY - move.axes[1].machinePosition) / var.tN) * (global.mosProtectedMoveBackOff) }
+        var tDZ = { ((var.tPZ - move.axes[2].machinePosition) / var.tN) * (global.mosProtectedMoveBackOff) }
 
         ; Calculate straight line distance from current position to initial
         ; move position
         var tIN = { sqrt(pow(var.tDX, 2) + pow(var.tDY, 2) + pow(var.tDZ, 2)) }
 
         M7500 S{"Probe is triggered at start position. Must back off until probe deactivates."}
-        M7500 S{"Backoff Target position X=" ^ var.tDX ^ " Y=" ^ var.tDY ^ " Z=" ^ var.tDZ ^ " Distance to initial target: " ^ var.tIN }
+        M7500 S{"Backoff Target position X=" ^ var.tDX ^ " Y=" ^ var.tDY ^ " Z=" ^ var.tDZ ^ " Distance to target: " ^ var.tN ^ " Back-off distance: " ^ var.tIN }
 
         if { var.tIN >= var.tN }
-            abort {"G6550: Probe is triggered and 2 x its radius is greater than the distance to the target position! You will need to manually move the probe out of harms way!" }
-
+            abort {"G6550: Probe is triggered and global.mosProtectedMoveBackOff=" ^ global.mosProtectedMoveBackOff ^ " is greater than the distance to the target position! You will need to manually move the probe out of harms way!" }
 
         ; Configure probe speed
         M558 K{ param.I } F{ var.roughSpeed }
 
-        ; Back off by 2 * the probe radius
+        ; Back off by the back-off distance
         G53 G38.5 K{ param.I } X{ move.axes[0].machinePosition + var.tDX} Y{ move.axes[1].machinePosition + var.tDY } Z{ move.axes[2].machinePosition + var.tDZ }
 
         ; Wait for moves to complete
@@ -119,7 +118,7 @@ else
 
         ; Check if probe is still triggered.
         if { sensors.probes[param.I].value[0] != 0 }
-            abort {"G6550: Probe is still triggered after backing off by 2 x its radius. You will need to manually move the probe out of harms way!" }
+            abort {"G6550: Probe is still triggered after backing off by " ^ global.mosProtectedMoveBackOff ^ "mm. You will need to manually move the probe out of harms way!" }
 
     M558 K{ param.I } F{ sensors.probes[param.I].travelSpeed }
 
