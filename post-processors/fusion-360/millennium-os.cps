@@ -436,7 +436,10 @@ function onOpen() {
     writeComment("WCS Probing Mode: {mode}".supplant({mode: getProperty("jobWCSProbeMode")}));
     if(getProperty("jobWCSProbeMode") === wcsProbeMode.ATSTART) {
       for(var i = 0; i < seenWCS.length; i++) {
-        var wcs = seenWCS[i];
+        // MillenniumOS uses 1-indexed WCS numbers.
+        // WCS 1 is G54, WCS 2 is G55, etc.
+        // Fusion360 uses _offsets_, which are 0-indexed.
+        var wcs = seenWCS[i]+1;
         writeComment("Probe origin and save in WCS {wcs}".supplant({wcs: wcs}));
         writeBlock(gCodesF.format(G.PROBE_OPERATOR), "W{wcs}".supplant({wcs: wcs}));
         writeln("");
