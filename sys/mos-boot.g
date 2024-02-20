@@ -53,6 +53,10 @@ if { global.mosFeatureToolSetter }
         M99
 
 
+if { (global.mosFeatureToolSetter || global.mosFeatureTouchProbe) && global.mosProtectedMoveBackOff == null }
+    set global.mosStartupError = { "<b>global.mosProtectedMoveBackOff</b> is not set. Run the configuration wizard to fix this (<b>G8000</b>)." }
+    M99
+
 if { !global.mosFeatureSpindleFeedback }
     if { !exists(global.mosSpindleAccelSeconds) || global.mosSpindleAccelSeconds == null }
         set global.mosStartupError = { "<b>global.mosSpindleAccelSeconds</b> is not set. Run the configuration wizard to fix this (<b>G8000</b>)." }

@@ -17,14 +17,33 @@ G90
 G21
 G94
 
-; Must have a touch probe to be able to probe the reference surface :)
-if { !global.mosFeatureTouchProbe || global.mosProbeToolID == null }
-    abort { "Reference surface probing requires a touch probe." }
+; If the touch probe or toolsetter feature is not enabled, we don't need to
+; probe the reference surface but we must not abort - this command should be
+; a no-op.
+if { !global.mosFeatureTouchProbe || !global.mosFeatureToolSetter }
+    M7500 S{"Reference surface probe is not required, touch probe or toolsetter feature is not enabled."}
+    M99
 
-; This macro is called during a tool change so we can't call a tool
-; change here as that would cause a recursion.
+if { global.mosToolSetterActivationPos != null && (!exists(param.R) || param.R == 0) }
+    echo { "Reference surface has already been probed! You can call G6511 R1 to force a re-probe." }
+    M99
+
+; If running in standalone mode, we are allowed to switch tools
+; to the touch probe. When calling G6511 from _inside_ a tool change,
+; we _MUST NOT_ switch tools (i.e. we must call with S0).
+var standalone = { (exists(param.S)) ? (param.S != 0) : true }
+
+; This macro is called during a tool change. When running _without_
+; S0, we must switch to the probe tool and then exit.
+; The tool change will handle connecting the touch probe, and trigger
+; G6511 again with the S0 parameter which will allow us to run the
+; reference surface probe.
 if { state.currentTool != global.mosProbeToolID }
-    abort { "Switching to the touch probe (<b>T" ^ global.mosProbeToolID ^ "</b>) will automatically probe the reference surface if not already probed!" }
+    if { var.standalone }
+        T{global.mosProbeToolID}
+        M99
+    else
+        abort { "Switching to the touch probe (<b>T" ^ global.mosProbeToolID ^ "</b>) will automatically probe the reference surface if not already probed!" }
 
 set global.mosToolSetterActivationPos = null
 

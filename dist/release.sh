@@ -2,6 +2,7 @@
 WD="${PWD}"
 TMP_DIR=$(mktemp -d -t mos-release-XXXXX)
 ZIP_NAME="${1:-mos-release}.zip"
+ZIP_PATH="${WD}/dist/${ZIP_NAME}"
 SYNC_CMD="rsync -a --exclude=README.md"
 COMMIT_ID=$(git describe --tags --exclude "release-*" --always --dirty)
 
@@ -21,7 +22,7 @@ ${SYNC_CMD} post-processors/**/* ${TMP_DIR}/posts/
 
 find ${TMP_DIR}
 
-[[ -f ${ZIP_NAME} ]] && rm ${ZIP_NAME}
+[[ -f ${ZIP_PATH} ]] && rm ${ZIP_PATH}
 
 cd "${TMP_DIR}"
 mv sys/daemon.g sys/daemon.install
