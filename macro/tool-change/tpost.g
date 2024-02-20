@@ -31,7 +31,9 @@ if { state.currentTool == global.mosProbeToolID }
         else
             if { !global.mosExpertMode }
                 M291 P{"<b>Touch Probe Detected</b>.<br/>We will now probe the reference surface. Move away from the machine <b>BEFORE</b> pressing <b>OK</b>!"} R"MillenniumOS: Tool Change" S2
-            G6511
+            ; Call reference surface probe in non-standalone mode to
+            ; run the actual probe.
+            G6511 S0
             if { global.mosToolSetterActivationPos == null }
                 abort { "Touch probe reference surface probing failed." }
                 M99

@@ -44,7 +44,7 @@ if { var.curSpindleSpeed == 0 }
 ; stored base RPM.
 var lowerLimit = global.mosVsscPreviousAdjustmentRPM - global.mosVsscVariance
 var upperLimit = global.mosVsscPreviousAdjustmentRPM + global.mosVsscVariance
-var maxRPM = spindle[global.mosSpindleID].max
+var maxRPM = spindles[global.mosSpindleID].max
 if { var.upperLimit > var.maxRPM }
     set var.upperLimit = var.maxRPM
     set var.lowerLimit = { var.maxRPM - (2*global.mosVsscVariance) }
