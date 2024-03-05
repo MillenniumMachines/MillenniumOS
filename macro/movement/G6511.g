@@ -28,7 +28,8 @@ G94
 ; probe the reference surface but we must not abort - this command should be
 ; a no-op.
 if { !global.mosFeatureTouchProbe || !global.mosFeatureToolSetter }
-    M7500 S{"Reference surface probe is not required, touch probe or toolsetter feature is not enabled."}
+    ; Commented due to memory limitations
+    ; M7500 S{"Reference surface probe is not required, touch probe or toolsetter feature is not enabled."}
     M99
 
 if { global.mosToolSetterActivationPos != null && (!exists(param.R) || param.R == 0) }

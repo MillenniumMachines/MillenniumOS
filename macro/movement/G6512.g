@@ -116,8 +116,10 @@ var tPZ = { exists(param.Z)? param.Z : var.sZ }
 G6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
 
-M7500 S{ "Starting probe position: X=" ^ var.sX ^ " Y=" ^ var.sY ^ " Z=" ^ var.sZ }
-M7500 S{ "Target probe position: X=" ^ var.tPX ^ " Y=" ^ var.tPY ^ " Z=" ^ var.tPZ }
+; Commented due to memory limitations
+; M7500 S{ "Starting probe position: X=" ^ var.sX ^ " Y=" ^ var.sY ^ " Z=" ^ var.sZ }
+; Commented due to memory limitations
+; M7500 S{ "Target probe position: X=" ^ var.tPX ^ " Y=" ^ var.tPY ^ " Z=" ^ var.tPZ }
 
 ; Use absolute positions in mm and feeds in mm/min
 G90
@@ -168,7 +170,8 @@ M400
 ; The tool radius we use here already includes a deflection value
 ; which is deemed to be the same for each X/Y axis.
 ; TODO: Is this a safe assumption?
-M7500 S{"Compensating for Tool # " ^ state.currentTool ^ " R=" ^ global.mosToolTable[state.currentTool][0] ^ " dX=" ^ global.mosToolTable[state.currentTool][1][0] ^ " dY=" ^ global.mosToolTable[state.currentTool][1][1]}
+; Commented due to memory limitations
+; M7500 S{"Compensating for Tool # " ^ state.currentTool ^ " R=" ^ global.mosToolTable[state.currentTool][0] ^ " dX=" ^ global.mosToolTable[state.currentTool][1][0] ^ " dY=" ^ global.mosToolTable[state.currentTool][1][1]}
 
 ; Calculate the magnitude of the direction vector of probe movement
 var mag = { sqrt(pow(global.mosProbeCoordinate[0] - var.sX, 2) + pow(global.mosProbeCoordinate[1] - var.sY, 2)) }

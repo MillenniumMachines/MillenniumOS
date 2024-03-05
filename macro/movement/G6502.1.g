@@ -91,7 +91,8 @@ if { var.clearance >= var.fW || var.clearance >= var.fL }
 ; probe target towards or away from the target
 ; surface rather.
 
-M7500 S{"Distance Modifiers adjusted for Tool Radius - Clearance=" ^ var.clearance ^ " Overtravel=" ^ var.overtravel }
+; Commented due to memory limitations
+; M7500 S{"Distance Modifiers adjusted for Tool Radius - Clearance=" ^ var.clearance ^ " Overtravel=" ^ var.overtravel }
 
 ; We can calculate the squareness of the pocket by probing outwards
 ; towards each edge and calculating an angle.
@@ -178,7 +179,8 @@ var aX1 = { atan((var.pX[1] - var.pX[0]) / (var.fL - (2*var.clearance))) }
 var aX2 = { atan((var.pX[2] - var.pX[3]) / (var.fL - (2*var.clearance))) }
 var xAngleDiff = { degrees(abs(var.aX1 - var.aX2)) }
 
-M7500 S{"X Surface Angle difference: " ^ var.xAngleDiff ^ " Threshold: " ^ global.mosProbeSquareAngleThreshold }
+; Commented due to memory limitations
+; M7500 S{"X Surface Angle difference: " ^ var.xAngleDiff ^ " Threshold: " ^ global.mosProbeSquareAngleThreshold }
 
 ; If the angle difference is greater than a certain threshold, abort.
 ; We do this because the below code makes assumptions about the
@@ -249,14 +251,16 @@ var aY1 = { atan((var.pY[1] - var.pY[0]) / (var.fW - (2*var.clearance))) }
 var aY2 = { atan((var.pY[2] - var.pY[3]) / (var.fW - (2*var.clearance))) }
 var yAngleDiff = { degrees(abs(var.aY1 - var.aY2)) }
 
-M7500 S{"Y Surface Angle difference: " ^ var.yAngleDiff ^ " Threshold: " ^ global.mosProbeSquareAngleThreshold }
+; Commented due to memory limitations
+; M7500 S{"Y Surface Angle difference: " ^ var.yAngleDiff ^ " Threshold: " ^ global.mosProbeSquareAngleThreshold }
 
 ; Abort if the angle difference is greater than a certain threshold like
 ; we did for the X axis.
 if { var.yAngleDiff > global.mosProbeSquareAngleThreshold }
     abort { "Rectangular pocket surfaces on Y axis are not parallel - this pocket does not appear to be square. (" ^ var.yAngleDiff ^ " degrees difference in surface angle and our threshold is " ^ global.mosProbeSquareAngleThreshold ^ " degrees!)" }
 
-M7500 S{"Surface Angles X1=" ^ degrees(var.aX1) ^ " X2=" ^ degrees(var.aX2) ^ " Y1=" ^ degrees(var.aY1) ^ " Y2=" ^ degrees(var.aY2) }
+; Commented due to memory limitations
+; M7500 S{"Surface Angles X1=" ^ degrees(var.aX1) ^ " X2=" ^ degrees(var.aX2) ^ " Y1=" ^ degrees(var.aY1) ^ " Y2=" ^ degrees(var.aY2) }
 
 ; Okay, we have now validated that the pocket surfaces are square in both X and Y.
 ; But this does not mean they are square to each other, so we need to calculate
@@ -274,7 +278,8 @@ set global.mosWorkPieceCornerAngle = { 90 + degrees(var.aX1 - var.aY1) }
 ; Square corners should be 90 degrees
 var cornerAngleError = { 90 - global.mosWorkPieceCornerAngle }
 
-M7500 S{"Rectangle Pocket Corner Angle Error: " ^ var.cornerAngleError }
+; Commented due to memory limitations
+; M7500 S{"Rectangle Pocket Corner Angle Error: " ^ var.cornerAngleError }
 
 ; Abort if the corner angle is greater than a certain threshold.
 if { (var.cornerAngleError > global.mosProbeSquareAngleThreshold) }
@@ -314,7 +319,8 @@ G6550 I{var.probeId} I{var.probeId} Z{var.safeZ}
 ; Calculate the slope and angle of the first X line.
 set global.mosWorkPieceRotationAngle = var.aX1
 
-M7500 S{"Rectangle Pocket Rotation from X axis: " ^ global.mosWorkPieceRotationAngle ^ " degrees" }
+; Commented due to memory limitations
+; M7500 S{"Rectangle Pocket Rotation from X axis: " ^ global.mosWorkPieceRotationAngle ^ " degrees" }
 
 if { !exists(param.R) || param.R != 0 }
     if { !global.mosExpertMode }

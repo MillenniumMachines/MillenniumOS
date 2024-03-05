@@ -84,7 +84,8 @@ if { var.clearance >= var.fX || var.clearance >= var.fY }
 ; probe target towards or away from the target
 ; surface rather.
 
-M7500 S{"Distance Modifiers adjusted for Tool Radius - Clearance=" ^ var.clearance ^ " Overtravel=" ^ var.overtravel }
+; Commented due to memory limitations
+; M7500 S{"Distance Modifiers adjusted for Tool Radius - Clearance=" ^ var.clearance ^ " Overtravel=" ^ var.overtravel }
 ; global mosOutsideCornerNames = {"In Front, Left", "In Front, Right", "Behind, Right", "Behind, Left"}
 
 ; Y start location (K) direction is dependent on the chosen corner.

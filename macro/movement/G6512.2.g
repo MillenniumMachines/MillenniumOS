@@ -78,7 +78,8 @@ while { true }
     var vDistIndex = 0
     var slowSpeedIndex = null
 
-    M7500 S{ "Distance to target: " ^ var.dist }
+    ; Commented due to memory limitations
+    ; M7500 S{ "Distance to target: " ^ var.dist }
 
     ; Calculate the v distances
     while { iterations < #var.distances }
@@ -120,7 +121,8 @@ while { true }
 
     var dI = { input }
 
-    M7500 S{"Selected distance index: " ^ var.dI}
+    ; Commented due to memory limitations
+    ; M7500 S{"Selected distance index: " ^ var.dI}
 
     ; Validate selected distance
     if { var.dI < 0 || var.dI >= (#var.vDistN-1) }
@@ -131,11 +133,13 @@ while { true }
 
     ; Break if operator picks the 'zero' distance.
     if { var.dD == 0 }
-        M7500 S{"Operator indicated that surface is being touched by tool."}
+        ; Commented due to memory limitations
+    ; M7500 S{"Operator indicated that surface is being touched by tool."}
         break
 
     if { var.dD == -1 }
-        M7500 S{"Operator indicated that probe needs to be backed away from the surface."}
+        ; Commented due to memory limitations
+    ; M7500 S{"Operator indicated that probe needs to be backed away from the surface."}
 
     ; Use a lower movement speed for the smallest increments
     var moveSpeed = { (var.dI >= var.slowSpeedIndex) ? global.mosManualProbeSpeed[2] : global.mosManualProbeSpeed[1] }
@@ -157,7 +161,8 @@ while { true }
 ; Set the probe coordinates to the current position
 set global.mosProbeCoordinate = { var.cP }
 
-M7500 S{"Probe coordinate: X=" ^ var.cP[0] ^ " Y=" ^ var.cP[1] ^ " Z=" ^ var.cP[2]}
+; Commented due to memory limitations
+; M7500 S{"Probe coordinate: X=" ^ var.cP[0] ^ " Y=" ^ var.cP[1] ^ " Z=" ^ var.cP[2]}
 
 ; Probe variance makes no sense for manual probes that are done once
 set global.mosProbeVariance = { 0 }

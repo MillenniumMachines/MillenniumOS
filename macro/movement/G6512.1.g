@@ -75,13 +75,15 @@ var pV = { vector(3, sensors.probes[param.I].tolerance + 10) }
 ; Probe until we hit a retry limit.
 ; We may also abort early if we reach the requested tolerance
 while { iterations <= var.retries }
-    M7500 S{ "Probe " ^ param.I ^ ": Starting probe " ^ iterations+1 ^ "/" ^ var.retries ^ " using G38.2" }
+    ; Commented due to memory limitations
+    ; M7500 S{ "Probe " ^ param.I ^ ": Starting probe " ^ iterations+1 ^ "/" ^ var.retries ^ " using G38.2" }
     ; Probe towards surface
     ; NOTE: This has potential to move in all 3 axes!
     G53 G38.2 K{ param.I } X{ var.tP[0] } Y{ var.tP[1] } Z{ var.tP[2] }
     ; Abort if an error was encountered
     if { result != 0 }
-        M7500 S{ "G38.2 reported an error, result=" ^ result }
+        ; Commented due to memory limitations
+    ; M7500 S{ "G38.2 reported an error, result=" ^ result }
 
         ; Reset probing speed limits
         M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
@@ -138,9 +140,12 @@ while { iterations <= var.retries }
             set var.pV[1] = { var.nS[1] / (iterations) }
             set var.pV[2] = { var.nS[2] / (iterations) }
 
-            M7500 S{ "Probe " ^ iterations ^ " Mean Location: X=" ^ var.nM[0] ^ " Y=" ^ var.nM[1] ^ " Z=" ^ var.nM[2] }
-            M7500 S{ "Probe " ^ iterations ^ " Cumulative Variance: X=" ^ var.nS[0] ^ " Y=" ^ var.nS[1] ^ " Z=" ^ var.nS[2] }
-            M7500 S{ "Probe " ^ iterations ^ " Variance: X=" ^ var.pV[0] ^ " Y=" ^ var.pV[1] ^ " Z=" ^ var.pV[2] }
+            ; Commented due to memory limitations
+    ; M7500 S{ "Probe " ^ iterations ^ " Mean Location: X=" ^ var.nM[0] ^ " Y=" ^ var.nM[1] ^ " Z=" ^ var.nM[2] }
+            ; Commented due to memory limitations
+    ; M7500 S{ "Probe " ^ iterations ^ " Cumulative Variance: X=" ^ var.nS[0] ^ " Y=" ^ var.nS[1] ^ " Z=" ^ var.nS[2] }
+            ; Commented due to memory limitations
+    ; M7500 S{ "Probe " ^ iterations ^ " Variance: X=" ^ var.pV[0] ^ " Y=" ^ var.pV[1] ^ " Z=" ^ var.pV[2] }
 
     ; Wait for all moves in the queue to finish
     M400
@@ -186,7 +191,8 @@ while { iterations <= var.retries }
     ; If we're within tolerance on all axes, we can stop probing
     ; and report the result.
     if { var.tR }
-        M7500 S{ "Probe " ^ param.I ^ ": Reached requested tolerance " ^ sensors.probes[param.I].tolerance ^ "mm after " ^ iterations+1 ^ "/" ^ var.retries ^ " probes" }
+        ; Commented due to memory limitations
+    ; M7500 S{ "Probe " ^ param.I ^ ": Reached requested tolerance " ^ sensors.probes[param.I].tolerance ^ "mm after " ^ iterations+1 ^ "/" ^ var.retries ^ " probes" }
         break
 
     ; Dwell so machine can settle, if necessary
@@ -194,7 +200,8 @@ while { iterations <= var.retries }
         G4 P{ ceil(sensors.probes[param.I].recoveryTime * 1000) }
 
 
-M7500 S{ "Probe cycle finished, setting vars" }
+; Commented due to memory limitations
+; M7500 S{ "Probe cycle finished, setting vars" }
 
 ; Reset probing speed limits
 M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }

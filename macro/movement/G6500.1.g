@@ -49,7 +49,8 @@ if { global.mosProbeToolID != state.currentTool }
 ; as the configured tool radius is accurate.
 var overtravel = { (exists(param.O) ? param.O : global.mosProbeOvertravel) - ((state.currentTool <= limits.tools-1 && state.currentTool >= 0) ? global.mosToolTable[state.currentTool][0] : 0) }
 
-M7500 S{"Distance Modifiers adjusted for Tool Radius - Overtravel=" ^ var.overtravel }
+; Commented due to memory limitations
+; M7500 S{"Distance Modifiers adjusted for Tool Radius - Overtravel=" ^ var.overtravel }
 
 ; We add the overtravel to the bore radius to give the user
 ; some leeway. If their estimate of the bore diameter is too
