@@ -40,7 +40,7 @@ var sP = { move.axes[0].machinePosition, move.axes[1].machinePosition, move.axes
 var tP = { exists(param.X)? param.X : var.sP[0], exists(param.Y)? param.Y : var.sP[1], exists(param.Z)? param.Z : var.sP[2] }
 
 ; Check if the positions are within machine limits
-G6515 X{ var.tP[0] } Y{ var.tP[1] } Z{ var.tP[2] }
+M6515 X{ var.tP[0] } Y{ var.tP[1] } Z{ var.tP[2] }
 
 ; We have to store these, as we apply them manually to
 ; the probe before triggering a single probe. We must

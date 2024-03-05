@@ -1,4 +1,4 @@
-; G6515.g - CHECK MACHINE LIMITS
+; M6515.g - CHECK MACHINE LIMITS
 ;
 ; This macro checks if the given position is within the limits
 ; of the machine. It will trigger an abort if any of the positions
@@ -12,7 +12,7 @@ if { !inputs[state.thisInput].active }
 M598
 
 if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
-    abort { "G6515: Must provide at least one of X, Y and Z parameters!" }
+    abort { "M6515: Must provide at least one of X, Y and Z parameters!" }
 
 ; Check if target position is within machine limits
 ; Long lines like this suck, but RRF runs on hardware-limited

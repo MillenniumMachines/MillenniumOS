@@ -113,7 +113,7 @@ var tPY = { exists(param.Y)? param.Y : var.sY }
 var tPZ = { exists(param.Z)? param.Z : var.sZ }
 
 ; Check if the positions are within machine limits
-G6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
+M6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
 
 ; Commented due to memory limitations

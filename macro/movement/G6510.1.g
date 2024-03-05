@@ -69,7 +69,7 @@ elif { var.probeAxis == 4 }
     set var.tPZ = { var.tPZ - var.probeDist - var.overtravel }
 
 ; Check if the positions are within machine limits
-G6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
+M6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
 
 ; Run probing operation
