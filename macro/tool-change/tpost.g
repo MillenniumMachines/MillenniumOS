@@ -4,6 +4,13 @@
 ; to probe tool length or reference surface
 ; position if touch probe is installed.
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
+; Make sure we're in the default motion system
+M598
+
 ; Abort if no tool selected
 if { state.currentTool < 0 }
     M99
@@ -15,9 +22,6 @@ if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
 ; Stop and park the spindle
 G27 Z1
 
-; Retrieve tool name
-var tD = { (state.currentTool < #tools) ? tools[state.currentTool].name : "Unknown Tool" }
-
 ; If touch probe is current tool, and enabled, and we have not calculated
 ; the toolsetter activation position yet, then run G6511 to probe the
 ; reference surface so we can make this calculation.
@@ -26,8 +30,7 @@ if { state.currentTool == global.mosProbeToolID }
     if { global.mosFeatureTouchProbe }
         ; Check if requested probe ID was detected.
         if { global.mosProbeToolID < #global.mosProbeDetected && global.mosProbeToolID >= 0 && global.mosProbeDetected[global.mosTouchProbeID] }
-            abort {"Did not detect a " ^ var.tD ^ " with ID " ^ global.mosTouchProbeID ^ "! Please check your " ^ var.tD ^ " and run T" ^ global.mosProbeToolID ^ " again to verify it is connected."}
-            M99
+            abort {"Did not detect a touch probe with ID " ^ global.mosTouchProbeID ^ "! Please check your probe connection and run T" ^ global.mosProbeToolID ^ " again to verify it is connected."}
         else
             if { !global.mosExpertMode }
                 M291 P{"<b>Touch Probe Detected</b>.<br/>We will now probe the reference surface. Move away from the machine <b>BEFORE</b> pressing <b>OK</b>!"} R"MillenniumOS: Tool Change" S2
@@ -36,7 +39,6 @@ if { state.currentTool == global.mosProbeToolID }
             G6511 S0
             if { global.mosToolSetterActivationPos == null }
                 abort { "Touch probe reference surface probing failed." }
-                M99
     else
         if { !global.mosExpertMode }
             M291 P{"<b>Datum Tool Installed</b>.<br/>We will now probe the tool length. Move away from the machine <b>BEFORE</b> pressing <b>OK</b>!"} R"MillenniumOS: Tool Change" S2

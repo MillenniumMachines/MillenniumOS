@@ -16,6 +16,13 @@
 ; We will then run the underlying G6508.1 macro to execute
 ; the probe cycle.
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
+; Make sure we're in the default motion system
+M598
+
 ; Display description of rectangle block probe if not already displayed this session
 if { global.mosTutorialMode && !global.mosDescDisplayed[10] }
     M291 P"This probe cycle finds the X and Y co-ordinates of the corner of a rectangular workpiece by probing twice each along the 2 edges that form the corner." R"MillenniumOS: Probe Outside Corner " T0 S2

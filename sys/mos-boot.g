@@ -23,13 +23,13 @@ if { global.mosFeatureTouchProbe }
         set global.mosStartupError = { "<b>global.mosTouchProbeID</b> must contain the ID of the touch probe. Configure it using M558 K<probe-id>... in config.g, then run the configuration wizard (<b>G8000</b>)." }
         M99
     if { !exists(global.mosTouchProbeReferencePos) || global.mosTouchProbeReferencePos == null }
-        set global.mosStartupError = { "<b>global.mosTouchProbeReferencePos</b> is not set. Run the configuration wizard to fix this (<b>G8000</b>)." }
+        set global.mosStartupError = { "<b>global.mosTouchProbeReferencePos</b> is not set." }
         M99
     if { !exists(global.mosTouchProbeRadius) || global.mosTouchProbeRadius == null }
-        set global.mosStartupError = { "<b>global.mosTouchProbeRadius</b> is not set. Run the configuration wizard to fix this (<b>G8000</b>)." }
+        set global.mosStartupError = { "<b>global.mosTouchProbeRadius</b> is not set." }
         M99
     if { !exists(global.mosTouchProbeDeflection) || global.mosTouchProbeDeflection == null }
-        set global.mosStartupError = { "<b>global.mosTouchProbeDeflection</b> is not set. Run the configuration wizard to fix this (<b>G8000</b>)." }
+        set global.mosStartupError = { "<b>global.mosTouchProbeDeflection</b> is not set." }
         M99
 
     ; Add a touch probe tool at the last index in the tool table.
@@ -37,7 +37,7 @@ if { global.mosFeatureTouchProbe }
     M4000 S{"Touch Probe"} P{global.mosProbeToolID} R{global.mosTouchProbeRadius} X{global.mosTouchProbeDeflection[0]} Y{global.mosTouchProbeDeflection[1]}
 else
     if { !exists(global.mosDatumToolRadius) || global.mosDatumToolRadius == null }
-        set global.mosStartupError = { "<b>global.mosDatumToolRadius</b> is not set. Run the configuration wizard to fix this (<b>G8000</b>)." }
+        set global.mosStartupError = { "<b>global.mosDatumToolRadius</b> is not set." }
         M99
 
     ; Add a datum tool at the last index in the tool table.
@@ -49,21 +49,21 @@ if { global.mosFeatureToolSetter }
         set global.mosStartupError = { "<b>global.mosToolSetterID</b> must contain the ID of the Toolsetter probe. Configure it using M558 K[probe-id]... in config.g, then run the configuration wizard (<b>G8000</b>)." }
         M99
     if { !exists(global.mosToolSetterPos) || global.mosToolSetterPos == null }
-        set global.mosStartupError = { "<b>global.mosToolSetterPos</b> is not set. Run the configuration wizard to fix this (<b>G8000</b>)." }
+        set global.mosStartupError = { "<b>global.mosToolSetterPos</b> is not set." }
         M99
 
 
 if { (global.mosFeatureToolSetter || global.mosFeatureTouchProbe) && global.mosProtectedMoveBackOff == null }
-    set global.mosStartupError = { "<b>global.mosProtectedMoveBackOff</b> is not set. Run the configuration wizard to fix this (<b>G8000</b>)." }
+    set global.mosStartupError = { "<b>global.mosProtectedMoveBackOff</b> is not set." }
     M99
 
 if { !global.mosFeatureSpindleFeedback }
     if { !exists(global.mosSpindleAccelSeconds) || global.mosSpindleAccelSeconds == null }
-        set global.mosStartupError = { "<b>global.mosSpindleAccelSeconds</b> is not set. Run the configuration wizard to fix this (<b>G8000</b>)." }
+        set global.mosStartupError = { "<b>global.mosSpindleAccelSeconds</b> is not set." }
         M99
 
     if { !exists(global.mosSpindleDecelSeconds) || global.mosSpindleDecelSeconds == null }
-        set global.mosStartupError = { "<b>global.mosSpindleDecelSeconds</b> is not set. Run the configuration wizard to fix this (<b>G8000</b>)." }
+        set global.mosStartupError = { "<b>global.mosSpindleDecelSeconds</b> is not set." }
         M99
 
 ; Allow MOS macros to run.

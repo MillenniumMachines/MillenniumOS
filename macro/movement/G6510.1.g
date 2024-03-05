@@ -4,6 +4,13 @@
 ; the axis to probe, distance to probe in and
 ; the depth to probe at or towards.
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
+; Make sure we're in the default motion system
+M598
+
 if { exists(param.W) && param.W != null && (param.W < 1 || param.W > #global.mosWorkOffsetCodes) }
     abort { "WCS number (W..) must be between 1 and " ^ #global.mosWorkOffsetCodes ^ "!" }
 
@@ -62,7 +69,7 @@ elif { var.probeAxis == 4 }
     set var.tPZ = { var.tPZ - var.probeDist - var.overtravel }
 
 ; Check if the positions are within machine limits
-G6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
+M6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
 
 ; Run probing operation

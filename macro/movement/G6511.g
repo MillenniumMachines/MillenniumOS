@@ -13,6 +13,13 @@
 
 ; This macro uses G6512 to perform the actual probing.
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
+; Make sure we're in the default motion system
+M598
+
 G90
 G21
 G94
@@ -21,7 +28,8 @@ G94
 ; probe the reference surface but we must not abort - this command should be
 ; a no-op.
 if { !global.mosFeatureTouchProbe || !global.mosFeatureToolSetter }
-    M7500 S{"Reference surface probe is not required, touch probe or toolsetter feature is not enabled."}
+    ; Commented due to memory limitations
+    ; M7500 S{"Reference surface probe is not required, touch probe or toolsetter feature is not enabled."}
     M99
 
 if { global.mosToolSetterActivationPos != null && (!exists(param.R) || param.R == 0) }

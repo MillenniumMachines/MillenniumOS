@@ -12,6 +12,12 @@
 ; If W is specified, the WCS origin will be set
 ; to the center of the boss.
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
+; Make sure we're in the default motion system
+M598
 
 if { exists(param.W) && param.W != null && (param.W < 1 || param.W > #global.mosWorkOffsetCodes) }
     abort { "WCS number (W..) must be between 1 and " ^ #global.mosWorkOffsetCodes ^ "!" }
@@ -47,7 +53,8 @@ var clearance = { (exists(param.T) ? param.T : global.mosProbeClearance) + ((sta
 ; as the configured tool radius is accurate.
 var overtravel = { (exists(param.O) ? param.O : global.mosProbeOvertravel) - ((state.currentTool <= limits.tools-1 && state.currentTool >= 0) ? global.mosToolTable[state.currentTool][0] : 0) }
 
-M7500 S{"Distance Modifiers adjusted for Tool Radius - Clearance=" ^ var.clearance ^ " Overtravel=" ^ var.overtravel }
+; Commented due to memory limitations
+; M7500 S{"Distance Modifiers adjusted for Tool Radius - Clearance=" ^ var.clearance ^ " Overtravel=" ^ var.overtravel }
 
 ; We add the clearance distance to the boss
 ; radius to ensure we move clear of the boss
@@ -79,7 +86,8 @@ var dirXY = { vector(3, {{null, null}, {null, null}}) }
 
 
 
-M7500 S{"Boss Radius=" ^ var.cR }
+; Commented due to memory limitations
+; M7500 S{"Boss Radius=" ^ var.cR }
 
 ; Start position probe 1
 set var.dirXY[0][0] = { var.sX + var.cR + var.clearance, var.sY }
@@ -107,8 +115,10 @@ var safeZ = { move.axes[2].machinePosition }
 ; Probe each of the 3 points
 while { iterations < #var.dirXY }
     ; Perform a probe operation towards the center of the boss
-    M7500 S{"Starting location X=" ^ var.dirXY[iterations][0][0] ^ " Y=" ^ var.dirXY[iterations][0][1] ^ " Z=" ^ var.sZ }
-    M7500 S{"Target location X=" ^ var.dirXY[iterations][1][0] ^ " Y=" ^ var.dirXY[iterations][1][1] ^ " Z=" ^ var.sZ }
+    ; Commented due to memory limitations
+    ; M7500 S{"Starting location X=" ^ var.dirXY[iterations][0][0] ^ " Y=" ^ var.dirXY[iterations][0][1] ^ " Z=" ^ var.sZ }
+    ; Commented due to memory limitations
+    ; M7500 S{"Target location X=" ^ var.dirXY[iterations][1][0] ^ " Y=" ^ var.dirXY[iterations][1][1] ^ " Z=" ^ var.sZ }
     G6512 I{var.probeId} J{var.dirXY[iterations][0][0]} K{var.dirXY[iterations][0][1]} L{var.sZ} X{var.dirXY[iterations][1][0]} Y{var.dirXY[iterations][1][1]}
 
     ; Save the probed co-ordinates

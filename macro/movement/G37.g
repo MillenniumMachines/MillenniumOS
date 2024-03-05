@@ -29,6 +29,13 @@
 ;
 ; NOTE: This is designed to work with a NEGATIVE Z - that is, MAX is 0 and MIN is -<something>
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
+; Make sure we're in the default motion system
+M598
+
 ; Without a toolsetter, the operator will have to zero the tool themselves.
 if { ! global.mosFeatureToolSetter }
     abort { "Tool length probing without a toolsetter is not currently supported!" }

@@ -11,7 +11,7 @@ set global.mosVsscEnabled  = false
 ; 'base' RPM
 if { spindles[global.mosSpindleID].state == "forward" }
     ; Set spindle RPM
-    M568 P0 F{ global.mosVsscPreviousAdjustmentRPM }
+    M568 F{ global.mosVsscPreviousAdjustmentRPM }
 
     if { global.mosVsscDebug }
         echo {"[VSSC]: State: Disabled RPM: " ^ global.mosVsscPreviousAdjustmentRPM }

@@ -24,6 +24,12 @@
 ; If this command errors, it means that the probe has collided when generally
 ; it should not have. This is a critical failure and should stop the current job.
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
+; Make sure we're in the default motion system
+M598
 
 if { exists(param.I) && param.I != null && (sensors.probes[param.I].type < 5 || sensors.probes[param.I].type > 8) }
     abort { "G6550: Invalid probe ID (I..), probe must be of type 5 or 8, or unset for manual probing." }
@@ -45,11 +51,12 @@ var tPY = { (exists(param.Y)? param.Y : move.axes[1].machinePosition) }
 var tPZ = { (exists(param.Z)? param.Z : move.axes[2].machinePosition) }
 
 if { var.tPX == move.axes[0].machinePosition && var.tPY == move.axes[1].machinePosition && var.tPZ == move.axes[2].machinePosition }
-    M7500 S{"G6550: Target position is the same as the current position, no move required."}
+    ; Commented due to memory limitations
+    ; M7500 S{"G6550: Target position is the same as the current position, no move required."}
     M99
 
 ; Check if the positions are within machine limits
-G6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
+M6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
 ; Use absolute positions in mm and feeds in mm/min
 G90
@@ -61,88 +68,100 @@ G94
 ; So just run the move as normal with our manual
 ; probing travel speed and then return.
 if { var.manualProbe }
-    M7500 S{"Unprotected move to X=" ^ var.tPX ^ " Y=" ^ var.tPY ^ " Z=" ^ var.tPZ ^ " as touch probe is not available."}
+    ; Commented due to memory limitations
+    ; M7500 S{"Unprotected move to X=" ^ var.tPX ^ " Y=" ^ var.tPY ^ " Z=" ^ var.tPZ ^ " as touch probe is not available."}
     G53 G1 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } F{ global.mosManualProbeSpeed[0] }
-    M400
+    M99
 
-else
+; Commented due to memory limitations
+; M7500 S{"Protected move to X=" ^ var.tPX ^ " Y=" ^ var.tPY ^ " Z=" ^ var.tPZ ^ " from X=" ^ move.axes[0].machinePosition ^ " Y=" ^ move.axes[1].machinePosition ^ " Z=" ^ move.axes[2].machinePosition }
 
-    M7500 S{"Protected move to X=" ^ var.tPX ^ " Y=" ^ var.tPY ^ " Z=" ^ var.tPZ ^ " from X=" ^ move.axes[0].machinePosition ^ " Y=" ^ move.axes[1].machinePosition ^ " Z=" ^ move.axes[2].machinePosition }
-
-    ; Note: these must be set as variables as we override the
-    ; probe speed below. We need to reset the probe speed
-    ; after the move.
-    var roughSpeed   = { sensors.probes[param.I].speeds[0] }
-    var fineSpeed    = { sensors.probes[param.I].speeds[1] }
+; Note: these must be set as variables as we override the
+; probe speed below. We need to reset the probe speed
+; after the move.
+var roughSpeed   = { sensors.probes[param.I].speeds[0] }
+var fineSpeed    = { sensors.probes[param.I].speeds[1] }
 
 
-    ; If the sensor is already triggered, we need to back-off slightly first
-    ; before backing off the full distance while waiting for the sensor to
-    ; trigger. When the sensor is _NOT_ triggered, it should read a value of
-    ; 0.
-    if { sensors.probes[param.I].value[0] != 0 }
-        ; We want to move towards the target position by global.mosProtectedMoveBackOff
-        ; to ensure that the probe is not triggered when we call G38.3.
+; If the sensor is already triggered, we need to back-off slightly first
+; before backing off the full distance while waiting for the sensor to
+; trigger. When the sensor is _NOT_ triggered, it should read a value of
+; 0.
+if { sensors.probes[param.I].value[0] != 0 }
+    ; We want to move towards the target position by global.mosProtectedMoveBackOff
+    ; to ensure that the probe is not triggered when we call G38.3.
 
-        ; Calculate target normal
-        var tN = { sqrt(pow((var.tPX - move.axes[0].machinePosition), 2) + pow((var.tPY - move.axes[1].machinePosition), 2) + pow((var.tPZ - move.axes[2].machinePosition), 2)) }
+    ; Calculate target normal
+    var tN = { sqrt(pow((var.tPX - move.axes[0].machinePosition), 2) + pow((var.tPY - move.axes[1].machinePosition), 2) + pow((var.tPZ - move.axes[2].machinePosition), 2)) }
 
-        ; Calculate X,Y and Z co-ordinates for initial move.
-        var tDX = { ((var.tPX - move.axes[0].machinePosition) / var.tN) * (global.mosProtectedMoveBackOff) }
-        var tDY = { ((var.tPY - move.axes[1].machinePosition) / var.tN) * (global.mosProtectedMoveBackOff) }
-        var tDZ = { ((var.tPZ - move.axes[2].machinePosition) / var.tN) * (global.mosProtectedMoveBackOff) }
+    ; Calculate X,Y and Z co-ordinates for initial move.
+    var tDX = { ((var.tPX - move.axes[0].machinePosition) / var.tN) * (global.mosProtectedMoveBackOff) }
+    var tDY = { ((var.tPY - move.axes[1].machinePosition) / var.tN) * (global.mosProtectedMoveBackOff) }
+    var tDZ = { ((var.tPZ - move.axes[2].machinePosition) / var.tN) * (global.mosProtectedMoveBackOff) }
 
-        ; Calculate straight line distance from current position to initial
-        ; move position
-        var tIN = { sqrt(pow(var.tDX, 2) + pow(var.tDY, 2) + pow(var.tDZ, 2)) }
+    ; Calculate straight line distance from current position to initial
+    ; move position
+    var tIN = { sqrt(pow(var.tDX, 2) + pow(var.tDY, 2) + pow(var.tDZ, 2)) }
 
-        M7500 S{"Probe is triggered at start position. Must back off until probe deactivates."}
-        M7500 S{"Backoff Target position X=" ^ var.tDX ^ " Y=" ^ var.tDY ^ " Z=" ^ var.tDZ ^ " Distance to target: " ^ var.tN ^ " Back-off distance: " ^ var.tIN }
+    ; Commented due to memory limitations
+    ; M7500 S{"Probe is triggered at start position. Must back off until probe deactivates."}
+    ; Commented due to memory limitations
+    ; M7500 S{"Backoff Target position X=" ^ var.tDX ^ " Y=" ^ var.tDY ^ " Z=" ^ var.tDZ ^ " Distance to target: " ^ var.tN ^ " Back-off distance: " ^ var.tIN }
 
-        if { var.tIN >= var.tN }
-            abort {"G6550: Probe is triggered and global.mosProtectedMoveBackOff=" ^ global.mosProtectedMoveBackOff ^ " is greater than the distance to the target position! You will need to manually move the probe out of harms way!" }
+    if { var.tIN >= var.tN }
+        abort {"G6550: Probe is triggered and global.mosProtectedMoveBackOff=" ^ global.mosProtectedMoveBackOff ^ " is greater than the distance to the target position! You will need to manually move the probe out of harms way!" }
 
-        ; Configure probe speed
-        M558 K{ param.I } F{ var.roughSpeed }
-
-        ; Back off by the back-off distance
-        G53 G38.5 K{ param.I } X{ move.axes[0].machinePosition + var.tDX} Y{ move.axes[1].machinePosition + var.tDY } Z{ move.axes[2].machinePosition + var.tDZ }
-
-        ; Wait for moves to complete
-        M400
-
-        M7500 S{"Probe back-off deactivated at X=" ^ move.axes[0].machinePosition ^ " Y=" ^ move.axes[1].machinePosition ^ " Z=" ^ move.axes[2].machinePosition }
-
-        ; Reset probe speed
-        M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
-
-        ; Check if probe is still triggered.
-        if { sensors.probes[param.I].value[0] != 0 }
-            abort {"G6550: Probe is still triggered after backing off by " ^ global.mosProtectedMoveBackOff ^ "mm. You will need to manually move the probe out of harms way!" }
-
-    M558 K{ param.I } F{ sensors.probes[param.I].travelSpeed }
-
-    ; Move to position while checking probe for activation
-    G53 G38.3 K{ param.I } X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
+    ; Back off by the back-off distance
+    ; We do not use a G38.5 here because it will stop movement the
+    ; instant the probe is triggered. It is possible, although it
+    ; happens rarely, for the probe to deactivate and then re-activate
+    ; because it is still slightly in contact with the surface.
+    ; It is better to just move the backoff distance and assume that it
+    ; is short enough to not damage the probe.
+    G53 G1 X{ move.axes[0].machinePosition + var.tDX} Y{ move.axes[1].machinePosition + var.tDY } Z{ move.axes[2].machinePosition + var.tDZ } F{ var.roughSpeed }
 
     ; Wait for moves to complete
     M400
 
-    ; Reset probe speed
-    M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
+    ; Commented due to memory limitations
+    ; M7500 S{"Probe back-off deactivated at X=" ^ move.axes[0].machinePosition ^ " Y=" ^ move.axes[1].machinePosition ^ " Z=" ^ move.axes[2].machinePosition }
 
-    ; There is a bug in RRF 3.5rc1 that does not update machine position
-    ; if it has not been updated in the last 200ms. This is a problem, as
-    ; it is possible for the G38.3 command above to return with a stale
-    ; machine position. To work around this, we can apply a delay of greater
-    ; than 200ms to ensure that the machine position is updated.
-    ; This value is set to 0 by default which simply waits for the movement
-    ; queue to empty, but if you find that you are receiving random probe
-    ; innacuracies or false triggers on protected probe moves you can try
-    ; setting this value to >200. This is only relevant if you are not using
-    ; RRF 3.5rc2 or later.
-    G4 P{global.mosProbePositionDelay}
+    ; Check if probe is still triggered.
+    if { sensors.probes[param.I].value[0] != 0 }
+        abort {"G6550: Probe is still triggered after backing off by " ^ global.mosProtectedMoveBackOff ^ "mm. You will need to manually move the probe out of harms way!" }
 
-    ; Probing move either complete or stopped due to collision, we need to
-    ; check the location of the machine to determine if the move was completed.
-    G6516 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
+M558 K{ param.I } F{ sensors.probes[param.I].travelSpeed }
+
+; Move to position while checking probe for activation
+G53 G38.3 K{ param.I } X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
+
+; Wait for moves to complete
+M400
+
+; Reset probe speed
+M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
+
+; There is a bug in RRF 3.5rc1 that does not update machine position
+; if it has not been updated in the last 200ms. This is a problem, as
+; it is possible for the G38.3 command above to return with a stale
+; machine position. To work around this, we can apply a delay of greater
+; than 200ms to ensure that the machine position is updated.
+; This value is set to 0 by default which simply waits for the movement
+; queue to empty, but if you find that you are receiving random probe
+; innacuracies or false triggers on protected probe moves you can try
+; setting this value to >200. This is only relevant if you are not using
+; RRF 3.5rc2 or later.
+G4 P{global.mosProbePositionDelay}
+
+; Probing move either complete or stopped due to collision, we need to
+; check the location of the machine to determine if the move was completed.
+var tolerance = 0.01
+
+if { (move.axes[0].machinePosition) < (var.tPX - var.tolerance/2) || (move.axes[0].machinePosition) > (var.tPX + var.tolerance/2) }
+    abort { "G6550: Machine position does not match expected position -  X=" ^ var.tPX ^ " != " ^ move.axes[0].machinePosition }
+
+if { (move.axes[1].machinePosition) < (var.tPY - var.tolerance/2) || (move.axes[1].machinePosition) > (var.tPY + var.tolerance/2) }
+    abort { "G6550: Machine position does not match expected position -  Y=" ^ var.tPY ^ " != " ^ move.axes[1].machinePosition }
+
+if { (move.axes[2].machinePosition) < (var.tPZ - var.tolerance/2) || (move.axes[2].machinePosition) > (var.tPZ + var.tolerance/2) }
+    abort { "G6550: Machine position does not match expected position -  Z=" ^ var.tPZ ^ " != " ^ move.axes[2].machinePosition }

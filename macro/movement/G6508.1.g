@@ -3,6 +3,13 @@
 ; Probe an outside corner of a workpiece, set target WCS X and Y
 ; co-ordinates to the probed corner, if requested.
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
+; Make sure we're in the default motion system
+M598
+
 if { exists(param.W) && param.W != null && (param.W < 1 || param.W > #global.mosWorkOffsetCodes) }
     abort { "WCS number (W..) must be between 1 and " ^ #global.mosWorkOffsetCodes ^ "!" }
 
@@ -77,7 +84,8 @@ if { var.clearance >= var.fX || var.clearance >= var.fY }
 ; probe target towards or away from the target
 ; surface rather.
 
-M7500 S{"Distance Modifiers adjusted for Tool Radius - Clearance=" ^ var.clearance ^ " Overtravel=" ^ var.overtravel }
+; Commented due to memory limitations
+; M7500 S{"Distance Modifiers adjusted for Tool Radius - Clearance=" ^ var.clearance ^ " Overtravel=" ^ var.overtravel }
 ; global mosOutsideCornerNames = {"In Front, Left", "In Front, Right", "Behind, Right", "Behind, Left"}
 
 ; Y start location (K) direction is dependent on the chosen corner.

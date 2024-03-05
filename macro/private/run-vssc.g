@@ -80,7 +80,7 @@ else
     ; Set adjusted spindle RPM
     if { global.mosVsscDebug }
         echo {"[VSSC] Adjusted spindle RPM: " ^ var.adjustedSpindleRPM }
-    M568 P{global.mosSpindleID} F{ var.adjustedSpindleRPM }
+    M568 F{ var.adjustedSpindleRPM }
 
 ; Update adjustment time
 set global.mosVsscPreviousAdjustmentTime = var.curTime

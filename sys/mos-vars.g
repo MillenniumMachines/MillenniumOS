@@ -157,6 +157,7 @@ global mosVsscVariance = 0.0
 global mosVsscSpeedWarningIssued = false
 global mosVsscPreviousAdjustmentTime = 0
 global mosVsscPreviousAdjustmentRPM = 0.0
+global mosVsscPreviousAdjustmentDir = false
 
 ; Define constants for wizard configured settings
 global mosSpindleID = null
