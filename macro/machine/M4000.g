@@ -36,4 +36,5 @@ if { exists(param.X) }
 if { exists(param.Y) }
     set global.mosToolTable[param.P][1][1] = { param.Y }
 
-M7500 S{"Stored tool #" ^ param.P ^ " R=" ^ param.R ^ " S=" ^ param.S}
+; Commented due to memory limitations
+; M7500 S{"Stored tool #" ^ param.P ^ " R=" ^ param.R ^ " S=" ^ param.S}

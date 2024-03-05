@@ -9,6 +9,13 @@
 ; enter a probe depth. These values will then be passed
 ; to the underlying G6503.1 macro to execute the probe cycle.
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
+; Make sure we're in the default motion system
+M598
+
 ; Display description of rectangle block probe if not already displayed this session
 if { global.mosTutorialMode && !global.mosDescDisplayed[5] }
     M291 P"This probe cycle finds the X and Y co-ordinates of the center of a rectangular block (protruding feature) on a workpiece by probing towards the block surfaces from all 4 directions." R"MillenniumOS: Probe Rect. Block " T0 S2

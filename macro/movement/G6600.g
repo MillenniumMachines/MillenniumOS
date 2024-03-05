@@ -11,6 +11,13 @@
 ;    prompt the user for the probe parameters. The meta macro will then
 ;    call the appropriate probing macro.
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
+; Make sure we're in the default motion system
+M598
+
 ; This is just for safety. It is good practice to park the machine and
 ; stop the spindle before calling any probing macro, and we should do
 ; this in any post-processor that targets the MillenniumOS Gcode Dialect,

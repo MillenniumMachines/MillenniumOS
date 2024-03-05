@@ -10,7 +10,7 @@ Parking is used widely throughout probing and tool changing to move the spindle 
 
 When using multiple milling tools, we must compensate for length differences between the tools. G37 can be used to (re-)calculate the length of the current tool in relation to a reference surface. `G37` is used widely by CNC mills to probe tool lengths but is not implemented by RRF, so again we implement our own.
 
-### `G6515` - CHECK CO-ORDINATES ARE WITHIN MACHINE LIMITS
+### `M6515` - CHECK CO-ORDINATES ARE WITHIN MACHINE LIMITS
 
 Takes at least one of X, Y and Z co-ordinates and checks that they are within the axes limits of the machine, otherwise triggers an abort. This is used by other macros to make sure we do not try to move outside of machine limits.
 

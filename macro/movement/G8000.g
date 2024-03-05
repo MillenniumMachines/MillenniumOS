@@ -5,9 +5,14 @@
 ; user-vars.g file does not exist. It can also be run manually but
 ; please note, it will overwrite your existing mos-user-vars.g file.
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
+; Make sure we're in the default motion system
+M598
+
 var wizUserVarsFile = "mos-user-vars.g"
-
-
 
 ; Do not load existing feature statuses, we should always ask the operator
 ; if they want to enable or disable a feature.
@@ -183,16 +188,24 @@ if { var.wizDatumToolRadius == null }
 
 ; Toolsetter Feature Enable / Disable
 if { var.wizFeatureToolSetter == null }
-    M291 P"Would you like to enable the <b>Toolsetter</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"}
+    M291 P"Would you like to enable the <b>Toolsetter</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F0
     set var.wizFeatureToolSetter = { (input == 0) ? true : false }
 
 ; Touch Probe Feature Enable / Disable
 if { var.wizFeatureTouchProbe == null }
-    M291 P"Would you like to enable the <b>Touch Probe</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"}
+    M291 P"Would you like to enable the <b>Touch Probe</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F1
     set var.wizFeatureTouchProbe = { (input == 0) ? true : false }
 
 ; We configure the toolsetter first. We configure the touch probe reference surface
 ; directly after this, as the datum tool will still be installed.
+
+
+if { (var.wizFeatureToolSetter || var.wizFeatureTouchProbe) && var.wizProtectedMoveBackOff == null }
+    if { var.wizTutorialMode }
+        M291 P{"We now need to enter a <b>back-off distance</b> for protected moves.<br/>This is the distance we will initially move when a touch probe or toolsetter is activated, to deactivate it."} R"MillenniumOS: Configuration Wizard" S2 T0
+    M291 P{"Please enter the back-off distance for protected moves."} R"MillenniumOS: Configuration Wizard" S6 L0.1 H5 F0.5
+    set var.wizProtectedMoveBackOff = { input }
+    set global.mosProtectedMoveBackOff = var.wizProtectedMoveBackOff
 
 ; Toolsetter ID Detection
 if { var.wizFeatureToolSetter }
@@ -244,20 +257,19 @@ if { var.wizFeatureToolSetter }
 
 
     if { var.needsToolSetterPos }
-        M291 P{"Now we need to calibrate the toolsetter position.<br/>Please jog the <b>datum tool</b> over the center of the toolsetter - but <b>NOT</b> touching it - and press <b>OK</b>."} R"MillenniumOS: Configuration Wizard" X1 Y1 Z1 S3
+        M291 P{"Now we need to calibrate the toolsetter position.<br/>Please jog the <b>datum tool</b> less than 10mm over the center of the toolsetter - but <b>NOT</b> touching it - and press <b>OK</b>."} R"MillenniumOS: Configuration Wizard" X1 Y1 Z1 S3
         if { result != 0 }
             abort { "MillenniumOS: Operator aborted toolsetter calibration!" }
 
         ; Save X and Y position, Z is probed in the next step
         set var.wizToolSetterPos = { move.axes[0].machinePosition, move.axes[1].machinePosition, null }
 
-        if { var.wizTutorialMode }
-            M291 P{"Toolsetter position is X: " ^ var.wizToolSetterPos[0] ^ " Y: " ^ var.wizToolSetterPos[1] ^ ".<br/>If this is correct, press <b>OK</b> to probe the toolsetter height."} R"MillenniumOS: Configuration Wizard" S3
-            if { result != 0 }
-                abort { "MillenniumOS: Operator aborted toolsetter calibration!" }
+        M291 P{"Toolsetter position is X: " ^ var.wizToolSetterPos[0] ^ " Y: " ^ var.wizToolSetterPos[1] ^ ".<br/>If this is correct, press <b>OK</b> to probe the toolsetter height."} R"MillenniumOS: Configuration Wizard" S3
+        if { result != 0 }
+            abort { "MillenniumOS: Operator aborted toolsetter calibration!" }
 
         ; Probe the toolsetter height
-        G6512 I{var.wizToolSetterID} L{move.axes[2].machinePosition} Z{move.axes[2].min}
+        G6512 I{var.wizToolSetterID} L{move.axes[2].machinePosition} Z{move.axes[2].machinePosition - 10}
         if { result != 0 }
             M291 P"MillenniumOS: Toolsetter probe failed!" R"MillenniumOS: Configuration Wizard" S2 T0
             abort { "MillenniumOS: Toolsetter probe failed!" }
@@ -446,12 +458,6 @@ if { var.wizFeatureTouchProbe && (var.wizTouchProbeID == null || var.wizTouchPro
 
     ; Remove the temporary probe tool.
     M4001 P{global.mosProbeToolID}
-
-if { (var.wizFeatureToolSetter || var.wizFeatureTouchProbe) && var.wizProtectedMoveBackOff == null }
-    if { var.wizTutorialMode }
-        M291 P{"We now need to enter a <b>back-off distance</b> for protected moves.<br/>This is the distance we will initially move when a touch probe or toolsetter is activated, to deactivate it."} R"MillenniumOS: Configuration Wizard" S2 T0
-    M291 P{"Please enter the back-off distance for protected moves."} R"MillenniumOS: Configuration Wizard" S6 L0.1 H5 F0.5
-    set var.wizProtectedMoveBackOff = { input }
 
 ; Overwrite the mos-user-vars.g file with the first line
 echo >{var.wizUserVarsFile} "; mos-user-vars.g: MillenniumOS User Variables"

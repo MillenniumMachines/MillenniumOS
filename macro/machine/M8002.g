@@ -40,4 +40,5 @@ while { iterations < var.maxIterations }
     ; If no probe status change detected, save the current value for the next iteration
     set var.previousValue = { sensors.probes[var.probeId].value[0] }
 
-M7500 { "MillenniumOS: Probe " ^ var.probeId ^ " not detected after " ^ var.maxWait ^ "s" }
+; Commented due to memory limitations
+; M7500 S{ "MillenniumOS: Probe " ^ var.probeId ^ " not detected after " ^ var.maxWait ^ "s" }

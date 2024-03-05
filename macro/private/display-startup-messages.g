@@ -18,6 +18,7 @@ if { !global.mosStartupMsgsDisplayed }
         else
             var startupError = { (exists(global.mosStartupError) && global.mosStartupError != null) ? global.mosStartupError : "Unknown error. Have you added <b>M98 P""mos.g""</b> at the bottom of your <b>config.g</b>?" }
             M291 P{ var.startupError } R"MillenniumOS: Startup Error" S2 T10
+            G8000
             M99
     else
         echo { "MillenniumOS: Loaded " ^ global.mosVersion }

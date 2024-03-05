@@ -8,26 +8,28 @@
 ; executing T<n> without any additional parameters
 ; to block tool change macros.
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
+; Make sure we're in the default motion system
+M598
+
 if { state.nextTool < 0 }
     abort {"No tool selected!"}
-    M99
 
 if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
     abort {"Machine must be homed before executing a tool change."}
-    T-1 P0
-    M99
 
 ; Stop and park the spindle
 G27 Z1
-
-var tD = {(exists(tools[state.nextTool])) ? tools[state.nextTool].name : "Unknown Tool" }
 
 ; Check if we're switching to a probe.
 if { state.nextTool == global.mosProbeToolID }
     ; If touch probe is enabled, prompt the operator to install
     ; it and check for activation.
     if { global.mosFeatureTouchProbe }
-        M291 P{"Please install your " ^ var.tD ^ " into the spindle and make sure it is connected.<br/>When ready, press <b>OK</b>, and then manually activate your " ^ var.tD ^ " until it is detected."} R"MillenniumOS: Probe Tool" S2 T0
+        M291 P{"Please install your touch probe into the spindle and make sure it is connected.<br/>When ready, press <b>OK</b>, and then manually activate it until it is detected."} R"MillenniumOS: Probe Tool" S2 T0
 
         echo { "Waiting for touch probe activation... "}
 
@@ -40,7 +42,7 @@ if { state.nextTool == global.mosProbeToolID }
 
     else
         ; If no touch probe enabled, ask user to install datum tool.
-        M291 P{"Please install your " ^ var.tD ^ " into the spindle. When ready, press <b>OK</b>."} R"MillenniumOS: Probe Tool" S2 T0
+        M291 P{"Please install your datum tool into the spindle. When ready, press <b>OK</b>."} R"MillenniumOS: Probe Tool" S2 T0
         echo { "Touch probe feature disabled, manual probing will use an installed datum tool." }
     M99
 else
@@ -52,11 +54,10 @@ else
     ; trust the operator did the right thing given the
     ; information :)
     if { global.mosTutorialMode }
-        var toolLengthProbeMethod = { (global.mosFeatureToolSetter) ? "your Toolsetter." : "a Guided Manual probing procedure." }
-        M291 P{"A tool change is required. You will be asked to insert the correct tool, and then the tool length will be probed using " ^ var.toolLengthProbeMethod} R"MillenniumOS: Tool Change" S2 T0
+        M291 P{"A tool change is required. You will be asked to insert the correct tool, and then the tool length will be probed."} R"MillenniumOS: Tool Change" S2 T0
 
     ; Prompt user to change tool
-    M291 P{"Insert Tool <b>#" ^ state.nextTool ^ "</b>: " ^ var.tD ^ " and press <b>Continue</b> when ready. <b>Cancel</b> will abort the running job!"} R"MillenniumOS: Tool Change" S4 K{"Continue", "Cancel"}
+    M291 P{"Insert Tool <b>#" ^ state.nextTool ^ "</b>: " ^ tools[state.nextTool].name ^ " and press <b>Continue</b> when ready. <b>Cancel</b> will abort the running job!"} R"MillenniumOS: Tool Change" S4 K{"Continue", "Cancel"}
     if { input != 0 }
         echo { "Tool change aborted by operator, aborting job!" }
         M99

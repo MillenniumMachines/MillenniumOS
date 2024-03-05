@@ -8,6 +8,13 @@
 ; and then ask for a probing depth. These values are then
 ; passed to the G6501.1 macro to execute the boss probe.
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
+; Make sure we're in the default motion system
+M598
+
 ; Display description of boss probe if not already displayed this session
 if { global.mosTutorialMode && !global.mosDescDisplayed[3] }
     M291 P"This probe cycle finds the X and Y co-ordinates of the center of a circular boss (protruding feature) on a workpiece by probing towards the approximate center of the boss in 3 directions." R"MillenniumOS: Probe Boss" T0 S2
