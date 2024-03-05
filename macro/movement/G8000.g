@@ -5,9 +5,14 @@
 ; user-vars.g file does not exist. It can also be run manually but
 ; please note, it will overwrite your existing mos-user-vars.g file.
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
+; Make sure we're in the default motion system
+M598
+
 var wizUserVarsFile = "mos-user-vars.g"
-
-
 
 ; Do not load existing feature statuses, we should always ask the operator
 ; if they want to enable or disable a feature.
@@ -193,6 +198,14 @@ if { var.wizFeatureTouchProbe == null }
 
 ; We configure the toolsetter first. We configure the touch probe reference surface
 ; directly after this, as the datum tool will still be installed.
+
+
+if { (var.wizFeatureToolSetter || var.wizFeatureTouchProbe) && var.wizProtectedMoveBackOff == null }
+    if { var.wizTutorialMode }
+        M291 P{"We now need to enter a <b>back-off distance</b> for protected moves.<br/>This is the distance we will initially move when a touch probe or toolsetter is activated, to deactivate it."} R"MillenniumOS: Configuration Wizard" S2 T0
+    M291 P{"Please enter the back-off distance for protected moves."} R"MillenniumOS: Configuration Wizard" S6 L0.1 H5 F0.5
+    set var.wizProtectedMoveBackOff = { input }
+    set global.mosProtectedMoveBackOff = var.wizProtectedMoveBackOff
 
 ; Toolsetter ID Detection
 if { var.wizFeatureToolSetter }
@@ -446,12 +459,6 @@ if { var.wizFeatureTouchProbe && (var.wizTouchProbeID == null || var.wizTouchPro
 
     ; Remove the temporary probe tool.
     M4001 P{global.mosProbeToolID}
-
-if { (var.wizFeatureToolSetter || var.wizFeatureTouchProbe) && var.wizProtectedMoveBackOff == null }
-    if { var.wizTutorialMode }
-        M291 P{"We now need to enter a <b>back-off distance</b> for protected moves.<br/>This is the distance we will initially move when a touch probe or toolsetter is activated, to deactivate it."} R"MillenniumOS: Configuration Wizard" S2 T0
-    M291 P{"Please enter the back-off distance for protected moves."} R"MillenniumOS: Configuration Wizard" S6 L0.1 H5 F0.5
-    set var.wizProtectedMoveBackOff = { input }
 
 ; Overwrite the mos-user-vars.g file with the first line
 echo >{var.wizUserVarsFile} "; mos-user-vars.g: MillenniumOS User Variables"

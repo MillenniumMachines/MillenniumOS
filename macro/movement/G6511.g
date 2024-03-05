@@ -13,6 +13,13 @@
 
 ; This macro uses G6512 to perform the actual probing.
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
+; Make sure we're in the default motion system
+M598
+
 G90
 G21
 G94

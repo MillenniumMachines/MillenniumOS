@@ -7,6 +7,13 @@
 ; level. If using this macro directly, please check your parameters
 ; (particularly start and target positions) before calling this macro.
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
+; Make sure we're in the default motion system
+M598
+
 if { !exists(param.I) || param.I == null || sensors.probes[param.I].type < 5 || sensors.probes[param.I].type > 8 }
     abort { "Must provide a valid probe ID (I..)!" }
 

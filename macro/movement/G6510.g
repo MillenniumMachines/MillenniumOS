@@ -8,6 +8,13 @@
 ; depth to probe at (in the case of a Z probe, this is how deep
 ; we will attempt to probe from the starting location).
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
+; Make sure we're in the default motion system
+M598
+
 var zProbeI = { #global.mosSurfaceLocationNames - 1 }
 
 ; Display description of surface probe if not displayed this session

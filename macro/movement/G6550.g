@@ -24,6 +24,12 @@
 ; If this command errors, it means that the probe has collided when generally
 ; it should not have. This is a critical failure and should stop the current job.
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
+; Make sure we're in the default motion system
+M598
 
 if { exists(param.I) && param.I != null && (sensors.probes[param.I].type < 5 || sensors.probes[param.I].type > 8) }
     abort { "G6550: Invalid probe ID (I..), probe must be of type 5 or 8, or unset for manual probing." }
@@ -145,4 +151,13 @@ else
 
     ; Probing move either complete or stopped due to collision, we need to
     ; check the location of the machine to determine if the move was completed.
-    G6516 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
+    var tolerance = 0.01
+
+    if { exists(var.tPX) && ((move.axes[0].machinePosition) < (var.tPX - var.tolerance/2) || (move.axes[0].machinePosition) > (var.tPX + var.tolerance/2)) }
+        abort { "G6550: Machine position does not match expected position -  X=" ^ var.tPX ^ " != " ^ move.axes[0].machinePosition }
+
+    if { exists(var.tPY) && ((move.axes[1].machinePosition) < (var.tPY - var.tolerance/2) || (move.axes[1].machinePosition) > (var.tPY + var.tolerance/2)) }
+        abort { "G6550: Machine position does not match expected position -  Y=" ^ var.tPY ^ " != " ^ move.axes[1].machinePosition }
+
+    if { exists(var.tPZ) && ((move.axes[2].machinePosition) < (var.tPZ - var.tolerance/2) || (move.axes[2].machinePosition) > (var.tPZ + var.tolerance/2)) }
+        abort { "G6550: Machine position does not match expected position -  Z=" ^ var.tPZ ^ " != " ^ move.axes[2].machinePosition }

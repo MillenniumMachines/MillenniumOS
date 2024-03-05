@@ -7,9 +7,17 @@
 ; Stop spindle after raising Z, in case it is spinning and
 ; in contact with the workpiece when this macro is called.
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
+; Make sure we're in the default motion system
+M598
+
 ; Use absolute positions in mm
 G90
 G21
+G94
 
 ; Move spindle to top of Z travel
 G53 G0 Z{move.axes[2].max}

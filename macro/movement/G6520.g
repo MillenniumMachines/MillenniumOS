@@ -17,6 +17,13 @@
 ; We will then run the underlying G6520.1 and macro to execute
 ; the probe cycle.
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
+; Make sure we're in the default motion system
+M598
+
 ; Display description of vise corner probe if not already displayed this session
 if { global.mosTutorialMode && !global.mosDescDisplayed[11] }
     M291 P"This probe cycle finds the X, Y and Z co-ordinates of the corner of a workpiece by probing the top surface and twice each along the 2 edges that form the corner." R"MillenniumOS: Probe Vise Corner" T0 S2
