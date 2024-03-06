@@ -44,64 +44,64 @@ var sW = { (global.mosWPDims[0] != null) ? global.mosWPDims[0] : 100 }
 M291 P{"Please enter approximate <b>surface length</b> along the X axis in mm.<br/><b>NOTE</b>: Along the X axis means the surface facing towards or directly away from the operator."} R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{var.sW}
 if { result != 0 }
     abort { "Outside corner probe aborted!" }
-else
-    var xSurfaceLength = { input }
 
-    if { var.xSurfaceLength < var.tR }
-        abort { "X surface length too low. Cannot probe distances smaller than the tool radius (" ^ var.tR ^ ")!"}
+var xSurfaceLength = { input }
 
-    var sL = { (global.mosWPDims[1] != null) ? global.mosWPDims[1] : 100 }
-    M291 P{"Please enter approximate <b>surface length</b> along the Y axis in mm.<br/><b>NOTE</b>: Along the Y axis means the surface to the left or the right of the operator."} R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{var.sL}
+if { var.xSurfaceLength < var.tR }
+    abort { "X surface length too low. Cannot probe distances smaller than the tool radius (" ^ var.tR ^ ")!"}
+
+var sL = { (global.mosWPDims[1] != null) ? global.mosWPDims[1] : 100 }
+M291 P{"Please enter approximate <b>surface length</b> along the Y axis in mm.<br/><b>NOTE</b>: Along the Y axis means the surface to the left or the right of the operator."} R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{var.sL}
+if { result != 0 }
+    abort { "Outside corner probe aborted!" }
+
+var ySurfaceLength = { input }
+
+if { var.ySurfaceLength < var.tR }
+    abort { "Y surface length too low. Cannot probe distances smaller than the tool radius (" ^ var.tR ^ ")!"}
+
+; Prompt for clearance distance
+M291 P"Please enter <b>clearance</b> distance in mm.<br/>This is how far far out we move from the expected surface to account for any innaccuracy in the corner location." R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{global.mosCL}
+if { result != 0 }
+    abort { "Outside corner probe aborted!" }
+
+var clearance = { input }
+if { var.clearance < var.tR }
+    abort { Clearance distance too low. Cannot probe distances smaller than the tool radius (" ^ var.tR ^ ")!"}
+
+; Prompt for overtravel distance
+M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far far in we move from the expected surface to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{global.mosOT}
+if { result != 0 }
+    abort { "Outside corner probe aborted!" }
+
+var overtravel = { input }
+if { var.overtravel < 0 }
+    abort { "Overtravel distance must not be negative!" }
+
+M291 P"Please jog the probe <b>OVER</b> the corner and press <b>OK</b>.<br/><b>CAUTION</b>: The chosen height of the probe is assumed to be safe for horizontal moves!" R"MillenniumOS: Probe Outside Corner" X1 Y1 Z1 J1 T0 S3
+if { result != 0 }
+    abort { "Outside corner probe aborted!" }
+
+M291 P"Please select the corner to probe.<br/><b>NOTE</b>: These surface names are relative to an operator standing at the front of the machine." R"MillenniumOS: Probe Outside Corner" T0 S4 K{global.mosCnr}
+if { result != 0 }
+    abort { "Outside corner probe aborted!" }
+
+var corner = { input }
+
+M291 P"Please enter the depth to probe at in mm, relative to the current location. A value of 10 will move the probe downwards 10mm before probing inwards." R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{global.mosOT}
+if { result != 0 }
+    abort { "Outside corner probe aborted!" }
+
+var probingDepth = { input }
+
+if { var.probingDepth < 0 }
+    abort { "Probing depth must not be negative!" }
+
+; Run the block probe cycle
+if { global.mosTM }
+    var cN = { global.mosCnr[var.corner] }
+    M291 P{"Probe will now move outside the <b>" ^ var.cN ^ "</b> corner and down by " ^ var.probingDepth ^ "mm, before probing 2 points " ^ var.clearance ^ "mm from each end of the surfaces." } R"MillenniumOS: Probe Outside Corner" T0 S3
     if { result != 0 }
         abort { "Outside corner probe aborted!" }
-    else
-        var ySurfaceLength = { input }
 
-        if { var.ySurfaceLength < var.tR }
-            abort { "Y surface length too low. Cannot probe distances smaller than the tool radius (" ^ var.tR ^ ")!"}
-
-        ; Prompt for clearance distance
-        M291 P"Please enter <b>clearance</b> distance in mm.<br/>This is how far far out we move from the expected surface to account for any innaccuracy in the corner location." R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{global.mosCL}
-        if { result != 0 }
-            abort { "Outside corner probe aborted!" }
-        else
-            var clearance = { input }
-            if { var.clearance < var.tR }
-                abort { Clearance distance too low. Cannot probe distances smaller than the tool radius (" ^ var.tR ^ ")!"}
-
-            ; Prompt for overtravel distance
-            M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far far in we move from the expected surface to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{global.mosOT}
-            if { result != 0 }
-                abort { "Outside corner probe aborted!" }
-            else
-                var overtravel = { input }
-                if { var.overtravel < 0 }
-                    abort { "Overtravel distance must not be negative!" }
-
-                M291 P"Please jog the probe <b>OVER</b> the corner and press <b>OK</b>.<br/><b>CAUTION</b>: The chosen height of the probe is assumed to be safe for horizontal moves!" R"MillenniumOS: Probe Outside Corner" X1 Y1 Z1 J1 T0 S3
-                if { result != 0 }
-                    abort { "Outside corner probe aborted!" }
-                else
-                    M291 P"Please select the corner to probe.<br/><b>NOTE</b>: These surface names are relative to an operator standing at the front of the machine." R"MillenniumOS: Probe Outside Corner" T0 S4 K{global.mosCnr}
-                    if { result != 0 }
-                        abort { "Outside corner probe aborted!" }
-                    else
-                        var corner = { input }
-
-                        M291 P"Please enter the depth to probe at in mm, relative to the current location. A value of 10 will move the probe downwards 10mm before probing inwards." R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{global.mosOT}
-                        if { result != 0 }
-                            abort { "Outside corner probe aborted!" }
-                        else
-                            var probingDepth = { input }
-
-                            if { var.probingDepth < 0 }
-                                abort { "Probing depth must not be negative!" }
-
-                            ; Run the block probe cycle
-                            if { global.mosTM }
-                                var cN = { global.mosCnr[var.corner] }
-                                M291 P{"Probe will now move outside the <b>" ^ var.cN ^ "</b> corner and down by " ^ var.probingDepth ^ "mm, before probing 2 points " ^ var.clearance ^ "mm from each end of the surfaces." } R"MillenniumOS: Probe Outside Corner" T0 S3
-                                if { result != 0 }
-                                    abort { "Outside corner probe aborted!" }
-
-                            G6508.1 W{exists(param.W)? param.W : null} H{var.xSurfaceLength} I{var.ySurfaceLength} N{var.corner} T{var.clearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
+G6508.1 W{exists(param.W)? param.W : null} H{var.xSurfaceLength} I{var.ySurfaceLength} N{var.corner} T{var.clearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}

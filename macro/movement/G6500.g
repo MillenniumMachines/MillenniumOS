@@ -39,39 +39,39 @@ if { global.mosPTID != state.currentTool }
 M291 P"Please enter approximate bore diameter in mm." R"MillenniumOS: Probe Bore" J1 T0 S6 F{(global.mosWPRad != null) ? global.mosWPRad*2 : 0}
 if { result != 0 }
     abort { "Bore probe aborted!" }
-else
-    var boreDiameter = { input }
 
-    if { var.boreDiameter < 1 }
-        abort { "Bore diameter too low!" }
+var boreDiameter = { input }
+
+if { var.boreDiameter < 1 }
+    abort { "Bore diameter too low!" }
 
 
-    ; Prompt for overtravel distance
-    M291 P"Please enter overtravel distance in mm." R"MillenniumOS: Probe Bore" J1 T0 S6 F{global.mosOT}
+; Prompt for overtravel distance
+M291 P"Please enter overtravel distance in mm." R"MillenniumOS: Probe Bore" J1 T0 S6 F{global.mosOT}
+if { result != 0 }
+    abort { "Bore probe aborted!" }
+
+var overTravel = { input }
+if { var.overTravel < 0.1 }
+    abort { "Overtravel distance too low!" }
+
+M291 P"Please jog the probe <b>OVER</b> the center of the bore and press <b>OK</b>." R"MillenniumOS: Probe Bore" X1 Y1 Z1 J1 T0 S3
+if { result != 0 }
+    abort { "Bore probe aborted!" }
+
+M291 P"Please enter the depth to probe at in mm, relative to the current location. A value of 10 will move the probe downwards 10mm before probing outwards." R"MillenniumOS: Probe Bore" J1 T0 S6 F{global.mosOT}
+if { result != 0 }
+    abort { "Bore probe aborted!" }
+
+var probingDepth = { input }
+
+if { var.probingDepth < 0 }
+    abort { "Probing depth was negative!" }
+
+; Run the bore probe cycle
+if { global.mosTM }
+    M291 P{"Probe will now move downwards " ^ var.probingDepth ^ "mm into the bore and probe towards the edge in 3 directions."} R"MillenniumOS: Probe Bore" J1 T0 S3
     if { result != 0 }
         abort { "Bore probe aborted!" }
-    else
-        var overTravel = { input }
-        if { var.overTravel < 0.1 }
-            abort { "Overtravel distance too low!" }
 
-        M291 P"Please jog the probe <b>OVER</b> the center of the bore and press <b>OK</b>." R"MillenniumOS: Probe Bore" X1 Y1 Z1 J1 T0 S3
-        if { result != 0 }
-            abort { "Bore probe aborted!" }
-        else
-            M291 P"Please enter the depth to probe at in mm, relative to the current location. A value of 10 will move the probe downwards 10mm before probing outwards." R"MillenniumOS: Probe Bore" J1 T0 S6 F{global.mosOT}
-            if { result != 0 }
-                abort { "Bore probe aborted!" }
-
-            var probingDepth = { input }
-
-            if { var.probingDepth < 0 }
-                abort { "Probing depth was negative!" }
-            else
-                ; Run the bore probe cycle
-                if { global.mosTM }
-                    M291 P{"Probe will now move downwards " ^ var.probingDepth ^ "mm into the bore and probe towards the edge in 3 directions."} R"MillenniumOS: Probe Bore" J1 T0 S3
-                    if { result != 0 }
-                        abort { "Bore probe aborted!" }
-
-                G6500.1 W{exists(param.W)? param.W : null} H{var.boreDiameter} O{var.overTravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
+G6500.1 W{exists(param.W)? param.W : null} H{var.boreDiameter} O{var.overTravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}

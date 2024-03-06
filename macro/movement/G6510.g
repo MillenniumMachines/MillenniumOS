@@ -48,54 +48,54 @@ if { global.mosPTID != state.currentTool }
 M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far far in we move from the expected surface to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{global.mosOT}
 if { result != 0 }
     abort { "Single Surface probe aborted!" }
-else
-    var overtravel = { input }
-    if { var.overtravel < 0 }
-        abort { "Overtravel distance must not be negative!" }
 
-    ; Ask the operator to jog to their chosen starting position
-    M291 P"Please jog the probe or tool to your chosen starting position.<br/><b>CAUTION</b>: Remember - Jogging in RRF does <b>NOT</b> watch the probe status. Be careful!" R"MillenniumOS: Probe Surface" X1 Y1 Z1 T0 S3
+var overtravel = { input }
+if { var.overtravel < 0 }
+    abort { "Overtravel distance must not be negative!" }
+
+; Ask the operator to jog to their chosen starting position
+M291 P"Please jog the probe or tool to your chosen starting position.<br/><b>CAUTION</b>: Remember - Jogging in RRF does <b>NOT</b> watch the probe status. Be careful!" R"MillenniumOS: Probe Surface" X1 Y1 Z1 T0 S3
+if { result != 0 }
+    abort { "Surface probe aborted!" }
+
+; Prompt the operator for the location of the surface
+M291 P"Please select the surface to probe.<br/><b>NOTE</b>: These surface names are relative to an operator standing at the front of the machine." R"MillenniumOS: Probe Surface" T0 S4 F{var.zProbeI} K{var.surfaceLocationNames}
+var probeAxis = { input }
+
+; For Z probes, our depth is 0 but our distance is the probing depth
+var probeDepth = 0
+
+var isZProbe = { var.probeAxis == var.zProbeI }
+
+; If this is an X/Y probe, ask for depth
+if { !var.isZProbe }
+    M291 P"Please enter the depth to probe at in mm, below the current location.<br/><b>Example</b>: A value of 10 will move the probe downwards 10mm before probing outwards." R"MillenniumOS: Probe Surface" J1 T0 S6 F{global.mosOT}
     if { result != 0 }
         abort { "Surface probe aborted!" }
-    else
-        ; Prompt the operator for the location of the surface
-        M291 P"Please select the surface to probe.<br/><b>NOTE</b>: These surface names are relative to an operator standing at the front of the machine." R"MillenniumOS: Probe Surface" T0 S4 F{var.zProbeI} K{var.surfaceLocationNames}
-        var probeAxis = { input }
 
-        ; For Z probes, our depth is 0 but our distance is the probing depth
-        var probeDepth = 0
+    set var.probeDepth = { input }
 
-        var isZProbe = { var.probeAxis == var.zProbeI }
+    if { var.probeDepth < 0 }
+        abort { "Probing depth was negative!" }
 
-        ; If this is an X/Y probe, ask for depth
-        if { !var.isZProbe }
-            M291 P"Please enter the depth to probe at in mm, below the current location.<br/><b>Example</b>: A value of 10 will move the probe downwards 10mm before probing outwards." R"MillenniumOS: Probe Surface" J1 T0 S6 F{global.mosOT}
-            if { result != 0 }
-                abort { "Surface probe aborted!" }
-            else
-                set var.probeDepth = { input }
+M291 P"Please enter the distance to probe towards the surface in mm." R"MillenniumOS: Probe Surface" J1 T0 S6 F{global.mosOT}
+if { result != 0 }
+    abort { "Surface probe aborted!" }
 
-                if { var.probeDepth < 0 }
-                    abort { "Probing depth was negative!" }
+var probeDist = { input }
 
-        M291 P"Please enter the distance to probe towards the surface in mm." R"MillenniumOS: Probe Surface" J1 T0 S6 F{global.mosOT}
+if { var.probeDist < 0 }
+    abort { "Probe distance was negative!" }
+
+if { global.mosTM }
+    if { !var.isZProbe }
+        M291 P{"Probe will now move down <b>" ^ var.probeDepth ^ "</b> mm and probe towards the <b>" ^ var.surfaceLocationNames[var.probeAxis] ^ "</b> surface." } R"MillenniumOS: Probe Surface" T0 S3
         if { result != 0 }
-            abort { "Surface probe aborted!" }
-        else
-            var probeDist = { input }
-
-            if { var.probeDist < 0 }
-                abort { "Probe distance was negative!" }
-
-            if { global.mosTM}
-                if { !var.isZProbe }
-                    M291 P{"Probe will now move down <b>" ^ var.probeDepth ^ "</b> mm and probe towards the <b>" ^ var.surfaceLocationNames[var.probeAxis] ^ "</b> surface." } R"MillenniumOS: Probe Surface" T0 S3
-                    if { result != 0 }
-                        abort { "Single Surface probe aborted!" }
-                else
-                    M291 P{"Probe will now move towards the <b>" ^ var.surfaceLocationNames[var.probeAxis] ^ "</b> surface." } R"MillenniumOS: Probe Surface" T0 S3
-                    if { result != 0 }
-                        abort { "Single Surface probe aborted!" }
+            abort { "Single Surface probe aborted!" }
+    else
+        M291 P{"Probe will now move towards the <b>" ^ var.surfaceLocationNames[var.probeAxis] ^ "</b> surface." } R"MillenniumOS: Probe Surface" T0 S3
+        if { result != 0 }
+            abort { "Single Surface probe aborted!" }
 
 
-            G6510.1 W{exists(param.W)? param.W : null} H{var.probeAxis} I{var.probeDist} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probeDepth}
+G6510.1 W{exists(param.W)? param.W : null} H{var.probeAxis} I{var.probeDist} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probeDepth}
