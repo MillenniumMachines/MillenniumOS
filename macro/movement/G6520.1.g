@@ -19,8 +19,8 @@ if { !inputs[state.thisInput].active }
 ; Make sure we're in the default motion system
 M598
 
-if { exists(param.W) && param.W != null && (param.W < 1 || param.W > #global.mosWorkOffsetCodes) }
-    abort { "WCS number (W..) must be between 1 and " ^ #global.mosWorkOffsetCodes ^ "!" }
+if { exists(param.W) && param.W != null && (param.W < 1 || param.W > limits.workplaces) }
+    abort { "WCS number (W..) must be between 1 and " ^ limits.workplaces ^ "!" }
 
 if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
     abort { "Must provide a start position to probe from using J, K and L parameters!" }
@@ -31,14 +31,14 @@ if { !exists(param.H) || !exists(param.I) }
 if { !exists(param.P) }
     abort { "Must provide a probe depth below the top surface using the P parameter!" }
 
-if { !exists(param.N) || param.N < 0 || param.N >= (#global.mosOutsideCornerNames) }
+if { !exists(param.N) || param.N < 0 || param.N >= (#global.mosCnr) }
     abort { "Must provide a valid corner index using the N parameter!" }
 
-var probeId = { global.mosFeatureTouchProbe ? global.mosTouchProbeID : null }
+var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
 ; Make sure probe tool is selected
-if { global.mosProbeToolID != state.currentTool }
-    T T{global.mosProbeToolID}
+if { global.mosPTID != state.currentTool }
+    T T{global.mosPTID}
 
 ; Store our own safe Z position as the current position. We return to
 ; this position where necessary to make moves across the workpiece to
@@ -62,25 +62,22 @@ var sZ   = { param.L }
 
 ; Probe the top surface of the workpiece from the current Z position
 G6510.1 R0 W{exists(param.W)? param.W : null} H4 I{param.T} O{param.O} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{var.safeZ}
-if { global.mosWorkPieceSurfacePos == null || global.mosWorkPieceSurfaceAxis != "Z" }
+if { global.mosWPSfcPos == null || global.mosWPSfcAxis != "Z" }
     abort { "G6520: Failed to probe the top surface of the workpiece!" }
 
 ; Probe the corner surface
-G6508.1 R0 W{exists(param.W)? param.W : null} H{param.H} I{param.I} N{param.N} T{param.T} O{param.O} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{ global.mosWorkPieceSurfacePos - param.P}
-if { global.mosWorkPieceCornerNum == null }
+G6508.1 R0 W{exists(param.W)? param.W : null} H{param.H} I{param.I} N{param.N} T{param.T} O{param.O} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{ global.mosWPSfcPos - param.P}
+if { global.mosWPCnrNum == null }
     abort { "G6520: Failed to probe the corner surface of the workpiece!" }
 
-if { !global.mosExpertMode }
-    var cpX = { global.mosWorkPieceCornerPos[0] }
-    var cpY = { global.mosWorkPieceCornerPos[1] }
-    var cpZ = { global.mosWorkPieceSurfacePos }
-    echo { "Vise Corner " ^ global.mosOutsideCornerNames[param.N] ^ " is X=" ^ var.cpX ^ " Y=" ^ var.cpY ^ ", Z=" ^ var.cpZ ^ " with a corner angle of " ^ global.mosWorkPieceCornerAngle ^ " degrees" }
+if { !global.mosEM }
+    var cpX = { global.mosWPCnrPos[0] }
+    var cpY = { global.mosWPCnrPos[1] }
+    var cpZ = { global.mosWPSfcPos }
+    echo { "Vise Corner " ^ global.mosCnr[param.N] ^ " is X=" ^ var.cpX ^ " Y=" ^ var.cpY ^ ", Z=" ^ var.cpZ ^ " with a corner angle of " ^ global.mosWPCnrDeg ^ " degrees" }
 else
-    echo { "global.mosWorkPieceCornerNum=" ^ global.mosWorkPieceCornerNum }
-    echo { "global.mosWorkPieceCornerPos=" ^ global.mosWorkPieceCornerPos }
-    echo { "global.mosWorkPieceSurfacePos=" ^ global.mosWorkPieceSurfacePos }
-    echo { "global.mosWorkPieceSurfaceAxis=" ^ global.mosWorkPieceSurfaceAxis }
-    echo { "global.mosWorkPieceCornerAngle=" ^ global.mosWorkPieceCornerAngle }
-
-; Save code of last probe cycle
-set global.mosLastProbeCycle = "G6520"
+    echo { "global.mosWPCnrNum=" ^ global.mosWPCnrNum }
+    echo { "global.mosWPCnrPos=" ^ global.mosWPCnrPos }
+    echo { "global.mosWPSfcPos=" ^ global.mosWPSfcPos }
+    echo { "global.mosWPSfcAxis=" ^ global.mosWPSfcAxis }
+    echo { "global.mosWPCnrDeg=" ^ global.mosWPCnrDeg }

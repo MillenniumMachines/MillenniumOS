@@ -11,6 +11,13 @@ if { !inputs[state.thisInput].active }
 ; Make sure we're in the default motion system
 M598
 
+; tpre _must_ have run to completion before we execute any post-change
+; operations. If it didn't, we abort this file.
+if { global.mosTCS != 3 }
+    abort {"MillenniumOS: tpre.g did not run to completion, aborting tpost.g"}
+
+set global.mosTCS = 4
+
 ; Abort if no tool selected
 if { state.currentTool < 0 }
     M99
@@ -26,21 +33,19 @@ G27 Z1
 ; the toolsetter activation position yet, then run G6511 to probe the
 ; reference surface so we can make this calculation.
 ; Touchprobe tool ID is only set if the touchprobe feature is enabled.
-if { state.currentTool == global.mosProbeToolID }
-    if { global.mosFeatureTouchProbe }
-        ; Check if requested probe ID was detected.
-        if { global.mosProbeToolID < #global.mosProbeDetected && global.mosProbeToolID >= 0 && global.mosProbeDetected[global.mosTouchProbeID] }
-            abort {"Did not detect a touch probe with ID " ^ global.mosTouchProbeID ^ "! Please check your probe connection and run T" ^ global.mosProbeToolID ^ " again to verify it is connected."}
-        else
-            if { !global.mosExpertMode }
-                M291 P{"<b>Touch Probe Detected</b>.<br/>We will now probe the reference surface. Move away from the machine <b>BEFORE</b> pressing <b>OK</b>!"} R"MillenniumOS: Tool Change" S2
-            ; Call reference surface probe in non-standalone mode to
-            ; run the actual probe.
-            G6511 S0
-            if { global.mosToolSetterActivationPos == null }
-                abort { "Touch probe reference surface probing failed." }
+if { state.currentTool == global.mosPTID }
+    if { global.mosFeatTouchProbe }
+        ; We abort the tool change if the touch probe is not detected
+        ; so at this point we can safely assume the probe is connected.
+        if { !global.mosEM }
+            M291 P{"<b>Touch Probe Detected</b>.<br/>We will now probe the reference surface. Move away from the machine <b>BEFORE</b> pressing <b>OK</b>!"} R"MillenniumOS: Tool Change" S2
+        ; Call reference surface probe in non-standalone mode to
+        ; run the actual probe.
+        G6511 S0 R1
+        if { global.mosTSAP == null }
+            abort { "Touch probe reference surface probing failed." }
     else
-        if { !global.mosExpertMode }
+        if { !global.mosEM }
             M291 P{"<b>Datum Tool Installed</b>.<br/>We will now probe the tool length. Move away from the machine <b>BEFORE</b> pressing <b>OK</b>!"} R"MillenniumOS: Tool Change" S2
 
         ; Probe datum tool length
@@ -50,10 +55,13 @@ else
     G37
 
 ; Continue after operator confirmation if necessary
-if { !global.mosExpertMode }
+if { !global.mosEM }
     if { job.file.fileName != null }
         M291 P{"Tool change complete. Press Continue to start the next operation, or Pause to perform further manual tasks (e.g. workpiece fixture changes)"} R"MillenniumOS: Tool Change" S4 K{"Continue", "Pause"}
         if { input != 0 }
-            M25.9 S{"Operator paused job after tool change complete." }
+            echo { "Operator paused job after tool change complete." }
+            M25
     else
         M291 P{"Tool change complete. Press <b>OK</b> to continue!"} R"MillenniumOS: Tool Change" S2 T0
+
+set global.mosTCS = null

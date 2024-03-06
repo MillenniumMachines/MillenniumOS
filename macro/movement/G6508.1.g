@@ -10,8 +10,8 @@ if { !inputs[state.thisInput].active }
 ; Make sure we're in the default motion system
 M598
 
-if { exists(param.W) && param.W != null && (param.W < 1 || param.W > #global.mosWorkOffsetCodes) }
-    abort { "WCS number (W..) must be between 1 and " ^ #global.mosWorkOffsetCodes ^ "!" }
+if { exists(param.W) && param.W != null && (param.W < 1 || param.W > limits.workplaces) }
+    abort { "WCS number (W..) must be between 1 and " ^ limits.workplaces ^ "!" }
 
 if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
     abort { "Must provide a start position to probe from using J, K and L parameters!" }
@@ -19,18 +19,19 @@ if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
 if { !exists(param.H) || !exists(param.I) }
     abort { "Must provide an approximate X length and Y length using H and I parameters!" }
 
-if { !exists(param.N) || param.N < 0 || param.N >= (#global.mosOutsideCornerNames) }
+; Maximum of 4 corners (0..3)
+if { !exists(param.N) || param.N < 0 || param.N >= 3 }
     abort { "Must provide a valid corner index (N..)!" }
 
-var probeId = { global.mosFeatureTouchProbe ? global.mosTouchProbeID : null }
+var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
-set global.mosWorkPieceCornerNum =  null
-set global.mosWorkPieceCornerAngle = null
-set global.mosWorkPieceCornerPos = { null, null }
+set global.mosWPCnrNum =  null
+set global.mosWPCnrDeg = null
+set global.mosWPCnrPos = { null, null }
 
 ; Make sure probe tool is selected
-if { global.mosProbeToolID != state.currentTool }
-    T T{global.mosProbeToolID}
+if { global.mosPTID != state.currentTool }
+    T T{global.mosPTID}
 
 ; Store our own safe Z position as the current position. We return to
 ; this position where necessary to make moves across the workpiece to
@@ -59,7 +60,7 @@ var fY   = { param.I }
 ; Apply tool radius to clearance. We want to make sure
 ; the surface of the tool and the workpiece are the
 ; clearance distance apart, rather than less than that.
-var clearance = { (exists(param.T) ? param.T : global.mosProbeClearance) + ((state.currentTool <= limits.tools-1 && state.currentTool >= 0) ? global.mosToolTable[state.currentTool][0] : 0) }
+var clearance = { (exists(param.T) ? param.T : global.mosCL) + ((state.currentTool <= limits.tools-1 && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
 
 ; Apply tool radius to overtravel. We want to allow
 ; less movement past the expected point of contact
@@ -67,7 +68,7 @@ var clearance = { (exists(param.T) ? param.T : global.mosProbeClearance) + ((sta
 ; For big tools and low overtravel values, this value
 ; might end up being negative. This is fine, as long
 ; as the configured tool radius is accurate.
-var overtravel = { (exists(param.O) ? param.O : global.mosProbeOvertravel) - ((state.currentTool <= limits.tools-1 && state.currentTool >= 0) ? global.mosToolTable[state.currentTool][0] : 0) }
+var overtravel = { (exists(param.O) ? param.O : global.mosOT) - ((state.currentTool <= limits.tools-1 && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
 
 ; Check that the clearance distance isn't
 ; higher than the width or height of the block.
@@ -86,7 +87,6 @@ if { var.clearance >= var.fX || var.clearance >= var.fY }
 
 ; Commented due to memory limitations
 ; M7500 S{"Distance Modifiers adjusted for Tool Radius - Clearance=" ^ var.clearance ^ " Overtravel=" ^ var.overtravel }
-; global mosOutsideCornerNames = {"In Front, Left", "In Front, Right", "Behind, Right", "Behind, Left"}
 
 ; Y start location (K) direction is dependent on the chosen corner.
 ; If this is the front left corner, then our first probe is at
@@ -144,15 +144,15 @@ G6550 I{var.probeId} Y{var.dirXY[0][0][1]}
 
 ; Run X probe 1
 G6512 D1 I{var.probeId} J{var.dirXY[0][0][0]} K{var.dirXY[0][0][1]} L{var.sZ} X{var.dirXY[0][1][0]}
-set var.pX[0] = { global.mosProbeCoordinate[0] }
-set var.pY[0] = { global.mosProbeCoordinate[1] }
+set var.pX[0] = { global.mosPCX }
+set var.pY[0] = { global.mosPCY }
 
 ; Return to our starting position
 G6550 I{var.probeId} X{var.dirXY[0][0][0]}
 
 G6512 D1 I{var.probeId} J{var.dirXY[1][0][0]} K{var.dirXY[1][0][1]} L{var.sZ} X{var.dirXY[1][1][0]}
-set var.pX[1] = { global.mosProbeCoordinate[0] }
-set var.pY[1] = { global.mosProbeCoordinate[1] }
+set var.pX[1] = { global.mosPCX }
+set var.pY[1] = { global.mosPCY }
 
 ; Return to our starting position.
 G6550 I{var.probeId} X{var.dirXY[1][0][0]}
@@ -169,15 +169,15 @@ G6550 I{var.probeId} X{var.dirXY[2][0][0]}
 
 ; Run Y probes
 G6512 D1 I{var.probeId} J{var.dirXY[2][0][0]} K{var.dirXY[2][0][1]} L{var.sZ} Y{var.dirXY[2][1][1]}
-set var.pX[2] = { global.mosProbeCoordinate[0] }
-set var.pY[2] = { global.mosProbeCoordinate[1] }
+set var.pX[2] = { global.mosPCX }
+set var.pY[2] = { global.mosPCY }
 
 ; Return to our starting position
 G6550 I{var.probeId} Y{var.dirXY[2][0][1]}
 
 G6512 D1 I{var.probeId} J{var.dirXY[3][0][0]} K{var.dirXY[3][0][1]} L{var.sZ} Y{var.dirXY[3][1][1]}
-set var.pX[3] = { global.mosProbeCoordinate[0] }
-set var.pY[3] = { global.mosProbeCoordinate[1] }
+set var.pX[3] = { global.mosPCX }
+set var.pY[3] = { global.mosPCY }
 
 ; Return to our starting position and then raise the probe
 G6550 I{var.probeId} Y{var.dirXY[3][0][1]}
@@ -216,29 +216,26 @@ var aX = { atan2(var.pY[1] - var.pY[0], var.pX[1] - var.pX[0]) }
 var aY = { atan2(var.pY[3] - var.pY[2], var.pX[3] - var.pX[2]) }
 
 ; This is the corner angle
-set global.mosWorkPieceCornerAngle = { abs(degrees(var.aX - var.aY)) }
+set global.mosWPCnrDeg = { abs(degrees(var.aX - var.aY)) }
 
 ; Move above the corner position
 G6550 I{var.probeId} X{var.cX} Y{var.cY}
 
 ; Set corner position
-set global.mosWorkPieceCornerPos = { var.cX, var.cY }
+set global.mosWPCnrPos = { var.cX, var.cY }
 
 ; Set corner number
-set global.mosWorkPieceCornerNum = { param.N }
+set global.mosWPCnrNum = { param.N }
 
 if { !exists(param.R) || param.R != 0 }
-    if { !global.mosExpertMode }
-        echo { "Outside " ^ global.mosOutsideCornerNames[param.N] ^ " corner is X=" ^ global.mosWorkPieceCornerPos[0] ^ " Y=" ^ global.mosWorkPieceCornerPos[1] ^ ", angle is " ^ global.mosWorkPieceCornerAngle ^ " degrees" }
+    if { !global.mosEM }
+        echo { "Outside " ^ global.mosCnr[param.N] ^ " corner is X=" ^ global.mosWPCnrPos[0] ^ " Y=" ^ global.mosWPCnrPos[1] ^ ", angle is " ^ global.mosWPCnrDeg ^ " degrees" }
     else
-        echo { "global.mosWorkPieceCornerNum=" ^ global.mosWorkPieceCornerNum }
-        echo { "global.mosWorkPieceCornerPos=" ^ global.mosWorkPieceCornerPos }
-        echo { "global.mosWorkPieceCornerAngle=" ^ global.mosWorkPieceCornerAngle }
+        echo { "global.mosWPCnrNum=" ^ global.mosWPCnrNum }
+        echo { "global.mosWPCnrPos=" ^ global.mosWPCnrPos }
+        echo { "global.mosWPCnrDeg=" ^ global.mosWPCnrDeg }
 
 ; Set WCS origin to the probed center, if requested
 if { exists(param.W) && param.W != null }
-    echo { "Setting WCS " ^ param.W ^ " X,Y origin to corner " ^ global.mosOutsideCornerNames[param.N] }
-    G10 L2 P{param.W} X{global.mosWorkPieceCornerPos[0]} Y{global.mosWorkPieceCornerPos[1]}
-
-; Save code of last probe cycle
-set global.mosLastProbeCycle = "G6508"
+    echo { "MillenniumOS: Setting WCS " ^ param.W ^ " X,Y origin to corner " ^ global.mosCnr[param.N] }
+    G10 L2 P{param.W} X{global.mosWPCnrPos[0]} Y{global.mosWPCnrPos[1]}

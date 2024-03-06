@@ -26,7 +26,7 @@ var maxIterations = { var.maxWait / (var.delay/1000) }
 ; Previous probe value
 var previousValue = { null }
 
-set global.mosProbeDetected[var.probeId] = false
+set global.mosPD = null
 
 ; Loop until a probe is detected or the maximum number of iterations is reached
 while { iterations < var.maxIterations }
@@ -34,7 +34,7 @@ while { iterations < var.maxIterations }
 
     ; If probe value has changed and we had a previous iteration value, treat this as a detected probe and return.
     if { sensors.probes[var.probeId].value[0] != var.previousValue && var.previousValue != null }
-        set global.mosProbeDetected[var.probeId] = { true }
+        set global.mosPD = var.probeId
         M99
 
     ; If no probe status change detected, save the current value for the next iteration

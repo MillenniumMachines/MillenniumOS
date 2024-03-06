@@ -6,30 +6,31 @@
 ; M98 P"mos.g"
 
 ; MOS Release version
-if { exists(global.mosVersion) }
-    set global.mosVersion = { "%%MOS_VERSION%%" }
+if { exists(global.mosVer) }
+    set global.mosVer = { "%%MOS_VERSION%%" }
 else
-    global mosVersion = { "%%MOS_VERSION%%" }
+    global mosVer = { "%%MOS_VERSION%%" }
 
 ; Load internal / default variables
 if { !exists(global.mosVarsLoaded) }
     M98 P"mos-vars.g"
     global mosVarsLoaded=true
 
-if { !exists(global.mosLoaded) }
-    global mosLoaded=false
+if { !exists(global.mosLdd) }
+    global mosLdd=false
 else
-    set global.mosLoaded=false
+    set global.mosLdd=false
 
-if { !exists(global.mosStartupError) }
-    global mosStartupError=null
+if { !exists(global.mosErr) }
+    global mosErr=null
 else
-    set global.mosStartupError=null
+    set global.mosErr=null
 
 ; If user vars file doesn't exist, run configuration wizard
 if { !fileexists("0:/sys/mos-user-vars.g") }
     echo { "No user configuration file found. Running configuration wizard." }
     G8000
+    M99
 
 ; Delete extraneous example uservars
 if { fileexists("0:/sys/mos-user-vars.g.example") }

@@ -16,21 +16,21 @@ if { !inputs[state.thisInput].active }
 M598
 
 ; Display description of boss probe if not already displayed this session
-if { global.mosTutorialMode && !global.mosDescDisplayed[3] }
+if { global.mosTM && !global.mosDD3 }
     M291 P"This probe cycle finds the X and Y co-ordinates of the center of a circular boss (protruding feature) on a workpiece by probing towards the approximate center of the boss in 3 directions." R"MillenniumOS: Probe Boss" T0 S2
     M291 P"You will be asked to enter an approximate <b>boss diameter</b> and <b>clearance distance</b>.<br/>These define how far the probe will move away from the centerpoint before probing back inwards." R"MillenniumOS: Probe Boss" T0 S2
     M291 P"You will then jog the tool over the approximate center of the boss.<br/><b>CAUTION</b>: Jogging in RRF does not watch the probe status, so you could cause damage if moving in the wrong direction!" R"MillenniumOS: Probe Boss" T0 S2
     M291 P"You will then be asked for a <b>probe depth</b>. This is how far the probe will move downwards after moving outside of the boss diameter, and before probing towards the centerpoint. Press ""OK"" to continue." R"MillenniumOS: Probe Boss" T0 S3
     if { result != 0 }
         abort { "Boss probe aborted!" }
-    set global.mosDescDisplayed[3] = true
+    set global.mosDD3 = true
 
 ; Make sure probe tool is selected
-if { global.mosProbeToolID != state.currentTool }
-    T T{global.mosProbeToolID}
+if { global.mosPTID != state.currentTool }
+    T T{global.mosPTID}
 
 ; Prompt for boss diameter
-M291 P"Please enter approximate boss diameter in mm." R"MillenniumOS: Probe Boss" J1 T0 S6 F{(global.mosWorkPieceRadius != null) ? global.mosWorkPieceRadius*2 : 0}
+M291 P"Please enter approximate boss diameter in mm." R"MillenniumOS: Probe Boss" J1 T0 S6 F{(global.mosWPRad != null) ? global.mosWPRad*2 : 0}
 if { result != 0 }
     abort { "Boss probe aborted!" }
 else
@@ -40,7 +40,7 @@ else
         abort { "Boss diameter too low!" }
 
     ; Prompt for clearance distance
-    M291 P"Please enter clearance distance in mm." R"MillenniumOS: Probe Boss" J1 T0 S6 F{global.mosProbeClearance}
+    M291 P"Please enter clearance distance in mm." R"MillenniumOS: Probe Boss" J1 T0 S6 F{global.mosCL}
     if { result != 0 }
         abort { "Boss probe aborted!" }
     else
@@ -49,7 +49,7 @@ else
             abort { "Clearance distance too low!" }
 
         ; Prompt for overtravel distance
-        M291 P"Please enter the overtravel distance in mm." R"MillenniumOS: Probe Boss" J1 T0 S6 F{global.mosProbeOvertravel}
+        M291 P"Please enter the overtravel distance in mm." R"MillenniumOS: Probe Boss" J1 T0 S6 F{global.mosOT}
         if { result != 0 }
             abort { "Boss probe aborted!" }
         else
@@ -61,7 +61,7 @@ else
             if { result != 0 }
                 abort { "Boss probe aborted!" }
             else
-                M291 P"Please enter the depth to probe at in mm, relative to the current location. A value of 10 will move the probe downwards 10mm before probing inwards." R"MillenniumOS: Probe Boss" J1 T0 S6 F{global.mosProbeOvertravel}
+                M291 P"Please enter the depth to probe at in mm, relative to the current location. A value of 10 will move the probe downwards 10mm before probing inwards." R"MillenniumOS: Probe Boss" J1 T0 S6 F{global.mosOT}
                 if { result != 0 }
                     abort { "Boss probe aborted!" }
                 else
@@ -71,7 +71,7 @@ else
                         abort { "Probing depth was negative!" }
 
                     ; Run the boss probe cycle
-                    if { global.mosTutorialMode }
+                    if { global.mosTM }
                         M291 P{"Probe will now move outwards by " ^ {(var.bossDiameter/2) + var.clearance} ^ "mm and then downwards " ^ var.probingDepth ^ "mm, before probing towards the edge in 3 directions."} R"MillenniumOS: Probe Boss" T0 S3
                         if { result != 0 }
                             abort { "Boss probe aborted!" }

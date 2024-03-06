@@ -53,7 +53,7 @@ var roughDivider = 5
 
 if { var.roughSpeed == var.fineSpeed }
     set var.fineSpeed = { var.roughSpeed / var.roughDivider }
-    if { !global.mosExpertMode }
+    if { !global.mosEM }
         echo { "MillenniumOS: Probe " ^ param.I ^ " is configured with a single feed rate, which will be used for the initial probe. Subsequent probes will run at " ^ var.fineSpeed ^ "mm/min." }
         echo { "MillenniumOS: Please use M558 K" ^ param.I ^ " F" ^ var.roughSpeed ^ ":" ^ var.fineSpeed ^ " to silence this warning." }
 
@@ -96,13 +96,6 @@ while { iterations <= var.retries }
 
     ; Wait for all moves in the queue to finish
     M400
-
-    ; G38 commands appear to return before the machine has finished moving
-    ; (likely during deceleration), so we need to wait for the machine to
-    ; stop moving entirely before recording the position. There must be a
-    ; better way to do this, but I can't work it out at the moment. So
-    ; this will suffice. TODO: Fix this.
-    G4 P{global.mosProbePositionDelay}
 
     ; Drop to fine probing speed
     M558 K{ param.I } F{ var.fineSpeed }
@@ -207,5 +200,10 @@ while { iterations <= var.retries }
 M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
 
 ; Save output variables. No compensation applied here!
-set global.mosProbeCoordinate = { var.nM }
-set global.mosProbeVariance = { var.pV }
+set global.mosPCX = { var.nM[0] }
+set global.mosPCY = { var.nM[1] }
+set global.mosPCZ = { var.nM[2] }
+
+set global.mosPVX = { var.pV[0] }
+set global.mosPVY = { var.pV[1] }
+set global.mosPVZ = { var.pV[2] }

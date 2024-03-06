@@ -10,15 +10,21 @@ if { !inputs[state.thisInput].active }
 ; Make sure we're in the default motion system
 M598
 
+; Set tool change state to starting tfree
+set global.mosTCS = 0
+
 if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
-    abort {"Machine must be homed before executing a tool change."}
+    abort {"MillenniumOS: Machine must be homed before executing a tool change."}
 
 ; Stop and park the spindle
 G27 Z1
 
 ; If probe tool is selected
-if { state.currentTool == global.mosProbeToolID }
-    if { global.mosFeatureTouchProbe }
+if { state.currentTool == global.mosPTID }
+    if { global.mosFeatTouchProbe }
         M291 P{"Please remove the touch probe now and stow it safely away from the machine. Click <b>OK</b> when stowed safely."} R{"MillenniumOS: Touch Probe"} S2
     else
         M291 P{"Please remove the datum tool now and stow it safely away from the machine. Click <b>OK</b> when stowed safely."} R{"MillenniumOS: Datum Tool"} S2
+
+; Set tool change state to tfree complete
+set global.mosTCS = 1

@@ -18,23 +18,29 @@ if { param.P >= limits.tools || param.P < 0 }
 ; Define RRF tool against spindle.
 ; Allow spindle ID to be overridden where necessary using I parameter.
 ; This is mainly used during the configuration wizard.
-M563 P{param.P} S{param.S} R{(exists(param.I)) ? param.I : global.mosSpindleID}
+M563 P{param.P} S{param.S} R{(exists(param.I)) ? param.I : global.mosSID}
 
 ; Store tool description in zero-indexed array.
-set global.mosToolTable[param.P] = { global.mosEmptyTool }
+set global.mosTT[param.P] = { global.mosET }
 
 ; Set tool radius
-set global.mosToolTable[param.P][0] = { param.R }
+set global.mosTT[param.P][0] = { param.R }
 
 ; If X and Y parameters are given, these are deemed to be
 ; the deflection distance of the tool in the relevant axis
 ; when used for probing. This does not need to be set for
 ; non-probe tools.
 if { exists(param.X) }
-    set global.mosToolTable[param.P][1][0] = { param.X }
+    if { global.mosTT[param.P][1] == null }
+        set global.mosTT[param.P][1] = { param.X, 0.0 }
+    else
+        set global.mosTT[param.P][1][0] = { param.X }
 
 if { exists(param.Y) }
-    set global.mosToolTable[param.P][1][1] = { param.Y }
+    if { global.mosTT[param.P][1] == null }
+        set global.mosTT[param.P][1] = { 0.0, param.Y }
+    else
+        set global.mosTT[param.P][1][1] = { param.Y }
 
 ; Commented due to memory limitations
 ; M7500 S{"Stored tool #" ^ param.P ^ " R=" ^ param.R ^ " S=" ^ param.S}

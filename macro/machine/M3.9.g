@@ -8,7 +8,7 @@
 ; time only needs to exist in one place.
 ; USAGE: M3.9 [S<rpm>] [P<spindle-id>] [D<override-dwell-seconds>]
 
-if { !global.mosExpertMode }
+if { !global.mosEM }
     M291 P{"<b>CAUTION</b>: We will now start the spindle. Check that your workpiece and tool are secure, step away from the machine and <b>don your eye protection</b> or shut your enclosure door before pressing <b>OK</b>."} R"MillenniumOS: Warning" S3 T0
 
 ; Account for all permutations of M3 command
@@ -25,9 +25,9 @@ else
 if { result != 0 }
     abort {"Spindle failed to start!"}
 
-var dwellSeconds = { (exists(param.D) ? param.D : global.mosSpindleAccelSeconds) }
+var dwellSec = { (exists(param.D) ? param.D : global.mosSAS) }
 
-if { var.dwellSeconds > 0 }
+if { var.dwellSec > 0 }
     ; Wait for spindle to accelerate
-    echo { "Waiting " ^ var.dwellSeconds ^ " seconds for spindle to accelerate" }
-    G4 S{var.dwellSeconds}
+    echo { "Waiting " ^ var.dwellSec ^ " seconds for spindle to accelerate" }
+    G4 S{var.dwellSec}
