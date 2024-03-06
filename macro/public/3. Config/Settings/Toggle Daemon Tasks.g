@@ -1,10 +1,10 @@
 ; Toggle Daemon Tasks.g
 
-if { global.mosTutorialMode }
-    M291 R"MillenniumOS: Toggle Daemon Tasks" P{ (global.mosDaemonEnable  ? "Disable" : "Enable" ) ^ " Daemon tasks?" } S3
+if { global.mosTM }
+    M291 R"MillenniumOS: Toggle Daemon Tasks" P{ (global.mosDAE  ? "Disable" : "Enable" ) ^ " Daemon tasks?" } S3
     if result == -1
         M99
 
-set global.mosDaemonEnable = {!global.mosDaemonEnable}
+set global.mosDAE = {!global.mosDAE}
 
-echo {"MillenniumOS: Daemon tasks " ^ (global.mosDaemonEnable ? "Enabled" : "Disabled")}
+echo {"MillenniumOS: Daemon tasks " ^ (global.mosDAE ? "Enabled" : "Disabled")}

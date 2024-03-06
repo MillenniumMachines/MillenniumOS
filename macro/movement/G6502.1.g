@@ -11,8 +11,8 @@ if { !inputs[state.thisInput].active }
 ; Make sure we're in the default motion system
 M598
 
-if { exists(param.W) && param.W != null && (param.W < 1 || param.W > #global.mosWorkOffsetCodes) }
-    abort { "WCS number (W..) must be between 1 and " ^ #global.mosWorkOffsetCodes ^ "!" }
+if { exists(param.W) && param.W != null && (param.W < 1 || param.W > limits.workplaces) }
+    abort { "WCS number (W..) must be between 1 and " ^ limits.workplaces ^ "!" }
 
 if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
     abort { "Must provide a start position to probe from using J, K and L parameters!" }
@@ -20,16 +20,16 @@ if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
 if { !exists(param.H) || !exists(param.I) }
     abort { "Must provide an approximate width and length using H and I parameters!" }
 
-var probeId = { global.mosFeatureTouchProbe ? global.mosTouchProbeID : null }
+var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
-set global.mosWorkPieceRotationAngle = null
-set global.mosWorkPieceDimensionalError = null
-set global.mosWorkPieceDimensions = { null, null }
-set global.mosWorkPieceCenterPos = { null, null }
+set global.mosWPDeg = null
+set global.mosWPDimsErr = null
+set global.mosWPDims = { null, null }
+set global.mosWPCtrPos = { null, null }
 
 ; Make sure probe tool is selected
-if { global.mosProbeToolID != state.currentTool }
-    T T{global.mosProbeToolID}
+if { global.mosPTID != state.currentTool }
+    T T{global.mosPTID}
 
 ; Store our own safe Z position as the current position. We return to
 ; this position where necessary to make moves across the workpiece to
@@ -66,7 +66,7 @@ var hL   = { var.fL/2 }
 ; Apply tool radius to clearance. We want to make sure
 ; the surface of the tool and the workpiece are the
 ; clearance distance apart, rather than less than that.
-var clearance = { (exists(param.T) ? param.T : global.mosProbeClearance) + ((state.currentTool < #tools && state.currentTool >= 0) ? global.mosToolTable[state.currentTool][0] : 0) }
+var clearance = { (exists(param.T) ? param.T : global.mosCL) + ((state.currentTool < #tools && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
 
 ; Apply tool radius to overtravel. We want to allow
 ; less movement past the expected point of contact
@@ -74,7 +74,7 @@ var clearance = { (exists(param.T) ? param.T : global.mosProbeClearance) + ((sta
 ; For big tools and low overtravel values, this value
 ; might end up being negative. This is fine, as long
 ; as the configured tool radius is accurate.
-var overtravel = { (exists(param.O) ? param.O : global.mosProbeOvertravel) - ((state.currentTool < #tools && state.currentTool >= 0) ? global.mosToolTable[state.currentTool][0] : 0) }
+var overtravel = { (exists(param.O) ? param.O : global.mosOT) - ((state.currentTool < #tools && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
 
 ; Check that the clearance distance isn't
 ; higher than the width or height of the pocket.
@@ -116,7 +116,7 @@ G6550 I{var.probeId} X{(var.sX - var.hW + var.clearance)}
 ; First probe point - left edge, inwards from front face by clearance distance
 ; towards the face plus overtravel distance.
 G6512 I{var.probeId} D1 J{(var.sX - var.hW + var.clearance)} K{(var.sY - var.hL + var.clearance)} L{param.L} X{(var.sX - var.hW - var.overtravel)}
-set var.pX[0] = { global.mosProbeCoordinate[0] }
+set var.pX[0] = { global.mosPCX }
 
 ; Return to our starting position
 G6550 I{var.probeId} X{(var.sX - var.hW + var.clearance)}
@@ -124,7 +124,7 @@ G6550 I{var.probeId} X{(var.sX - var.hW + var.clearance)}
 ; Second probe point - left edge, inwards from rear face by clearance distance
 ; towards the face minus overtravel distance.
 G6512 I{var.probeId} D1 J{(var.sX - var.hW + var.clearance)} K{(var.sY + var.hL - var.clearance)} L{param.L} X{(var.sX - var.hW - var.overtravel)}
-set var.pX[1] = { global.mosProbeCoordinate[0] }
+set var.pX[1] = { global.mosPCX }
 
 ; Return to our starting position
 G6550 I{var.probeId} X{(var.sX - var.hW + var.clearance)}
@@ -137,7 +137,7 @@ G6550 I{var.probeId} X{(var.sX - var.hW + var.clearance)}
 ; Third probe point - right edge, inwards from rear face by clearance distance
 ; towards the face minus overtravel distance.
 G6512 I{var.probeId} D1 J{(var.sX + var.hW - var.clearance)} K{(var.sY + var.hL - var.clearance)} L{param.L} X{(var.sX + var.hW + var.overtravel)}
-set var.pX[2] = { global.mosProbeCoordinate[0] }
+set var.pX[2] = { global.mosPCX }
 
 ; Return to our starting position
 G6550 I{var.probeId} X{(var.sX + var.hW - var.clearance)}
@@ -145,7 +145,7 @@ G6550 I{var.probeId} X{(var.sX + var.hW - var.clearance)}
 ; Fourth probe point - right edge, inwards from front face by clearance distance
 ; towards the face plus overtravel distance.
 G6512 I{var.probeId} D1 J{(var.sX + var.hW - var.clearance)} K{(var.sY - var.hL + var.clearance)} L{param.L} X{(var.sX + var.hW + var.overtravel)}
-set var.pX[3] = { global.mosProbeCoordinate[0] }
+set var.pX[3] = { global.mosPCX }
 
 ; Return to our starting position.
 G6550 I{var.probeId} X{(var.sX + var.hW - var.clearance)}
@@ -180,15 +180,15 @@ var aX2 = { atan((var.pX[2] - var.pX[3]) / (var.fL - (2*var.clearance))) }
 var xAngleDiff = { degrees(abs(var.aX1 - var.aX2)) }
 
 ; Commented due to memory limitations
-; M7500 S{"X Surface Angle difference: " ^ var.xAngleDiff ^ " Threshold: " ^ global.mosProbeSquareAngleThreshold }
+; M7500 S{"X Surface Angle difference: " ^ var.xAngleDiff ^ " Threshold: " ^ global.mosAngleTol }
 
 ; If the angle difference is greater than a certain threshold, abort.
 ; We do this because the below code makes assumptions about the
 ; squareness of the pocket, and if these assumptions are not correct
 ; then there is a chance we could damage the probe or incorrectly
 ; calculate dimensions or centerpoint.
-if { var.xAngleDiff > global.mosProbeSquareAngleThreshold }
-    abort { "Rectangular pocket surfaces on X axis are not parallel - this pocket does not appear to be square. (" ^ var.xAngleDiff ^ " degrees difference in surface angle and our threshold is " ^ global.mosProbeSquareAngleThreshold ^ " degrees!)" }
+if { var.xAngleDiff > global.mosAngleTol }
+    abort { "Rectangular pocket surfaces on X axis are not parallel - this pocket does not appear to be square. (" ^ var.xAngleDiff ^ " degrees difference in surface angle and our threshold is " ^ global.mosAngleTol ^ " degrees!)" }
 
 ; Now we have validated that the pocket is square in X, we need to calculate
 ; the real center position of the pocket so we can probe the Y surfaces.
@@ -196,7 +196,7 @@ if { var.xAngleDiff > global.mosProbeSquareAngleThreshold }
 ; Our midpoint for each line is the average of the 2 points, so
 ; we can just add all of the points together and divide by 4.
 set var.sX = { (var.pX[0] + var.pX[1] + var.pX[2] + var.pX[3]) / 4 }
-set global.mosWorkPieceCenterPos[0] = { var.sX }
+set global.mosWPCtrPos[0] = { var.sX }
 
 ; Use the recalculated center of the pocket to probe Y surfaces.
 
@@ -211,7 +211,7 @@ G6550 I{var.probeId} X{(var.sX + var.hW - var.clearance)}
 ; First probe point - front edge, inwards from right face by clearance distance
 ; towards the face minus overtravel distance.
 G6512 I{var.probeId} D1 K{(var.sY - var.hL + var.clearance)} J{(var.sX + var.hW - var.clearance)} L{param.L} Y{(var.sY - var.hL - var.overtravel)}
-set var.pY[0] = { global.mosProbeCoordinate[1] }
+set var.pY[0] = { global.mosPCY }
 
 ; Return to our starting position
 G6550 I{var.probeId} Y{(var.sY - var.hL + var.clearance)}
@@ -219,7 +219,7 @@ G6550 I{var.probeId} Y{(var.sY - var.hL + var.clearance)}
 ; Second probe point - front edge, inwards from left face by clearance distance
 ; towards the face plus overtravel distance.
 G6512 I{var.probeId} D1 K{(var.sY - var.hL + var.clearance)} J{(var.sX - var.hW + var.clearance)} L{param.L} Y{(var.sY - var.hL - var.overtravel)}
-set var.pY[1] = { global.mosProbeCoordinate[1] }
+set var.pY[1] = { global.mosPCY }
 
 ; Return to our starting position.
 ; Again, no need to raise probe as we are in a pocket.
@@ -228,7 +228,7 @@ G6550 I{var.probeId} Y{(var.sY - var.hL + var.clearance)}
 ; Third probe point - rear edge, inwards from left face by clearance distance
 ; towards the face plus overtravel distance.
 G6512 I{var.probeId} D1 K{(var.sY + var.hL - var.clearance)} J{(var.sX - var.hW + var.clearance)} L{param.L} Y{(var.sY + var.hL + var.overtravel)}
-set var.pY[2] = { global.mosProbeCoordinate[1] }
+set var.pY[2] = { global.mosPCY }
 
 ; Return to our starting position
 G6550 I{var.probeId} Y{(var.sY + var.hL - var.clearance)}
@@ -236,7 +236,7 @@ G6550 I{var.probeId} Y{(var.sY + var.hL - var.clearance)}
 ; Fourth probe point - rear edge, inwards from right face by clearance distance
 ; towards the face minus overtravel distance.
 G6512 I{var.probeId} D1 K{(var.sY + var.hL - var.clearance)} J{(var.sX + var.hW - var.clearance)} L{param.L} Y{(var.sY + var.hL + var.overtravel)}
-set var.pY[3] = { global.mosProbeCoordinate[1] }
+set var.pY[3] = { global.mosPCY }
 
 ; Return to our starting position.
 G6550 I{var.probeId} Y{(var.sY + var.hL - var.clearance)}
@@ -252,12 +252,12 @@ var aY2 = { atan((var.pY[2] - var.pY[3]) / (var.fW - (2*var.clearance))) }
 var yAngleDiff = { degrees(abs(var.aY1 - var.aY2)) }
 
 ; Commented due to memory limitations
-; M7500 S{"Y Surface Angle difference: " ^ var.yAngleDiff ^ " Threshold: " ^ global.mosProbeSquareAngleThreshold }
+; M7500 S{"Y Surface Angle difference: " ^ var.yAngleDiff ^ " Threshold: " ^ global.mosAngleTol }
 
 ; Abort if the angle difference is greater than a certain threshold like
 ; we did for the X axis.
-if { var.yAngleDiff > global.mosProbeSquareAngleThreshold }
-    abort { "Rectangular pocket surfaces on Y axis are not parallel - this pocket does not appear to be square. (" ^ var.yAngleDiff ^ " degrees difference in surface angle and our threshold is " ^ global.mosProbeSquareAngleThreshold ^ " degrees!)" }
+if { var.yAngleDiff > global.mosAngleTol }
+    abort { "Rectangular pocket surfaces on Y axis are not parallel - this pocket does not appear to be square. (" ^ var.yAngleDiff ^ " degrees difference in surface angle and our threshold is " ^ global.mosAngleTol ^ " degrees!)" }
 
 ; Commented due to memory limitations
 ; M7500 S{"Surface Angles X1=" ^ degrees(var.aX1) ^ " X2=" ^ degrees(var.aX2) ^ " Y1=" ^ degrees(var.aY1) ^ " Y2=" ^ degrees(var.aY2) }
@@ -273,38 +273,38 @@ if { var.yAngleDiff > global.mosProbeSquareAngleThreshold }
 ; The angles are between the line and their respective axis, so
 ; a perfect 90 degree corner with completely squared machine axes
 ; would report an error of 0 degrees.
-set global.mosWorkPieceCornerAngle = { 90 + degrees(var.aX1 - var.aY1) }
+set global.mosWPCnrDeg = { 90 + degrees(var.aX1 - var.aY1) }
 
 ; Square corners should be 90 degrees
-var cornerAngleError = { 90 - global.mosWorkPieceCornerAngle }
+var cornerAngleError = { 90 - global.mosWPCnrDeg }
 
 ; Commented due to memory limitations
 ; M7500 S{"Rectangle Pocket Corner Angle Error: " ^ var.cornerAngleError }
 
 ; Abort if the corner angle is greater than a certain threshold.
-if { (var.cornerAngleError > global.mosProbeSquareAngleThreshold) }
-    abort { "Rectangular pocket corner angle is not 90 degrees - this pocket does not appear to be square. (" ^ var.cornerAngleError ^ " degrees difference in corner angle and our threshold is " ^ global.mosProbeSquareAngleThreshold ^ " degrees!)" }
+if { (var.cornerAngleError > global.mosAngleTol) }
+    abort { "Rectangular pocket corner angle is not 90 degrees - this pocket does not appear to be square. (" ^ var.cornerAngleError ^ " degrees difference in corner angle and our threshold is " ^ global.mosAngleTol ^ " degrees!)" }
 
 ; Calculate Y centerpoint as before.
 set var.sY = { (var.pY[0] + var.pY[1] + var.pY[2] + var.pY[3]) / 4 }
-set global.mosWorkPieceCenterPos[1] = { var.sY }
+set global.mosWPCtrPos[1] = { var.sY }
 
 ; We can now calculate the actual dimensions of the pocket.
 ; The dimensions are the difference between the average of each
 ; pair of points of each line.
-set global.mosWorkPieceDimensions[0] = { ((var.pX[2] + var.pX[3]) / 2) - ((var.pX[0] + var.pX[1]) / 2) }
-set global.mosWorkPieceDimensions[1] = { ((var.pY[2] + var.pY[3]) / 2) - ((var.pY[0] + var.pY[1]) / 2) }
+set global.mosWPDims[0] = { ((var.pX[2] + var.pX[3]) / 2) - ((var.pX[0] + var.pX[1]) / 2) }
+set global.mosWPDims[1] = { ((var.pY[2] + var.pY[3]) / 2) - ((var.pY[0] + var.pY[1]) / 2) }
 
 ; Calculate error in dimensions from expected
-var dimErrorX = { abs(var.fW - global.mosWorkPieceDimensions[0]) }
-var dimErrorY = { abs(var.fL - global.mosWorkPieceDimensions[1]) }
+var dimErrorX = { abs(var.fW - global.mosWPDims[0]) }
+var dimErrorY = { abs(var.fL - global.mosWPDims[1]) }
 
 ; Set the global error in dimensions
 ; This can be used by other macros to configure the touch probe deflection.
-set global.mosWorkPieceDimensionalError = { abs(var.fW - global.mosWorkPieceDimensions[0]), abs(var.fL - global.mosWorkPieceDimensions[1]) }
+set global.mosWPDimsErr = { abs(var.fW - global.mosWPDims[0]), abs(var.fL - global.mosWPDims[1]) }
 
 ; Move to the calculated center of the pocket
-G6550 I{var.probeId} X{global.mosWorkPieceCenterPos[0]} Y{global.mosWorkPieceCenterPos[1]}
+G6550 I{var.probeId} X{global.mosWPCtrPos[0]} Y{global.mosWPCtrPos[1]}
 
 ; Move to the safe Z height
 G6550 I{var.probeId} I{var.probeId} Z{var.safeZ}
@@ -317,29 +317,26 @@ G6550 I{var.probeId} I{var.probeId} Z{var.safeZ}
 ; as the angle of the first X line.
 
 ; Calculate the slope and angle of the first X line.
-set global.mosWorkPieceRotationAngle = var.aX1
+set global.mosWPDeg = var.aX1
 
 ; Commented due to memory limitations
-; M7500 S{"Rectangle Pocket Rotation from X axis: " ^ global.mosWorkPieceRotationAngle ^ " degrees" }
+; M7500 S{"Rectangle Pocket Rotation from X axis: " ^ global.mosWPDeg ^ " degrees" }
 
 if { !exists(param.R) || param.R != 0 }
-    if { !global.mosExpertMode }
+    if { !global.mosEM }
         ; Save as local variables because these variable names are
         ; hella long and the echo would otherwise exceed the
         ; maximum command length.
-        var ctr = { global.mosWorkPieceCenterPos }
-        var dim = { global.mosWorkPieceDimensions }
-        var rot = { global.mosWorkPieceRotationAngle }
-        echo { "Rectangle Pocket - Center X=" ^ var.ctr[0] ^ " Y=" ^ var.ctr[1] ^ " Dimensions X=" ^ var.dim[0] ^ " Y=" ^ var.dim[1] ^ " Rotation=" ^ var.rot ^ " degrees" }
+        var ctr = { global.mosWPCtrPos }
+        var dim = { global.mosWPDims }
+        var rot = { global.mosWPDeg }
+        echo { "Rectangle Pocket - Center X=" ^ var.ctr[0] ^ " Y=" ^ var.ctr[1] ^ " Dims X=" ^ var.dim[0] ^ " Y=" ^ var.dim[1] ^ " Rotation=" ^ var.rot ^ " degrees" }
     else
-        echo { "global.mosWorkPieceCenterPos=" ^ global.mosWorkPieceCenterPos }
-        echo { "global.mosWorkPieceDimensions=" ^ global.mosWorkPieceDimensions }
-        echo { "global.mosWorkPieceRotationAngle=" ^ global.mosWorkPieceRotationAngle }
+        echo { "global.mosWPCtrPos=" ^ global.mosWPCtrPos }
+        echo { "global.mosWPDims=" ^ global.mosWPDims }
+        echo { "global.mosWPDeg=" ^ global.mosWPDeg }
 
 ; Set WCS origin to the probed center, if requested
 if { exists(param.W) && param.W != null }
-    echo { "Setting WCS " ^ param.W ^ " X,Y origin to center of rectangle pocket" }
-    G10 L2 P{param.W} X{global.mosWorkPieceCenterPos[0]} Y{global.mosWorkPieceCenterPos[1]}
-
-; Save code of last probe cycle
-set global.mosLastProbeCycle = "G6502"
+    echo { "MillenniumOS: Setting WCS " ^ param.W ^ " X,Y origin to center of rectangle pocket" }
+    G10 L2 P{param.W} X{global.mosWPCtrPos[0]} Y{global.mosWPCtrPos[1]}

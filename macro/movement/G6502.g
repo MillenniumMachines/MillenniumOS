@@ -17,7 +17,7 @@ if { !inputs[state.thisInput].active }
 M598
 
 ; Display description of rectangle pocket probe if not already displayed this session
-if { global.mosTutorialMode && !global.mosDescDisplayed[6] }
+if { global.mosTM && !global.mosDD6 }
     M291 P"This probe cycle finds the X and Y co-ordinates of the center of a rectangular pocket (recessed feature) on a workpiece by moving into the pocket and probing towards each surface." R"MillenniumOS: Probe Rect. Pocket " T0 S2
     M291 P"You will be asked to enter an approximate <b>width</b> and <b>height</b> of the pocket, and a <b>clearance distance</b>." R"MillenniumOS: Probe Rect. Pocket" T0 S2
     M291 P"These define how far the probe will move away from the center point before starting to probe towards the relevant surfaces." R"MillenniumOS: Probe Rect. Pocket" T0 S2
@@ -25,13 +25,13 @@ if { global.mosTutorialMode && !global.mosDescDisplayed[6] }
     M291 P"You will then be asked for a <b>probe depth</b>. This is how far the probe will move downwards into the pocket before probing towards the edges. Press ""OK"" to continue." R"MillenniumOS: Probe Rect. Pocket" T0 S3
     if { result != 0 }
         abort { "Rectangle pocket probe aborted!" }
-    set global.mosDescDisplayed[6] = true
+    set global.mosDD6 = true
 
 ; Make sure probe tool is selected
-if { global.mosProbeToolID != state.currentTool }
-    T T{global.mosProbeToolID}
+if { global.mosPTID != state.currentTool }
+    T T{global.mosPTID}
 
-var bW = { (global.mosWorkPieceDimensions[0] != null) ? global.mosWorkPieceDimensions[0] : 100 }
+var bW = { (global.mosWPDims[0] != null) ? global.mosWPDims[0] : 100 }
 
 M291 P{"Please enter approximate <b>pocket width</b> in mm.<br/><b>NOTE</b>: <b>Width</b> is measured along the <b>X</b> axis."} R"MillenniumOS: Probe Rect. Pocket" J1 T0 S6 F{var.bW}
 if { result != 0 }
@@ -42,7 +42,7 @@ else
     if { var.pocketWidth < 1 }
         abort { "Pocket width too low!" }
 
-    var bL = { (global.mosWorkPieceDimensions[1] != null) ? global.mosWorkPieceDimensions[1] : 100 }
+    var bL = { (global.mosWPDims[1] != null) ? global.mosWPDims[1] : 100 }
 
     M291 P{"Please enter approximate <b>pocket length</b> in mm.<br/><b>NOTE</b>: <b>Length</b> is measured along the <b>Y</b> axis."} R"MillenniumOS: Probe Rect. Pocket" J1 T0 S6 F{var.bL}
     if { result != 0 }
@@ -54,7 +54,7 @@ else
             abort { "Pocket length too low!" }
 
         ; Prompt for clearance distance
-        M291 P"Please enter <b>clearance</b> distance in mm.<br/>This is how far out we move from the expected surfaces to account for any innaccuracy in the center location." R"MillenniumOS: Probe Rect. Pocket" J1 T0 S6 F{global.mosProbeClearance}
+        M291 P"Please enter <b>clearance</b> distance in mm.<br/>This is how far out we move from the expected surfaces to account for any innaccuracy in the center location." R"MillenniumOS: Probe Rect. Pocket" J1 T0 S6 F{global.mosCL}
         if { result != 0 }
             abort { "Rectangle pocket probe aborted!" }
         else
@@ -63,7 +63,7 @@ else
                 abort { "Clearance distance too low!" }
 
             ; Prompt for overtravel distance
-            M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far in we move from the expected surfaces to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Rect. Pocket" J1 T0 S6 F{global.mosProbeOvertravel}
+            M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far in we move from the expected surfaces to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Rect. Pocket" J1 T0 S6 F{global.mosOT}
             if { result != 0 }
                 abort { "Rectangle pocket probe aborted!" }
             else
@@ -75,7 +75,7 @@ else
                 if { result != 0 }
                     abort { "Rectangle pocket probe aborted!" }
                 else
-                    M291 P"Please enter the depth to probe at in mm, relative to the current location. A value of 10 will move the probe downwards 10mm before probing inwards." R"MillenniumOS: Probe Rect. Pocket" J1 T0 S6 F{global.mosProbeOvertravel}
+                    M291 P"Please enter the depth to probe at in mm, relative to the current location. A value of 10 will move the probe downwards 10mm before probing inwards." R"MillenniumOS: Probe Rect. Pocket" J1 T0 S6 F{global.mosOT}
                     if { result != 0 }
                         abort { "Rectangle pocket probe aborted!" }
                     else
@@ -85,7 +85,7 @@ else
                             abort { "Probing depth was negative!" }
 
                         ; Run the pocket probe cycle
-                        if { global.mosTutorialMode }
+                        if { global.mosTM }
                             M291 P{"Probe will now move down by " ^ var.probingDepth ^ "mm, before probing towards each of the pocket surfaces at 2 locations."} R"MillenniumOS: Probe Rect. Pocket" T0 S3
                             if { result != 0 }
                                 abort { "Rectangle pocket probe aborted!" }

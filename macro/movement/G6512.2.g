@@ -142,7 +142,7 @@ while { true }
     ; M7500 S{"Operator indicated that probe needs to be backed away from the surface."}
 
     ; Use a lower movement speed for the smallest increments
-    var moveSpeed = { (var.dI >= var.slowSpeedIndex) ? global.mosManualProbeSpeed[2] : global.mosManualProbeSpeed[1] }
+    var moveSpeed = { (var.dI >= var.slowSpeedIndex) ? global.mosMPSS : global.mosMPSF }
 
     ; Generate the new position based on the increment chosen
     var nPX = { var.cP[0] - ((var.dX / var.mag) * var.dD) }
@@ -159,13 +159,17 @@ while { true }
     set var.cP = { move.axes[0].machinePosition, move.axes[1].machinePosition, move.axes[2].machinePosition }
 
 ; Set the probe coordinates to the current position
-set global.mosProbeCoordinate = { var.cP }
+set global.mosPCX = { var.cP[0] }
+set global.mosPCY = { var.cP[1] }
+set global.mosPCZ = { var.cP[2] }
 
 ; Commented due to memory limitations
 ; M7500 S{"Probe coordinate: X=" ^ var.cP[0] ^ " Y=" ^ var.cP[1] ^ " Z=" ^ var.cP[2]}
 
 ; Probe variance makes no sense for manual probes that are done once
-set global.mosProbeVariance = { 0 }
+set global.mosPVX = 0
+set global.mosPVY = 0
+set global.mosPVZ = 0
 
 ; Calculate back-off normal
 var bN = { sqrt(pow(var.sX - var.cP[0], 2) + pow(var.sY - var.cP[1], 2) + pow(var.sZ - var.cP[2], 2)) }
@@ -181,9 +185,9 @@ var bN = { sqrt(pow(var.sX - var.cP[0], 2) + pow(var.sY - var.cP[1], 2) + pow(va
 
 ; Calculate normalized direction and backoff per axis,
 ; and apply to current position.
-var bPX = { var.cP[0] + ((var.sX - var.cP[0]) / var.bN * ((global.mosManualProbeBackoff > var.bN) ? var.bN : global.mosManualProbeBackoff)) }
-var bPY = { var.cP[1] + ((var.sY - var.cP[1]) / var.bN * ((global.mosManualProbeBackoff > var.bN) ? var.bN : global.mosManualProbeBackoff)) }
-var bPZ = { var.cP[2] + ((var.sZ - var.cP[2]) / var.bN * ((global.mosManualProbeBackoff > var.bN) ? var.bN : global.mosManualProbeBackoff)) }
+var bPX = { var.cP[0] + ((var.sX - var.cP[0]) / var.bN * ((global.mosMPBO > var.bN) ? var.bN : global.mosMPBO)) }
+var bPY = { var.cP[1] + ((var.sY - var.cP[1]) / var.bN * ((global.mosMPBO > var.bN) ? var.bN : global.mosMPBO)) }
+var bPZ = { var.cP[2] + ((var.sZ - var.cP[2]) / var.bN * ((global.mosMPBO > var.bN) ? var.bN : global.mosMPBO)) }
 
 G6550 X{ var.bPX } Y{ var.bPY } Z{ var.bPZ }
 

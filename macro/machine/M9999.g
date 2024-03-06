@@ -9,16 +9,16 @@ echo {"MillenniumOS: Reloading..."}
 if { exists(global.mosStartupMsgsDisplayed) }
     set global.mosStartupMsgsDisplayed = false
 
-var needsDaemonDisabled = { global.mosDaemonEnable }
+var needsDaemonDisabled = { global.mosDAE }
 
 if { var.needsDaemonDisabled }
-    set global.mosDaemonEnable = false
+    set global.mosDAE = false
     ; Wait for 2 daemon update cycles to make sure
     ; the daemon script has had a chance to exit.
-    G4 P{global.mosDaemonUpdateRate*2}
+    G4 P{global.mosDAEUR*2}
 
 ; Reload MOS base file
 M98 P"mos.g"
 
 ; Reset daemon status
-set global.mosDaemonEnable = { var.needsDaemonDisabled }
+set global.mosDAE = { var.needsDaemonDisabled }
