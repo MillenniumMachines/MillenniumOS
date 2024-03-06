@@ -27,12 +27,12 @@ G94
 ; If the touch probe or toolsetter feature is not enabled, we don't need to
 ; probe the reference surface but we must not abort - this command should be
 ; a no-op.
-if { !global.mosFeatureTouchProbe || !global.mosFeatureToolSetter }
+if { !global.mosFeatTouchProbe || !global.mosFeatToolSetter }
     ; Commented due to memory limitations
     ; M7500 S{"Reference surface probe is not required, touch probe or toolsetter feature is not enabled."}
     M99
 
-if { global.mosToolSetterActivationPos != null && (!exists(param.R) || param.R == 0) }
+if { global.mosTSAP != null && (!exists(param.R) || param.R == 0) }
     echo { "Reference surface has already been probed! You can call G6511 R1 to force a re-probe." }
     M99
 
@@ -46,20 +46,20 @@ var standalone = { (exists(param.S)) ? (param.S != 0) : true }
 ; The tool change will handle connecting the touch probe, and trigger
 ; G6511 again with the S0 parameter which will allow us to run the
 ; reference surface probe.
-if { state.currentTool != global.mosProbeToolID }
+if { state.currentTool != global.mosPTID }
     if { var.standalone }
-        T{global.mosProbeToolID}
+        T{global.mosPTID}
         M99
     else
-        abort { "Switching to the touch probe (<b>T" ^ global.mosProbeToolID ^ "</b>) will automatically probe the reference surface if not already probed!" }
+        abort { "Switching to the touch probe (<b>T" ^ global.mosPTID ^ "</b>) will automatically probe the reference surface if not already probed!" }
 
-set global.mosToolSetterActivationPos = null
+set global.mosTSAP = null
 
 ; Using the touch probe, probe downwards until the probe is triggered.
-G6512 I{global.mosTouchProbeID} J{global.mosTouchProbeReferencePos[0]} K{global.mosTouchProbeReferencePos[1]} L{move.axes[2].max} Z{move.axes[2].min}
+G6512 I{global.mosTPID} J{global.mosTPRP[0]} K{global.mosTPRP[1]} L{move.axes[2].max} Z{move.axes[2].min}
 
 ; Reference surface to toolsetter activation point distance
-set global.mosToolSetterActivationPos = { global.mosProbeCoordinate[2] - (global.mosTouchProbeReferencePos[2] - global.mosToolSetterPos[2]) }
+set global.mosTSAP = { global.mosPCZ - (global.mosTPRP[2] - global.mosTSP[2]) }
 
-if { !global.mosExpertMode }
-    echo { "MillenniumOS: Probed reference surface Z=" ^ global.mosProbeCoordinate[2] ^ ", expected toolsetter activation point is Z=" ^ global.mosToolSetterActivationPos }
+if { !global.mosEM }
+    echo { "MillenniumOS: Probed reference surface Z=" ^ global.mosPCZ ^ ", expected toolsetter activation point is Z=" ^ global.mosTSAP }

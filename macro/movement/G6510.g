@@ -15,10 +15,19 @@ if { !inputs[state.thisInput].active }
 ; Make sure we're in the default motion system
 M598
 
-var zProbeI = { #global.mosSurfaceLocationNames - 1 }
+; Friendly names to indicate the location of a surface to be probed, relative to the tool.
+; Left means 'surface is to the left of the tool', i.e. we will move the table towards the
+; _right_ to probe it.
+; If your machine is configured with the axes in a different orientation, you can override
+; these names in mos-user-vars.g but there is no way to override the "Below" option (which)
+; is a Z axis, and always probes towards Z minimum. On the Milo, Z Max is 0 and Z min is 60 or 120.
+var surfaceLocationNames = {"Left","Right","Front","Back","Top"}
+
+; Index of the zProbe entry as this requires different inputs.
+var zProbeI = { #var.surfaceLocationNames - 1 }
 
 ; Display description of surface probe if not displayed this session
-if { global.mosTutorialMode && !global.mosDescDisplayed[4] }
+if { global.mosTM && !global.mosDD4 }
     M291 P"This operation finds the co-ordinate of a surface on a single axis. It is usually used to find the top surface of a workpiece but can be used to find X or Y positions as well." R"MillenniumOS: Probe Surface" T0 S2
     M291 P"<b>CAUTION</b>: This operation will only return accurate results if the surface you are probing is perpendicular to the axis you are probing in." R"MillenniumOS: Probe Surface" T0 S2
     M291 P"You will jog the tool or touch probe to your chosen starting position. Your starting position should be outside and above X or Y surfaces, or directly above the top surface." R"MillenniumOS: Probe Surface" T0 S2
@@ -29,14 +38,14 @@ if { global.mosTutorialMode && !global.mosDescDisplayed[4] }
     if { result != 0 }
         abort { "Surface probe aborted!" }
 
-    set global.mosDescDisplayed[4] = true
+    set global.mosDD4 = true
 
 ; Make sure probe tool is selected
-if { global.mosProbeToolID != state.currentTool }
-    T T{global.mosProbeToolID}
+if { global.mosPTID != state.currentTool }
+    T T{global.mosPTID}
 
 ; Prompt for overtravel distance
-M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far far in we move from the expected surface to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{global.mosProbeOvertravel}
+M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far far in we move from the expected surface to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{global.mosOT}
 if { result != 0 }
     abort { "Single Surface probe aborted!" }
 else
@@ -50,7 +59,7 @@ else
         abort { "Surface probe aborted!" }
     else
         ; Prompt the operator for the location of the surface
-        M291 P"Please select the surface to probe.<br/><b>NOTE</b>: These surface names are relative to an operator standing at the front of the machine." R"MillenniumOS: Probe Surface" T0 S4 F{var.zProbeI} K{global.mosSurfaceLocationNames}
+        M291 P"Please select the surface to probe.<br/><b>NOTE</b>: These surface names are relative to an operator standing at the front of the machine." R"MillenniumOS: Probe Surface" T0 S4 F{var.zProbeI} K{var.surfaceLocationNames}
         var probeAxis = { input }
 
         ; For Z probes, our depth is 0 but our distance is the probing depth
@@ -60,7 +69,7 @@ else
 
         ; If this is an X/Y probe, ask for depth
         if { !var.isZProbe }
-            M291 P"Please enter the depth to probe at in mm, below the current location.<br/><b>Example</b>: A value of 10 will move the probe downwards 10mm before probing outwards." R"MillenniumOS: Probe Surface" J1 T0 S6 F{global.mosProbeOvertravel}
+            M291 P"Please enter the depth to probe at in mm, below the current location.<br/><b>Example</b>: A value of 10 will move the probe downwards 10mm before probing outwards." R"MillenniumOS: Probe Surface" J1 T0 S6 F{global.mosOT}
             if { result != 0 }
                 abort { "Surface probe aborted!" }
             else
@@ -69,7 +78,7 @@ else
                 if { var.probeDepth < 0 }
                     abort { "Probing depth was negative!" }
 
-        M291 P"Please enter the distance to probe towards the surface in mm." R"MillenniumOS: Probe Surface" J1 T0 S6 F{global.mosProbeOvertravel}
+        M291 P"Please enter the distance to probe towards the surface in mm." R"MillenniumOS: Probe Surface" J1 T0 S6 F{global.mosOT}
         if { result != 0 }
             abort { "Surface probe aborted!" }
         else
@@ -78,13 +87,13 @@ else
             if { var.probeDist < 0 }
                 abort { "Probe distance was negative!" }
 
-            if { global.mosTutorialMode}
+            if { global.mosTM}
                 if { !var.isZProbe }
-                    M291 P{"Probe will now move down <b>" ^ var.probeDepth ^ "</b> mm and probe towards the <b>" ^ global.mosSurfaceLocationNames[var.probeAxis] ^ "</b> surface." } R"MillenniumOS: Probe Surface" T0 S3
+                    M291 P{"Probe will now move down <b>" ^ var.probeDepth ^ "</b> mm and probe towards the <b>" ^ var.surfaceLocationNames[var.probeAxis] ^ "</b> surface." } R"MillenniumOS: Probe Surface" T0 S3
                     if { result != 0 }
                         abort { "Single Surface probe aborted!" }
                 else
-                    M291 P{"Probe will now move towards the <b>" ^ global.mosSurfaceLocationNames[var.probeAxis] ^ "</b> surface." } R"MillenniumOS: Probe Surface" T0 S3
+                    M291 P{"Probe will now move towards the <b>" ^ var.surfaceLocationNames[var.probeAxis] ^ "</b> surface." } R"MillenniumOS: Probe Surface" T0 S3
                     if { result != 0 }
                         abort { "Single Surface probe aborted!" }
 

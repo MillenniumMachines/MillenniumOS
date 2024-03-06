@@ -19,8 +19,8 @@ if { !inputs[state.thisInput].active }
 ; Make sure we're in the default motion system
 M598
 
-if { exists(param.W) && param.W != null && (param.W < 1 || param.W > #global.mosWorkOffsetCodes) }
-    abort { "WCS number (W..) must be between 1 and " ^ #global.mosWorkOffsetCodes ^ "!" }
+if { exists(param.W) && param.W != null && (param.W < 1 || param.W > limits.workplaces) }
+    abort { "WCS number (W..) must be between 1 and " ^ limits.workplaces ^ "!" }
 
 if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
     abort { "Must provide a start position to probe from using J, K and L parameters!" }
@@ -28,14 +28,14 @@ if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
 if { !exists(param.H) }
     abort { "Must provide an approximate boss diameter using the H parameter!" }
 
-var probeId = { global.mosFeatureTouchProbe ? global.mosTouchProbeID : null }
+var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
-set global.mosWorkPieceRadius = null
-set global.mosWorkPieceCenterPos = { null, null }
+set global.mosWPRad = null
+set global.mosWPCtrPos = { null, null }
 
 ; Make sure probe tool is selected
-if { global.mosProbeToolID != state.currentTool }
-    T T{global.mosProbeToolID}
+if { global.mosPTID != state.currentTool }
+    T T{global.mosPTID}
 
 ; Tool Radius is the first entry for each value in
 ; our extended tool table.
@@ -43,7 +43,7 @@ if { global.mosProbeToolID != state.currentTool }
 ; Apply tool radius to clearance. We want to make sure
 ; the surface of the tool and the workpiece are the
 ; clearance distance apart, rather than less than that.
-var clearance = { (exists(param.T) ? param.T : global.mosProbeClearance) + ((state.currentTool <= limits.tools-1 && state.currentTool >= 0) ? global.mosToolTable[state.currentTool][0] : 0) }
+var clearance = { (exists(param.T) ? param.T : global.mosCL) + ((state.currentTool <= limits.tools-1 && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
 
 ; Apply tool radius to overtravel. We want to allow
 ; less movement past the expected point of contact
@@ -51,7 +51,7 @@ var clearance = { (exists(param.T) ? param.T : global.mosProbeClearance) + ((sta
 ; For big tools and low overtravel values, this value
 ; might end up being negative. This is fine, as long
 ; as the configured tool radius is accurate.
-var overtravel = { (exists(param.O) ? param.O : global.mosProbeOvertravel) - ((state.currentTool <= limits.tools-1 && state.currentTool >= 0) ? global.mosToolTable[state.currentTool][0] : 0) }
+var overtravel = { (exists(param.O) ? param.O : global.mosOT) - ((state.currentTool <= limits.tools-1 && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
 
 ; Commented due to memory limitations
 ; M7500 S{"Distance Modifiers adjusted for Tool Radius - Clearance=" ^ var.clearance ^ " Overtravel=" ^ var.overtravel }
@@ -122,7 +122,7 @@ while { iterations < #var.dirXY }
     G6512 I{var.probeId} J{var.dirXY[iterations][0][0]} K{var.dirXY[iterations][0][1]} L{var.sZ} X{var.dirXY[iterations][1][0]} Y{var.dirXY[iterations][1][1]}
 
     ; Save the probed co-ordinates
-    set var.pXY[iterations] = { global.mosProbeCoordinate[0], global.mosProbeCoordinate[1] }
+    set var.pXY[iterations] = { global.mosPCX, global.mosPCY }
 
 ; Calculate the slopes, midpoints, and perpendicular bisectors
 var sM1 = { (var.pXY[1][1] - var.pXY[0][1]) / (var.pXY[1][0] - var.pXY[0][0]) }
@@ -149,9 +149,8 @@ var r3 = { sqrt(pow((var.pXY[2][0] - var.cX), 2) + pow((var.pXY[2][1] - var.cY),
 var avgR = { (var.r1 + var.r2 + var.r3) / 3 }
 
 ; Update global vars
-set global.mosWorkPieceCenterPos = { var.cX, var.cY }
-set global.mosWorkPieceRadius = { var.avgR }
-set global.mosWorkPieceBoundingBox = { var.cX - var.avgR, var.cY - var.avgR, var.cX + var.avgR, var.cY + var.avgR }
+set global.mosWPCtrPos = { var.cX, var.cY }
+set global.mosWPRad = { var.avgR }
 
 ; Confirm we are at the safe Z height
 G6550 I{var.probeId} Z{var.safeZ}
@@ -160,17 +159,13 @@ G6550 I{var.probeId} Z{var.safeZ}
 G6550 I{var.probeId} X{var.cX} Y{var.cY}
 
 if { !exists(param.R) || param.R != 0 }
-    if { !global.mosExpertMode }
-        echo { "Boss - Center X=" ^ global.mosWorkPieceCenterPos[0] ^ " Y=" ^ global.mosWorkPieceCenterPos[1] ^ " R=" ^ global.mosWorkPieceRadius }
+    if { !global.mosEM }
+        echo { "Boss - Center X=" ^ global.mosWPCtrPos[0] ^ " Y=" ^ global.mosWPCtrPos[1] ^ " R=" ^ global.mosWPRad }
     else
-        echo { "global.mosWorkPieceCenterPos=" ^ global.mosWorkPieceCenterPos }
-        echo { "global.mosWorkPieceRadius=" ^ global.mosWorkPieceRadius }
-        echo { "global.mosWorkPieceBoundingBox=" ^ global.mosWorkPieceBoundingBox }
+        echo { "global.mosWPCtrPos=" ^ global.mosWPCtrPos }
+        echo { "global.mosWPRad=" ^ global.mosWPRad }
 
 ; Set WCS origin to the probed boss center, if requested
 if { exists(param.W) && param.W != null }
-    echo { "Setting WCS " ^ param.W ^ " X,Y origin to center of boss" }
+    echo { "MillenniumOS: Setting WCS " ^ param.W ^ " X,Y origin to center of boss" }
     G10 L2 P{param.W} X{var.cX} Y{var.cY}
-
-; Save code of last probe cycle
-set global.mosLastProbeCycle = "G6501"

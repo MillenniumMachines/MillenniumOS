@@ -6,7 +6,7 @@
 ; or toolsetter.
 
 ; Reset detected probe ID
-set global.mosDetectedProbeID = null
+set global.mosDPID = null
 
 ; Delay between checking probe status in ms
 var delay = { (exists(param.D)) ? param.D : 100 }
@@ -23,7 +23,7 @@ var previousValues = { vector(#sensors.probes, null) }
 
 ; Loop until a probe status change is detected or the maximum number
 ; of iterations is reached.
-while { iterations < var.maxIterations && global.mosDetectedProbeID == null }
+while { iterations < var.maxIterations && global.mosDPID == null }
     G4 P{ var.delay }
 
     ; Loop through all configured probes
@@ -34,7 +34,7 @@ while { iterations < var.maxIterations && global.mosDetectedProbeID == null }
 
         ; If probe value has changed and we had a previous iteration value, treat this as a detected probe and return.
         if { sensors.probes[iterations].value[0] != var.previousValues[iterations] && var.previousValues[iterations] != null }
-            set global.mosDetectedProbeID = iterations
+            set global.mosDPID = iterations
             break
 
         ; If no probe status change detected, save the current value for the next iteration

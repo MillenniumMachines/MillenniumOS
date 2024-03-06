@@ -5,21 +5,21 @@
 ; USAGE: "M7001"
 
 ; Disable the daemon process
-set global.mosVsscEnabled  = false
+set global.mosVSEnabled  = false
 
 ; If spindle is active, adjust speed to last recorded
 ; 'base' RPM
-if { spindles[global.mosSpindleID].state == "forward" }
+if { spindles[global.mosSID].state == "forward" }
     ; Set spindle RPM
-    M568 F{ global.mosVsscPreviousAdjustmentRPM }
+    M568 F{ global.mosVSPS }
 
-    if { global.mosVsscDebug }
-        echo {"[VSSC]: State: Disabled RPM: " ^ global.mosVsscPreviousAdjustmentRPM }
+    if { global.mosDebug }
+        echo {"[VSSC]: State: Disabled RPM: " ^ global.mosVSPS }
 else
-    if { global.mosVsscDebug }
+    if { global.mosDebug }
         echo {"[VSSC]: State: Disabled" }
 
 ; Update adjustment time, RPM and direction
-set global.mosVsscPreviousAdjustmentTime = 0
-set global.mosVsscPreviousAdjustmentRPM  = 0
-set global.mosVsscPreviousAdjustmentDir  = true
+set global.mosVSPT = 0
+set global.mosVSPS = 0
+set global.mosVSPD = true

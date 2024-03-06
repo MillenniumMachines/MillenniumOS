@@ -1,12 +1,12 @@
 ; Toggle VSSC.g
 
-; Toggles global.mosVsscOverrideEnabled so that VSSC behaviour can be overridden
+; Toggles global.mosVSOE so that VSSC behaviour can be overridden
 ; by the operator on the fly.
-if { global.mosTutorialMode }
-    M291 R"MillenniumOS: Toggle VSSC" P{ (global.mosVsscOverrideEnabled  ? "Disable" : "Enable" ) ^ " Variable Spindle Speed Control?" } S3
+if { global.mosTM }
+    M291 R"MillenniumOS: Toggle VSSC" P{ (global.mosVSOE  ? "Disable" : "Enable" ) ^ " Variable Spindle Speed Control?" } S3
     if { result == -1 }
         M99
 
-set global.mosVsscOverrideEnabled = {!global.mosVsscOverrideEnabled}
+set global.mosVSOE = {!global.mosVSOE}
 
-echo {"MillenniumOS: VSSC " ^ (global.mosVsscOverrideEnabled ? "Enabled" : "Disabled")}
+echo {"MillenniumOS: VSSC " ^ (global.mosVSOE ? "Enabled" : "Disabled")}

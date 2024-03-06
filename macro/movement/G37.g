@@ -37,10 +37,10 @@ if { !inputs[state.thisInput].active }
 M598
 
 ; Without a toolsetter, the operator will have to zero the tool themselves.
-if { ! global.mosFeatureToolSetter }
+if { ! global.mosFeatToolSetter }
     abort { "Tool length probing without a toolsetter is not currently supported!" }
 
-if { global.mosFeatureTouchProbe && global.mosToolSetterActivationPos == null }
+if { global.mosFeatTouchProbe && global.mosTSAP == null }
     abort { "Touch probe feature is enabled but reference surface has not been probed. Please run <b>G6511</b> before probing tool lengths!" }
 
 G27 Z1    ; park spindle
@@ -50,7 +50,7 @@ if { state.status == "paused" }
     M99
 
 
-; Offsets are calculated based on our mosToolSetterPos[2] which
+; Offsets are calculated based on our mosTSP[2] which
 ; is the activation point of the toolsetter with a dowel installed.
 ; Due to the Z movement limits of the machine, the installed dowel
 ; will need to have ~15-20mm of stickout to be able to reach the
@@ -67,10 +67,10 @@ if { state.currentTool == -1 }
 ; Reset the tool offset before probing
 G10 P{state.currentTool} Z0
 
-echo {"Probing tool #" ^ state.currentTool ^ " length at X=" ^ global.mosToolSetterPos[0] ^ ", Y=" ^ global.mosToolSetterPos[1] }
+echo {"Probing tool #" ^ state.currentTool ^ " length at X=" ^ global.mosTSP[0] ^ ", Y=" ^ global.mosTSP[1] }
 
 ; Probe towards axis minimum until toolsetter is activated
-G6512 I{global.mosToolSetterID} J{global.mosToolSetterPos[0]} K{global.mosToolSetterPos[1]} L{move.axes[2].max} Z{move.axes[2].min}
+G6512 I{global.mosTSID} J{global.mosTSP[0]} K{global.mosTSP[1]} L{move.axes[2].max} Z{move.axes[2].min}
 
 ; If touch probe is configured, then our position in Z is relative to
 ; the installed height of the touch probe, which we don't know. What we
@@ -83,10 +83,10 @@ G6512 I{global.mosToolSetterID} J{global.mosToolSetterPos[0]} K{global.mosToolSe
 ; offset from there instead.
 
 var toolOffset = 0
-if { global.mosFeatureTouchProbe }
-    set var.toolOffset = { -(global.mosProbeCoordinate[2] - global.mosToolSetterActivationPos) }
+if { global.mosFeatTouchProbe }
+    set var.toolOffset = { -(global.mosPCZ - global.mosTSAP) }
 else
-    set var.toolOffset = { -(abs(global.mosToolSetterPos[2]) - abs(global.mosProbeCoordinate[2])) }
+    set var.toolOffset = { -(abs(global.mosTSP[2]) - abs(global.mosPCZ)) }
 
 echo {"Tool #" ^ state.currentTool ^ " Offset=" ^ var.toolOffset ^ "mm"}
 

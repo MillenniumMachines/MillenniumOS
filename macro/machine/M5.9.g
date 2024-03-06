@@ -28,9 +28,9 @@ while { iterations < #spindles }
 ; be stopped.
 M5
 
-var dwellSeconds = { (exists(param.D) ? param.D : global.mosSpindleDecelSeconds) }
+var dwellSec = { (exists(param.D) ? param.D : global.mosSDS) }
 
-if { var.doWait && var.dwellSeconds > 0 }
+if { var.doWait && var.dwellSec > 0 }
     ; Wait for spindle to accelerate
-    echo { "Waiting " ^ var.dwellSeconds ^ " seconds for spindle to stop" }
-    G4 S{var.dwellSeconds}
+    echo { "Waiting " ^ var.dwellSec ^ " seconds for spindle to stop" }
+    G4 S{var.dwellSec}

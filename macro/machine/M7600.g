@@ -9,47 +9,57 @@
 ; use these variables in your own macro calls to implement custom
 ; functionality.
 
+echo { "=== MOS Info:" }
+echo { "      global.mosVer=" ^ global.mosVer }
+echo { "      global.mosErr=" ^ global.mosErr }
+echo { "      global.mosLdd=" ^ global.mosLdd }
+
 echo { "=== MOS Features:" }
-echo { "      global.mosFeatureToolSetter=" ^ global.mosFeatureToolSetter }
-echo { "      global.mosFeatureTouchProbe=" ^ global.mosFeatureTouchProbe }
-echo { "      global.mosFeatureSpindleFeedback=" ^ global.mosFeatureSpindleFeedback }
-echo { "      global.mosFeatureVSSC=" ^ global.mosFeatureVSSC }
+echo { "      global.mosFeatToolSetter=" ^ global.mosFeatToolSetter }
+echo { "      global.mosFeatTouchProbe=" ^ global.mosFeatTouchProbe }
+echo { "      global.mosFeatSpindleFeedback=" ^ global.mosFeatSpindleFeedback }
+echo { "      global.mosFeatVSSC=" ^ global.mosFeatVSSC }
 
 echo { "=== MOS Probing:" }
-echo { "      global.mosProbeToolID=" ^ global.mosProbeToolID }
-echo { "      global.mosProbeDetected=" ^ global.mosProbeDetected }
-echo { "      global.mosDetectedProbeID=" ^ global.mosDetectedProbeID }
-echo { "      global.mosProbeCoordinate=" ^ global.mosProbeCoordinate }
-echo { "      global.mosProbeVariance=" ^ global.mosProbeVariance }
-echo { "      global.mosProbeOvertravel=" ^ global.mosProbeOvertravel }
-echo { "      global.mosProbePositionDelay=" ^ global.mosProbePositionDelay }
-echo { "      global.mosLastProbeCycle=" ^ global.mosLastProbeCycle }
-echo { "      global.mosWorkPieceCenterPos=" ^ global.mosWorkPieceCenterPos }
-echo { "      global.mosWorkPieceDimensions=" ^ global.mosWorkPieceDimensions }
-echo { "      global.mosWorkPieceRadius=" ^ global.mosWorkPieceRadius }
-echo { "      global.mosWorkPieceRotationAngle=" ^ global.mosWorkPieceRotationAngle }
-echo { "      global.mosWorkPieceBoundingBox=" ^ global.mosWorkPieceBoundingBox }
-echo { "      global.mosWorkPieceCornerNum=" ^ global.mosWorkPieceCornerNum }
-echo { "      global.mosWorkPieceCornerPos=" ^ global.mosWorkPieceCornerPos }
-echo { "      global.mosWorkPieceCornerAngle=" ^ global.mosWorkPieceCornerAngle }
-echo { "      global.mosWorkPieceSurfaceAxis=" ^ global.mosWorkPieceSurfaceAxis }
-echo { "      global.mosWorkPieceSurfacePos=" ^ global.mosWorkPieceSurfacePos }
+echo { "      global.mosPTID=" ^ global.mosPTID }
+echo { "      global.mosPD=" ^ global.mosPD }
+echo { "      global.mosDPID=" ^ global.mosDPID }
+echo { "      global.mosPCX=" ^ global.mosPCX }
+echo { "      global.mosPCY=" ^ global.mosPCY }
+echo { "      global.mosPCZ=" ^ global.mosPCZ }
+echo { "      global.mosPVX=" ^ global.mosPVX }
+echo { "      global.mosPVY=" ^ global.mosPVY }
+echo { "      global.mosPVZ=" ^ global.mosPVZ }
+echo { "      global.mosOT=" ^ global.mosOT }
+echo { "      global.mosCL=" ^ global.mosCL }
+echo { "      global.mosWPCtrPos=" ^ global.mosWPCtrPos }
+echo { "      global.mosWPDims=" ^ global.mosWPDims }
+echo { "      global.mosWPRad=" ^ global.mosWPRad }
+echo { "      global.mosWPDeg=" ^ global.mosWPDeg }
+echo { "      global.mosWPCnrNum=" ^ global.mosWPCnrNum }
+echo { "      global.mosWPCnrPos=" ^ global.mosWPCnrPos }
+echo { "      global.mosWPCnrDeg=" ^ global.mosWPCnrDeg }
+echo { "      global.mosWPSfcAxis=" ^ global.mosWPSfcAxis }
+echo { "      global.mosWPSfcPos=" ^ global.mosWPSfcPos }
 
 echo { "=== MOS Touch Probe:" }
-echo { "      global.mosTouchProbeID=" ^ global.mosTouchProbeID }
-echo { "      global.mosTouchProbeRadius=" ^ global.mosTouchProbeRadius }
-echo { "      global.mosTouchProbeDeflection=" ^ global.mosTouchProbeDeflection }
-echo { "      global.mosTouchProbeReferencePos=" ^ global.mosTouchProbeReferencePos }
+echo { "      global.mosTPID=" ^ global.mosTPID }
+echo { "      global.mosTPR=" ^ global.mosTPR }
+echo { "      global.mosTPD=" ^ global.mosTPD }
+echo { "      global.mosTPRP=" ^ global.mosTPRP }
 
 echo { "=== MOS Toolsetter:" }
-echo { "      global.mosToolSetterID=" ^ global.mosToolSetterID }
-echo { "      global.mosToolSetterPos=" ^ global.mosToolSetterPos }
-echo { "      global.mosToolSetterActivationPos=" ^ global.mosToolSetterActivationPos }
+echo { "      global.mosTSID=" ^ global.mosTSID }
+echo { "      global.mosTSP=" ^ global.mosTSP }
+echo { "      global.mosTSAP=" ^ global.mosTSAP }
+
+echo { "=== MOS Misc:" }
+echo { "      global.mosPMBO=" ^ global.mosPMBO }
 
 echo { "=== MOS Spindle:"}
-echo { "      global.mosSpindleID=" ^ global.mosSpindleID }
-echo { "      global.mosSpindleAccelSeconds=" ^ global.mosSpindleAccelSeconds }
-echo { "      global.mosSpindleDecelSeconds=" ^ global.mosSpindleDecelSeconds }
+echo { "      global.mosSID=" ^ global.mosSID }
+echo { "      global.mosSAS=" ^ global.mosSAS }
+echo { "      global.mosSDS=" ^ global.mosSDS }
 
 if { exists(param.D) && param.D == 1 }
     echo "=== Additional Output from RRF for debugging purposes"
