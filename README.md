@@ -8,26 +8,26 @@ We build _on top of_ RepRapFirmware, providing operators of the Millennium Machi
 
 ## Features
 
-  - Canned probing cycles usable directly from gcode or via Duet Web Control as named macros.
-  - Fallbacks to guided manual probing when touch probe and / or toolsetter is not available.
-  - Safety checks at every step to instill confidence in novice machinists.
-  - Variable Spindle Speed Control.
-  - Compatible with Millennium Machines Milo GCode Dialect.
+- Canned probing cycles usable directly from gcode or via Duet Web Control as named macros.
+- Fallbacks to guided manual probing when touch probe and / or toolsetter is not available.
+- Safety checks at every step to instill confidence in novice machinists.
+- Variable Spindle Speed Control.
+- Compatible with Millennium Machines Milo GCode Dialect.
 
 ## Usage
 
-  - Configure your toolsetter and optionally, touch probe, in RRF. Please see [here](#rrf-config) for instructions.
-  - Download the ZIP file of a release.
-  - Extract the ZIP file onto the root of your SD card, or upload the ZIP directly into Duet Web Control. If uploading, you can use the **"Upload System Files"** button in the **Files** -> **System** window, and you do not need to extract the ZIP file first.
-  - Add `M98 P"mos.g"` to the bottom of your `config.g` file. You can edit this via the **Files** -> **System** window.
-  - Restart RRF (`M999`)
-  - Follow the configuration wizard in Duet Web Control that will guide you through the necessary configuration settings.
-  - Install one of the post-processors from [here](./post-processors/) into your CAM tool of choice.
+- Configure your toolsetter and optionally, touch probe, in RRF. Please see [here](#rrf-config) for instructions.
+- Download the ZIP file of a release.
+- Extract the ZIP file onto the root of your SD card, or upload the ZIP directly into Duet Web Control. If uploading, you can use the **"Upload System Files"** button in the **Files** -> **System** window, and you do not need to extract the ZIP file first.
+- Add `M98 P"mos.g"` to the bottom of your `config.g` file. You can edit this via the **Files** -> **System** window.
+- Restart RRF (`M999`)
+- Follow the configuration wizard in Duet Web Control that will guide you through the necessary configuration settings.
+- Install one of the post-processors from [here](./post-processors/) into your CAM tool of choice.
 
 ## Notes
 
-  - You _must_ be using RRF `v3.5.0-rc.1` or above. MOS uses many 'meta gcode' features that do not exist in earlier versions.
-  - MOS includes its own `daemon.g` file to implement repetitive tasks, such as VSSC. If you want to implement your own repetitive tasks, you should create a `user-daemon.g` file in the `/sys` directory, which MillenniumOS will run during its' own daemon loop. Disabling the MOS daemon tasks will also disable any `user-daemon.g` tasks. Do not use any long-running loops inside `user-daemon.g` as this will interfere with MOS's own daemon behaviour.
+- You _must_ be using RRF `v3.5.0-rc.3` or above. MOS uses many 'meta gcode' features that do not exist in earlier versions.
+- MOS includes its own `daemon.g` file to implement repetitive tasks, such as VSSC. If you want to implement your own repetitive tasks, you should create a `user-daemon.g` file in the `/sys` directory, which MillenniumOS will run during its' own daemon loop. Disabling the MOS daemon tasks will also disable any `user-daemon.g` tasks. Do not use any long-running loops inside `user-daemon.g` as this will interfere with MOS's own daemon behaviour.
 
 ## RRF Config
 
@@ -79,11 +79,13 @@ Your touch probe may not need filtering, and you can test this by moving it to a
 
 Due to some issues with RRF as it currently stands, there are a small number of situations where you can shoot yourself in the foot when running MillenniumOS macros outside of a print file. These are:
 
- - Clicking Cancel on a messagebox to abort a probing routine may trigger undesired behaviour when running a probe **outside** of a print file. This is because clicking cancel on a message box, if outside of a print, simply returns from the macro that created the box. There is no way to easily detect this from any calling macros so we could end up running moves that were unexpected. This is something that ideally will need to be fixed by the RRF devs and is documented [here](https://forum.duet3d.com/topic/34945/meta-gcode-result-variable-inconsistent-with-docs?_=1707734672834). When clicking cancel from _within_ a print, the whole print is aborted from that point so this behaviour should not be an issue when executing actual CAM code produced by our post-processor.
+- Clicking Cancel on a messagebox to abort a probing routine may trigger undesired behaviour when running a probe **outside** of a print file. This is because clicking cancel on a message box, if outside of a print, simply returns from the macro that created the box. There is no way to easily detect this from any calling macros so we could end up running moves that were unexpected. This is something that ideally will need to be fixed by the RRF devs and is documented [here](https://forum.duet3d.com/topic/34945/meta-gcode-result-variable-inconsistent-with-docs?_=1707734672834). When clicking cancel from _within_ a print, the whole print is aborted from that point so this behaviour should not be an issue when executing actual CAM code produced by our post-processor.
 
- - Toolchanges cannot currently be cancelled, so if a touch probe is not detected during the touch probe installation routine, then the active tool number will still be set to the probing tool. This will not affect print files because an aborted toolchange aborts the print (but still sets the active tool number). We use the tool number as a guard to not execute probing routines unless the touch probe is installed, so this leaves some window of vulnerability where it could _appear_ like a touch probe is connected when it actually wasn't detected. Again, this is likely something that should be fixed in RRF but if we absolutely _have_ to work around it by tracking touchprobe connectivity ourselves then we can implement this.
+- Toolchanges cannot currently be cancelled, so if a touch probe is not detected during the touch probe installation routine, then the active tool number will still be set to the probing tool. This will not affect print files because an aborted toolchange aborts the print (but still sets the active tool number). We use the tool number as a guard to not execute probing routines unless the touch probe is installed, so this leaves some window of vulnerability where it could _appear_ like a touch probe is connected when it actually wasn't detected. Again, this is likely something that should be fixed in RRF but if we absolutely _have_ to work around it by tracking touchprobe connectivity ourselves then we can implement this.
 
- - If the touch probe is activated during a protected move, then due to how this is implemented in RRF it is _possible_ that the speeds of the probe were not reset correctly. Subsequent probes will run at the same speed which might be very slow, or very fast (if the interrupted move was a travel move). You should be aware of this when restarting from a collision during a protected move. We are currently looking for options as to how to improve this behaviour, but it may involve underlying changes to RRF to allow this.
+- If the touch probe is activated during a protected move, then due to how this is implemented in RRF it is _possible_ that the speeds of the probe were not reset correctly. Subsequent probes will run at the same speed which might be very slow, or very fast (if the interrupted move was a travel move). You should be aware of this when restarting from a collision during a protected move. We are currently looking for options as to how to improve this behaviour, but it may involve underlying changes to RRF to allow this.
+
+- Memory limits on the `stm32f4` chip are very restrictive - MOS uses quite a lot of global variables for communication between macros and configuration, and is pushing the limits of this chip. You may receive `OutOfMemory` crashes (check `M122` after an unexpected reboot to confirm) if you use global variables in other places in your configuration. The only way around this issue at the moment is to reduce the number and size of global variables in other locations - MillenniumOS is already about as efficient as it can be.
 
 ## Bugs, Issues, Support
 
