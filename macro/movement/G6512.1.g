@@ -55,7 +55,7 @@ if { var.roughSpeed == var.fineSpeed }
     set var.fineSpeed = { var.roughSpeed / var.roughDivider }
     if { !global.mosEM }
         echo { "MillenniumOS: Probe " ^ param.I ^ " is configured with a single feed rate, which will be used for the initial probe. Subsequent probes will run at " ^ var.fineSpeed ^ "mm/min." }
-        echo { "MillenniumOS: Please use M558 K" ^ param.I ^ " F" ^ var.roughSpeed ^ ":" ^ var.fineSpeed ^ " to silence this warning." }
+        echo { "MillenniumOS: Please use M558 K" ^ param.I ^ " F" ^ var.roughSpeed ^ ":" ^ var.fineSpeed ^ " in your config to silence this warning." }
 
 ; Set rough probe speed
 M558 K{ param.I } F{ var.roughSpeed }
