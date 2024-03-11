@@ -42,7 +42,7 @@ if { global.mosTM }
     M291 P{"<b>CAUTION</b>: You may need to use small, manual movements using this interface during the configuration process. Please make sure the jog button distances are set appropriately before starting!"} R"MillenniumOS: Configuration Wizard" S2 T0
     M291 P{"<b>CAUTION</b>: Follow <b>ALL</b> instructions to the letter, and if you are unsure about any step, please ask for help on our <a target=""_blank"" href=""https://discord.gg/ya4UUj7ax2"">Discord</a>."} R"MillenniumOS: Configuration Wizard" S2 T0
 
-M291 P"Would you like to enable <b>Tutorial Mode</b>?<br/><b>Tutorial Mode</b> describes configuration and probing actions in detail before the any action is taken." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F0
+M291 P"Would you like to enable <b>Tutorial Mode</b>?<br/><b>Tutorial Mode</b> describes configuration and probing actions in detail before any action is taken." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F0
 set var.wizTutorialMode = { (input == 0) ? true : false }
 
 M291 P"Would you like to enable <b>Expert Mode</b>?<br/><b>Expert Mode</b> disables some confirmation checks before and after operations to reduce operator interaction." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F1

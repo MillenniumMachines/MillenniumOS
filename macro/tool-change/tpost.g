@@ -37,15 +37,13 @@ if { state.currentTool == global.mosPTID }
     if { global.mosFeatTouchProbe }
         ; We abort the tool change if the touch probe is not detected
         ; so at this point we can safely assume the probe is connected.
-        if { !global.mosEM }
-            M291 P{"<b>Touch Probe Detected</b>.<br/>We will now probe the reference surface. Move away from the machine <b>BEFORE</b> pressing <b>OK</b>!"} R"MillenniumOS: Tool Change" S2
+        M291 P{"<b>Touch Probe Detected</b>.<br/>We will now probe the reference surface. Move away from the machine <b>BEFORE</b> pressing <b>OK</b>!"} R"MillenniumOS: Tool Change" S2
         ; Call reference surface probe in non-standalone mode to
         ; run the actual probe.
         G6511 S0 R1
         if { global.mosTSAP == null }
             abort { "Touch probe reference surface probing failed." }
     else
-        if { !global.mosEM }
             M291 P{"<b>Datum Tool Installed</b>.<br/>We will now probe the tool length. Move away from the machine <b>BEFORE</b> pressing <b>OK</b>!"} R"MillenniumOS: Tool Change" S2
 
         ; Probe datum tool length
