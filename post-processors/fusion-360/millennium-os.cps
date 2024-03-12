@@ -162,7 +162,7 @@ properties = {
     title: "Enable Variable Spindle Speed Control",
     description: "When enabled, spindle speed is varied between an upper and lower limit surrounding the requested RPM which helps to avoid harmonic resonance between tool and work piece.",
     group: "spindle",
-    scope: "operation",
+    scope: ["post","operation"],
     type: "boolean",
     value: true
   },
@@ -170,7 +170,7 @@ properties = {
     title: "Variable Spindle Speed Control Variance",
     description: "Variance above and below target RPM to vary Spindle speed when VSSC is enabled, in RPM.",
     group: "spindle",
-    scope: "operation",
+    scope: ["post","operation"],
     type: "integer",
     value: 100
   },
@@ -178,7 +178,7 @@ properties = {
     title: "Variable Spindle Speed Control Period",
     description: "Period over which RPM is varied up and down when VSSC is enabled, in milliseconds.",
     group: "spindle",
-    scope: "operation",
+    scope: ["post","operation"],
     type: "integer",
     value: 2000
   }
@@ -668,10 +668,12 @@ function onSection() {
   // Move laterally from park location to initial positions in X and Y
   writeComment("Move to starting position in X and Y");
   writeBlock(gCodesF.format(0), xVar.format(startPos.x), yVar.format(startPos.y));
+  writeln("");
 
   // Move to initial Z position (usually clearance height)
   writeComment("Move to starting position in Z");
   writeBlock(gCodesF.format(0), zVar.format(startPos.z));
+  writeln("");
 
 }
 
@@ -858,20 +860,27 @@ function getArcVars(plane, start, cx, cy, cz) {
 // Output the right plane gcode based on the arc plane.
 function outputPlaneCommand(plane) {
   var code;
+  var planeStr = "";
   switch(plane) {
     case PLANE_XY:
       code = 17;
+      planeStr = "XY";
     break;
     case PLANE_ZX:
       code = 18;
+      planeStr = "XZ";
     break;
     case PLANE_YZ:
       code = 19;
+      planeStr = "YZ";
     break;
     default:
       return;
   }
+  writeln("");
+  writeComment("Switch to {plane} plane for arc moves".supplant({plane: planeStr}));
   writeBlock(gCodes.format(code));
+  writeln("");
 }
 
 // Output 360 degree arc move on given plane.

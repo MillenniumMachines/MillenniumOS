@@ -1,9 +1,11 @@
 # Fusion360 Post Processor for MillenniumOS
 
 ## Intro
+
 The Fusion360 post-processor for MillenniumOS outputs a relatively basic gcode flavour that is designed to work with the RRF 3.5+ gcode format. It also targets some custom gcodes implemented by MillenniumOS, used for workpiece probing, reference surface probing and tool length probing.
 
 ## Installation
+
 1. Download the `millennium-os-<version>-post-f360.cps` file from the release matching your installed MillenniumOS version.
 2. Switch to the **"MANUFACTURE"** workbench in Fusion360.
 3. Under the **"Milling"** tab, click the **"NC Program"** icon (the one with a G at the top of a document).
@@ -15,14 +17,17 @@ The Fusion360 post-processor for MillenniumOS outputs a relatively basic gcode f
 9. Create a setup, add some toolpaths and then run the Post to generate MillenniumOS flavoured output gcode.
 
 ## Notes
+
 Under **"Machine WCS"** in the **"Post Process"** tab of Fusion360's **"Setup"** configuration is a **"WCS offset"** setting which is where the work offset output is configured. Setting this value to `0` (the default) corresponds to `G54`, which is Work Co-ordinate System 1 in RRF / Duet Web Control terms.
 
 This mismatch might be confusing, but it is done for good reason - if no setup changes are made by the operator, we will still generate code in a work co-ordinate system instead of in machine co-ordinates, which will force probing for the origin. We do not allow generating gcode in machine co-ordinates for safety purposes.
 
 ## Usage
+
 By default, the post-processor will wrap your operations with a number of commands that are designed to make life easier for novice machinists. In short, these make your programs feel slightly more like they're running on a 3D printer than a CNC mill.
 
 By default, a program will follow roughly these steps:
+
   1. Pass tool details from Fusion360 to RepRapFirmware to ease tool changes
   2. Home machine in X, Y and Z using G28
   3. Configure movement options
@@ -32,6 +37,7 @@ By default, a program will follow roughly these steps:
   7. End program
 
 For each of your operations, the following steps will be taken:
+
   1. If the new work offset is not the current work offset:
      1. Park the spindle (including stop)
      2. Prompt the operator to probe the work piece and save its' zero to the new work offset
@@ -41,15 +47,16 @@ For each of your operations, the following steps will be taken:
      2. Run tool change process (M6)
      3. Tool change process prompts operator to install right tool, and
      4. Runs G37 to probe the new tool's offset.
-  5. Enable VSSC if requested
-  6. Start spindle at requested RPM
-  7. Wait for spindle to reach target RPM
-  8. Move to operation starting position in Z
-  9. Move to operation starting position in X and Y
-  10. Run cutting moves
-  11. Disable VSSC if it was enabled
+  4. Enable VSSC if requested
+  5. Start spindle at requested RPM
+  6. Wait for spindle to reach target RPM
+  7. Move to operation starting position in Z
+  8. Move to operation starting position in X and Y
+  9. Run cutting moves
+  10. Disable VSSC if it was enabled
 
 ## Probing
+
 When the operator is prompted to probe the work piece, our default behaviour is to run `G6600` which is a "meta macro" that collects information from the operator before running the actual probing macros to find the work piece.
 
 `G6600` allows the operator to select the type of probing operation they want, and then guides the user through filling out the relevant settings for the probing operation they chose.
@@ -75,4 +82,3 @@ In this mode, no work piece probing code will be generated automatically - but y
 You can set individual output settings to `No` to disable some of the default functionality (e.g. "Home Before Start" can be turned off, amongst others), or you can disable all the pre-configuration commands by setting "Output job setup commands" to `No`.
 
 If disabling any or all of these settings, please read the output g-code before running it on your machine to confirm that you have configured the machine in the way that the g-code expects prior to running the program.
-
