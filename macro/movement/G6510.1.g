@@ -73,7 +73,6 @@ else
 ; Check if the positions are within machine limits
 M6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
-
 ; Run probing operation
 G6512 I{var.probeId} J{var.sX} K{var.sY} L{var.sZ} X{var.tPX} Y{var.tPY} Z{var.tPZ}
 
