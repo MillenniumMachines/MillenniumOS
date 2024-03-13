@@ -11,13 +11,6 @@ if { !inputs[state.thisInput].active }
 ; Make sure we're in the default motion system
 M598
 
-; tpre _must_ have run to completion before we execute any post-change
-; operations. If it didn't, we abort this file.
-if { global.mosTCS != 3 }
-    abort {"MillenniumOS: tpre.g did not run to completion, aborting tpost.g"}
-
-set global.mosTCS = 4
-
 ; Abort if no tool selected
 if { state.currentTool < 0 }
     M99
@@ -25,6 +18,13 @@ if { state.currentTool < 0 }
 ; Abort if not homed
 if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
     M99
+
+; tpre _must_ have run to completion before we execute any post-change
+; operations. If it didn't, we abort this file.
+if { global.mosTCS == null || global.mosTCS < 3 }
+    abort { "tpre.g did not run to completion, aborting tpost.g"}
+
+set global.mosTCS = 4
 
 ; Stop and park the spindle
 G27 Z1
@@ -39,10 +39,12 @@ if { state.currentTool == global.mosPTID }
         ; so at this point we can safely assume the probe is connected.
         M291 P{"<b>Touch Probe Detected</b>.<br/>We will now probe the reference surface. Move away from the machine <b>BEFORE</b> pressing <b>OK</b>!"} R"MillenniumOS: Tool Change" S2
         ; Call reference surface probe in non-standalone mode to
-        ; run the actual probe.
+        ; run the actual probe, and force a re-probe if already set
+        ; since the probe has been re-installed, the measured distance
+        ; will be different.
         G6511 S0 R1
         if { global.mosTSAP == null }
-            abort { "Touch probe reference surface probing failed." }
+            abort { "Touch probe reference surface probe failed." }
     else
             M291 P{"<b>Datum Tool Installed</b>.<br/>We will now probe the tool length. Move away from the machine <b>BEFORE</b> pressing <b>OK</b>!"} R"MillenniumOS: Tool Change" S2
 
@@ -53,13 +55,15 @@ else
     G37
 
 ; Continue after operator confirmation if necessary
-if { !global.mosEM }
-    if { job.file.fileName != null }
-        M291 P{"Tool change complete. Press Continue to start the next operation, or Pause to perform further manual tasks (e.g. workpiece fixture changes)"} R"MillenniumOS: Tool Change" S4 K{"Continue", "Pause"}
-        if { input != 0 }
-            echo { "Operator paused job after tool change complete." }
-            M25
-    else
-        M291 P{"Tool change complete. Press <b>OK</b> to continue!"} R"MillenniumOS: Tool Change" S2 T0
+; Note: we use global.mosTM here instead of global.mosEM.
+; After a tool-change, it is almost certain that the next
+; call will be M3.9, to start the spindle. This already
+; contains an operator confirmation dialog, which appears if
+; expert mode is off, so rather than having both controlled
+; by expert mode, we should show this one if tutorial mode is
+; on. This way, the only way to avoid both confirmations is to
+; enable expert mode _and_ disable tutorial mode.
+if { global.mosTM }
+    M291 P{"Tool change complete. Press <b>OK</b> to continue!"} R"MillenniumOS: Tool Change" S2 T0
 
 set global.mosTCS = null

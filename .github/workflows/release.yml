@@ -50,7 +50,7 @@ jobs:
           asset_name: millennium-os-${{ github.ref_name }}-post-f360.cps
           asset_content_type: application/octet-stream
 
-      - name: Upload F360 Standard Machine Definition
+      - name: Upload F360 Machine Definition
         id: upload-f360-mch-std
         uses: actions/upload-release-asset@v1
         env:
@@ -59,15 +59,4 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: dist/milo-v1.5-std.mch
           asset_name: milo-v1.5-std-${{ github.ref_name }}.mch
-          asset_content_type: application/octet-stream
-
-      - name: Upload F360 FMJ Machine Definition
-        id: upload-f360-mch-fmj
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/milo-v1.5-120mm-z.mch
-          asset_name: milo-v1.5-120mm-z-${{ github.ref_name }}.mch
           asset_content_type: application/octet-stream
