@@ -22,4 +22,3 @@ else
 ; Update adjustment time, RPM and direction
 set global.mosVSPT = 0
 set global.mosVSPS = 0
-set global.mosVSPD = true

@@ -168,19 +168,19 @@ properties = {
   },
   vsscVariance: {
     title: "Variable Spindle Speed Control Variance",
-    description: "Variance above and below target RPM to vary Spindle speed when VSSC is enabled, in RPM.",
+    description: "Total variance in rpm to adjust around the requested spindle speed when VSSC is enabled. A value of 100 will vary the spindle speed from 50rpm below to 50rpm above the requested value.",
     group: "spindle",
     scope: ["post","operation"],
     type: "integer",
-    value: 100
+    value: 200
   },
   vsscPeriod: {
     title: "Variable Spindle Speed Control Period",
-    description: "Period over which RPM is varied up and down when VSSC is enabled, in milliseconds.",
+    description: "Period in milliseconds over which rpm is varied around the requested spindle speed when VSSC is enabled.",
     group: "spindle",
     scope: ["post","operation"],
     type: "integer",
-    value: 2000
+    value: 4000
   }
 };
 
