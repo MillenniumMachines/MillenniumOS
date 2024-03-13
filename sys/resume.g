@@ -14,14 +14,10 @@ if { state.currentTool >= 0 && var.toolRpm > 0 }
     ; TODO: What about spindle direction?
     M3.9 S{var.toolRpm}
 
-; Move to X/Y position above stored co-ordinates
+; Move to X/Y position above the stored co-ordinates
+; This will occur at machine Z=0 as we parked the
+; spindle above.
 G53 G0 R1 X0 Y0
 
-; Move to 10mm above stored co-ordinates
-G53 G0 R1 X0 Y0 Z10
-
-; Move to resume position
+; Move down to the stored co-ordinates.
 G53 G0 R1 X0 Y0 Z0
-
-; Wait for move to complete.
-M400
