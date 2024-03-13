@@ -14,7 +14,7 @@ M598
 set global.mosTCS = 0
 
 if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
-    abort {"MillenniumOS: Machine must be homed before executing a tool change."}
+    abort { "Machine must be homed before executing a tool change."}
 
 ; Stop and park the spindle
 G27 Z1

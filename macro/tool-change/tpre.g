@@ -15,22 +15,24 @@ if { !inputs[state.thisInput].active }
 ; Make sure we're in the default motion system
 M598
 
+; Abort if no tool selected
+if { state.nextTool < 0 }
+    M99
+
+; Abort if not homed
+if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
+    M99
+
 ; If tfree ran to completion or was not run (no previous tool was loaded)
 ; then we can continue.
 ; We also allow running if tpre did not run to completion last time, as a
 ; subsequent successful tool change will bring the machine back to a consistent
 ; state. Failed tool changes will cause a job to abort anyway.
-if { global.mosTCS != null && global.mosTCS < 2 }
-    abort {"MillenniumOS: Current tool was not freed properly, aborting tpre.g"}
+if { global.mosTCS != null && global.mosTCS < 1 }
+    abort { "Current tool was not freed properly, aborting tpre.g"}
 
 ; Set tool change state to starting tpre
 set global.mosTCS = 2
-
-if { state.nextTool < 0 }
-    abort {"No tool selected!"}
-
-if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
-    abort {"Machine must be homed before executing a tool change."}
 
 ; Stop and park the spindle
 G27 Z1
@@ -42,7 +44,7 @@ if { state.nextTool == global.mosPTID }
     if { global.mosFeatTouchProbe }
         M291 P{"Please install your touch probe into the spindle and make sure it is connected.<br/>When ready, press <b>OK</b>, and then manually activate it until it is detected."} R"MillenniumOS: Probe Tool" S4 K{"Continue", "Cancel"}
         if { input != 0 }
-            abort { "Tool change aborted by operator, aborting job!" }
+            abort { "Tool change aborted by operator!" }
 
         echo { "Waiting for touch probe activation... "}
 
@@ -61,7 +63,7 @@ if { state.nextTool == global.mosPTID }
 else
 
     if { global.mosFeatTouchProbe && global.mosTSAP == null }
-        abort { "Touch probe feature is enabled but reference surface has not been probed. Please switch to the touch probe using T" ^ global.mosPTID ^ " first, then back to this tool using T" ^ state.nextTool ^ " to continue."}
+        abort { "Touch probe feature is enabled but reference surface has not been probed. Please run G6511 first, then back to this tool using T" ^ state.nextTool ^ "."}
 
     ; All other tools cannot be detected so we just have to
     ; trust the operator did the right thing given the
@@ -72,7 +74,7 @@ else
     ; Prompt user to change tool
     M291 P{"Insert Tool <b>#" ^ state.nextTool ^ "</b>: " ^ tools[state.nextTool].name ^ " and press <b>Continue</b> when ready. <b>Cancel</b> will abort the running job!"} R"MillenniumOS: Tool Change" S4 K{"Continue", "Cancel"}
     if { input != 0 }
-        abort { "Tool change aborted by operator, aborting job!" }
+        abort { "Tool change aborted by operator!" }
 
 ; Set tool change state to tpre complete
 set global.mosTCS = 3
