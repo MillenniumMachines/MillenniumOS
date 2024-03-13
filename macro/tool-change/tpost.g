@@ -21,7 +21,7 @@ if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
 
 ; tpre _must_ have run to completion before we execute any post-change
 ; operations. If it didn't, we abort this file.
-if { global.mosTCS < 3 }
+if { global.mosTCS == null || global.mosTCS < 3 }
     abort { "tpre.g did not run to completion, aborting tpost.g"}
 
 set global.mosTCS = 4
