@@ -138,10 +138,8 @@ global mosVSEnabled = false
 global mosVSOE = true
 global mosVSP = 0
 global mosVSV = 0.0
-global mosVSSW = false
 global mosVSPT = 0
 global mosVSPS = 0.0
-global mosVSPD = false
 
 ; Spindle configuration
 global mosSID = null
