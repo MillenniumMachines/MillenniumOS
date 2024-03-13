@@ -4,3 +4,6 @@
 ; Apparently also triggered when pausing.
 ; Park the spindle.
 G27
+
+; Deselect the current tool.
+T-1

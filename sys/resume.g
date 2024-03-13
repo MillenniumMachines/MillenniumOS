@@ -15,7 +15,13 @@ if { state.currentTool >= 0 && var.toolRpm > 0 }
     M3.9 S{var.toolRpm}
 
 ; Move to X/Y position above stored co-ordinates
+G53 G0 R1 X0 Y0
+
+; Move to 10mm above stored co-ordinates
 G53 G0 R1 X0 Y0 Z10
+
+; Move to resume position
+G53 G0 R1 X0 Y0 Z0
 
 ; Wait for move to complete.
 M400

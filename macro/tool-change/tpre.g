@@ -17,7 +17,10 @@ M598
 
 ; If tfree ran to completion or was not run (no previous tool was loaded)
 ; then we can continue.
-if { global.mosTCS != null && global.mosTCS != 1 }
+; We also allow running if tpre did not run to completion last time, as a
+; subsequent successful tool change will bring the machine back to a consistent
+; state. Failed tool changes will cause a job to abort anyway.
+if { global.mosTCS != null && global.mosTCS < 2 }
     abort {"MillenniumOS: Current tool was not freed properly, aborting tpre.g"}
 
 ; Set tool change state to starting tpre
@@ -58,7 +61,7 @@ if { state.nextTool == global.mosPTID }
 else
 
     if { global.mosFeatTouchProbe && global.mosTSAP == null }
-        abort { "Touch probe feature is enabled but reference surface has not been probed. Please run <b>G6511</b> before probing tool lengths!" }
+        abort { "Touch probe feature is enabled but reference surface has not been probed. Please switch to the touch probe using T" ^ global.mosPTID ^ " first, then back to this tool using T" ^ state.nextTool ^ " to continue."}
 
     ; All other tools cannot be detected so we just have to
     ; trust the operator did the right thing given the
