@@ -8,8 +8,12 @@
 ; time only needs to exist in one place.
 ; USAGE: M3.9 [S<rpm>] [P<spindle-id>] [D<override-dwell-seconds>]
 
-if { !global.mosEM }
-    M291 P{"<b>CAUTION</b>: We will now start the spindle. Check that your workpiece and tool are secure, step away from the machine and <b>don your eye protection</b> or shut your enclosure door before pressing <b>OK</b>."} R"MillenniumOS: Warning" S3 T0
+; Only warn the user if the job is not paused, pausing or resuming.
+if { !global.mosEM && state.status != "resuming" && state.status != "pausing" && state.status != "paused" }
+    M291 P{"<b>CAUTION</b>: Spindle will now start. Check that workpiece and tool are secure, and all safety precautions have been taken before pressing <b>Continue</b>."} R"MillenniumOS: Warning" S4 K{"Continue", "Pause"} F0
+    if { input == 1 }
+        M291 P{ "<b>CAUTION</b>: The job has been paused. Clicking <b>""Resume Job""</b> will start the spindle <b>INSTANTLY</b>, with no confirmation.<br/><b>BE CAREFUL!</b>" } R"MillenniumOS: Warning" S2 T0
+        M25
 
 ; Account for all permutations of M3 command
 if { exists(param.S) }
