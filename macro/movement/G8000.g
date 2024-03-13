@@ -290,7 +290,7 @@ if { var.wizFeatureToolSetter }
         ; Disable the touch probe feature temporarily so we force a manual probe.
         set global.mosFeatTouchProbe = false
 
-        M291 P{"Please jog the <b>datum tool</b> less than 20mm over the reference surface, but not touching, then press <b>OK</b>."} R"MillenniumOS: Configuration Wizard" X1 Y1 Z1 S3
+        M291 P{"Please jog the <b>datum tool</b> just less than 20mm over the reference surface, but not touching, then press <b>OK</b>."} R"MillenniumOS: Configuration Wizard" X1 Y1 Z1 S3
         if { result != 0 }
             abort { "MillenniumOS: Operator aborted touch probe calibration!" }
 
@@ -300,7 +300,8 @@ if { var.wizFeatureToolSetter }
         if { var.wizTutorialMode }
             M291 P{"Using the following probing interface, please move the <b>datum tool</b> until it is just touching the reference surface, then press <b>Finish</b>."} R"MillenniumOS: Configuration Wizard" S2 T0
 
-        G6510.1 R0 W{null} H4 I20 O2 J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition} Z{move.axes[2].machinePosition - 20}
+        ; Distance to move towards target is the lower of (min Z - current Z) or 20mm.
+        G6510.1 R0 W{null} H4 I{min(abs(move.axes[2].min - move.axes[2].machinePosition), 20)} O0 J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition}
 
         if { global.mosWPSfcPos == null || global.mosWPSfcAxis != "Z" }
             abort { "MillenniumOS: Failed to probe the reference surface!" }

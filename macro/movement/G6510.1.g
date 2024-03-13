@@ -34,14 +34,6 @@ if { global.mosPTID != state.currentTool }
 
 var safeZ = { move.axes[2].machinePosition }
 
-; Above the corner to be probed
-; J = start position X
-; K = start position Y
-; L = start position Z - our probe height
-var sX   = { param.J }
-var sY   = { param.K }
-var sZ   = { param.L }
-
 ; We do not apply tool radius to overtravel, because we need overtravel for
 ; Z probes as well as X/Y. Tool radius only applies for X/Y probes.
 var overtravel = { exists(param.O) ? param.O : global.mosOT }
@@ -50,9 +42,9 @@ var overtravel = { exists(param.O) ? param.O : global.mosOT }
 var tR = { ((state.currentTool <= limits.tools-1 && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
 
 ; Set target positions
-var tPX = { var.sX }
-var tPY = { var.sY }
-var tPZ = { var.sZ }
+var tPX = { param.J }
+var tPY = { param.K }
+var tPZ = { param.L }
 
 var probeAxis = { param.H }
 var probeDist = { param.I }
@@ -74,7 +66,7 @@ else
 M6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
 ; Run probing operation
-G6512 I{var.probeId} J{var.sX} K{var.sY} L{var.sZ} X{var.tPX} Y{var.tPY} Z{var.tPZ}
+G6512 I{var.probeId} J{param.J} K{param.K} L{param.L} X{var.tPX} Y{var.tPY} Z{var.tPZ}
 
 var sAxis = { (var.probeAxis <= 1)? "X" : (var.probeAxis <= 3)? "Y" : "Z" }
 
