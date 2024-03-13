@@ -16,6 +16,7 @@
 ; deceleration time if no spindles are actually running, we check
 ; for this first and only trigger a wait if any spindles are
 ; activated.
+
 var doWait = false
 while { iterations < #spindles }
     var sS = { spindles[iterations].state }
