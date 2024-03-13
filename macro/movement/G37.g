@@ -69,6 +69,11 @@ G10 P{state.currentTool} Z0
 
 echo {"Probing tool #" ^ state.currentTool ^ " length at X=" ^ global.mosTSP[0] ^ ", Y=" ^ global.mosTSP[1] }
 
+; TODO: Should we probe towards global.mosTSP[2] minus a static value
+; rather than the axis minimum? Right now, if we miss the toolsetter
+; due to a homing issue or missing steps, there's a high chance we
+; will plunge the tool into the table.
+
 ; Probe towards axis minimum until toolsetter is activated
 G6512 I{global.mosTSID} J{global.mosTSP[0]} K{global.mosTSP[1]} L{move.axes[2].max} Z{move.axes[2].min}
 

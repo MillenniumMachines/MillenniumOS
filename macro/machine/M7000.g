@@ -6,10 +6,10 @@
 
 
 if { !exists(param.P) }
-    abort { "Must specify period (P..) in milliseconds between spindle speed adjustments" }
+    abort { "Must specify period (P..) in milliseconds to complete a speed adjustment cycle" }
 
 if { !exists(param.V) }
-    abort { "Must specify variance (V..) in rpm of spindle speed adjustments" }
+    abort { "Must specify variance (V..) in rpm of spindle speed adjustment" }
 
 if { param.P < global.mosDAEUR }
     abort { "Period cannot be less than daemonUpdateRate (" ^ global.mosDAEUR ^ "ms)" }
@@ -17,10 +17,9 @@ if { param.P < global.mosDAEUR }
 if { mod(param.P, global.mosDAEUR) > 0 }
     abort { "Period must be a multiple of daemonUpdateRate (" ^ global.mosDAEUR ^ ")ms" }
 
-set global.mosVSP             = param.P
+set global.mosVSP           = param.P
 set global.mosVSV           = param.V
-set global.mosVSEnabled            = true
-set global.mosVSSW = false
+set global.mosVSEnabled     = true
 
 if { global.mosDebug }
     echo {"[VSSC] State: Enabled Period: " ^ param.P ^ "ms Variance: " ^ param.V ^ "RPM" }
