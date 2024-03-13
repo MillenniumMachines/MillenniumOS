@@ -29,7 +29,7 @@ if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
 ; subsequent successful tool change will bring the machine back to a consistent
 ; state. Failed tool changes will cause a job to abort anyway.
 if { global.mosTCS != null && global.mosTCS < 1 }
-    abort { "Current tool was not freed properly, aborting tpre.g"}
+    abort { "tfree.g did not run to completion, aborting tpre.g"}
 
 ; Set tool change state to starting tpre
 set global.mosTCS = 2
