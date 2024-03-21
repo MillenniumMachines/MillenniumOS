@@ -115,12 +115,6 @@ var tPZ = { exists(param.Z)? param.Z : var.sZ }
 ; Check if the positions are within machine limits
 M6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
-
-; Commented due to memory limitations
-; M7500 S{ "Starting probe position: X=" ^ var.sX ^ " Y=" ^ var.sY ^ " Z=" ^ var.sZ }
-; Commented due to memory limitations
-; M7500 S{ "Target probe position: X=" ^ var.tPX ^ " Y=" ^ var.tPY ^ " Z=" ^ var.tPZ }
-
 ; Use absolute positions in mm and feeds in mm/min
 G90
 G21
@@ -179,6 +173,9 @@ M400
 ; have not moved from the starting location and we do not want to
 ; divide by zero.
 var mag = { sqrt(pow(var.tPX - var.sX, 2) + pow(var.tPY - var.sY, 2)) }
+
+if { var.mag == 0 }
+    abort { "G6512: Probe target position is the same as the starting position. Cannot calculate direction vector." }
 
 ; Tool deflection in X and Y, if set.
 var dD = { (global.mosTT[state.currentTool][1] == null) ? { 0.0, 0.0 } : global.mosTT[state.currentTool][1] }

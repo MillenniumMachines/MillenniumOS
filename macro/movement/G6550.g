@@ -94,6 +94,9 @@ if { sensors.probes[param.I].value[0] != 0 }
     ; Calculate target normal
     var tN = { sqrt(pow((var.tPX - move.axes[0].machinePosition), 2) + pow((var.tPY - move.axes[1].machinePosition), 2) + pow((var.tPZ - move.axes[2].machinePosition), 2)) }
 
+    if { var.tN == 0 }
+        abort {"G6550: Probe is triggered and we have no direction to back-off in. You will need to manually move the probe out of harms way!" }
+
     ; Calculate X,Y and Z co-ordinates for initial move.
     var tDX = { ((var.tPX - move.axes[0].machinePosition) / var.tN) * (global.mosPMBO) }
     var tDY = { ((var.tPY - move.axes[1].machinePosition) / var.tN) * (global.mosPMBO) }

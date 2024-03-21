@@ -51,10 +51,13 @@ while { true }
     var dC = { var.cP[0] - (exists(param.X)? param.X : var.sP[0] ), var.cP[1] - (exists(param.Y)? param.Y : var.sP[1] ), var.cP[2] - (exists(param.Z)? param.Z : var.sP[2] ) }
 
     if { var.dC[0] == 0 && var.dC[1] == 0 && var.dC[2] == 0 }
-        abort { "Reached target position without operator selecting Finish!" }
+        abort { "G6512.2: Reached target position without operator selecting Finish!" }
 
     ; Calculate the magnitude (distance) of the direction vector
     var mag = { sqrt(pow(var.dC[0], 2) + pow(var.dC[1], 2) + pow(var.dC[2], 2)) }
+
+    if { var.mag == 0 }
+        abort { "G6512.2: Target position is the same as the current position!" }
 
     ; Find the valid distances less than the distance to the target
     var vDC = null
@@ -73,7 +76,7 @@ while { true }
             break
 
     if { var.vDI == #global.mosMPD }
-        abort { "No valid distances found!" }
+        abort { "G6512.2: No valid distances found!" }
 
     ; Length of valid distances
     set var.vDC = { #global.mosMPD - var.vDI }
@@ -96,11 +99,11 @@ while { true }
     ; Ask operator to select a distance to move towards the target point.
     M291 P{"Position: X=" ^ var.cP[0] ^ " Y=" ^ var.cP[1] ^ " Z=" ^ var.cP[2] ^ "<br/>Distance to target: " ^ (floor(var.mag*1000)/1000) ^ "mm.<br/>Select distance to move towards target."} R"MillenniumOS: Manual Probe" S4 K{ var.vDN } F{var.vDC} T0
     if { result != 0 || input == (#var.vDN-1) }
-        abort { "Operator cancelled probing!" }
+        abort { "G6512.2: Operator cancelled probing!" }
 
     ; Validate selected distance
     if { input < 0 || input >= (#var.vDN-1) }
-        abort { "Invalid distance selected!" }
+        abort { "G6512.2: Invalid distance selected!" }
 
     ; Otherwise, pick the operator selected distance
     var dI = { var.vD[input] }
