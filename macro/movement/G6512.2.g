@@ -137,6 +137,12 @@ set global.mosPVX = 0
 set global.mosPVY = 0
 set global.mosPVZ = 0
 
+; If we have not moved from the starting position, do not back off.
+; bN will return NaN if the start and current positions are the same
+; and this will cause unintended behaviour.
+if { var.sP[0] == var.cP[0] && var.sP[1] == var.cP[1] && var.sP[2] == var.cP[2] }
+    M99
+
 ; Calculate back-off normal
 var bN = { sqrt(pow(var.sP[0] - var.cP[0], 2) + pow(var.sP[1] - var.cP[1], 2) + pow(var.sP[2] - var.cP[2], 2)) }
 

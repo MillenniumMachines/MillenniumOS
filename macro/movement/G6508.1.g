@@ -179,9 +179,10 @@ G6512 D1 I{var.probeId} J{var.dirXY[3][0][0]} K{var.dirXY[3][0][1]} L{var.sZ} Y{
 set var.pX[3] = { global.mosPCX }
 set var.pY[3] = { global.mosPCY }
 
-; Return to our starting position and then raise the probe
+; Return to our starting position
 G6550 I{var.probeId} Y{var.dirXY[3][0][1]}
 
+; Raise the probe
 G6550 I{var.probeId} Z{var.safeZ}
 
 ; Calculate corner position
@@ -204,8 +205,13 @@ var eX = { var.pX[0] - (var.clearance * cos(atan2(var.pY[1] - var.pY[0], var.pX[
 var eY = { var.pY[2] - (var.clearance * sin(atan2(var.pY[3] - var.pY[2], var.pX[3] - var.pX[2]))) }
 
 ; Calculate the intersection of the extended lines
-var cX = { (var.eY - var.pY[0] + (var.mX * var.pX[0]) - (var.mY * var.eX)) / (var.mX - var.mY) }
-var cY = { (var.mX * (var.cX - var.pX[0])) + var.pY[0] }
+; If the gradient of either line is 0, then the
+; intersection on that axis is the first probed point.
+var cX = { (var.mX == 0) ? ((var.eY - var.pY[0] + (var.mX * var.pX[0]) - (var.mY * var.eX)) / (var.mX - var.mY)) : var.pX[0] }
+var cY = { (var.mY == 0) ? ((var.mX * (var.cX - var.pX[0])) + var.pY[0]) : var.pY[2] }
+
+if { isnan(var.cX) || isnan(var.cY) }
+    abort { "Could not calculate corner position!" }
 
 ; Calculate the angle of the surfaces in relation to the X
 ; axis. A square workpiece squared to the table should have

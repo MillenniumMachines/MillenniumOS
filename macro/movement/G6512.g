@@ -174,14 +174,18 @@ M400
 ; M7500 S{"Compensating for Tool # " ^ state.currentTool ^ " R=" ^ global.mosTT[state.currentTool][0] ^ " dX=" ^ global.mosTT[state.currentTool][1][0] ^ " dY=" ^ global.mosTT[state.currentTool][1][1]}
 
 ; Calculate the magnitude of the direction vector of probe movement
-var mag = { sqrt(pow(global.mosPCX - var.sX, 2) + pow(global.mosPCY - var.sY, 2)) }
+; Note: We use the target position to calculate the direction vector,
+; because it is possible (although _very_ unlikely) for the probe to
+; have not moved from the starting location and we do not want to
+; divide by zero.
+var mag = { sqrt(pow(var.tPX - var.sX, 2) + pow(var.tPY - var.sY, 2)) }
 
 ; Tool deflection in X and Y, if set.
 var dD = { (global.mosTT[state.currentTool][1] == null) ? { 0.0, 0.0 } : global.mosTT[state.currentTool][1] }
 
 ; Adjust the final position along the direction of movement in X and Y by the tool radius.
-set global.mosPCX = { global.mosPCX + (global.mosTT[state.currentTool][0] - var.dD[0]) * ((global.mosPCX - var.sX) / var.mag) }
-set global.mosPCY = { global.mosPCY + (global.mosTT[state.currentTool][0] - var.dD[1]) * ((global.mosPCY - var.sY) / var.mag) }
+set global.mosPCX = { global.mosPCX + (global.mosTT[state.currentTool][0] - var.dD[0]) * ((var.tPX - var.sX) / var.mag) }
+set global.mosPCY = { global.mosPCY + (global.mosTT[state.currentTool][0] - var.dD[1]) * ((var.tPY - var.sY) / var.mag) }
 
 ; We do not adjust by the tool radius in Z.
 

@@ -963,6 +963,7 @@ function onCircular(clockwise, cx, cy, cz, x, y, z, f) {
   } else if(getProperty("lowMemoryMode")) {
     writeComment("Linearized circular move - low memory mode enabled");
     linearize(tolerance);
+    writeln("");
   } else {
 
     // RRF 3.3 and later: Use of I, J and K parameters depends on
