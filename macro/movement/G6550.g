@@ -70,7 +70,7 @@ G94
 if { var.manualProbe }
     ; Commented due to memory limitations
     ; M7500 S{"Unprotected move to X=" ^ var.tPX ^ " Y=" ^ var.tPY ^ " Z=" ^ var.tPZ ^ " as touch probe is not available."}
-    G53 G1 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } F{ global.mosMPST }
+    G53 G1 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } F{ global.mosMPS[0] }
     M99
 
 ; Commented due to memory limitations

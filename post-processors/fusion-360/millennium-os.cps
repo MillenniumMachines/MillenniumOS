@@ -146,7 +146,7 @@ properties = {
     title: "Home before start",
     description: "When enabled, machine will home in X, Y and Z directions prior to executing any operations.",
     group: "homePositions",
-    scope: "machine",
+    scope: ["machine","post"],
     type: "boolean",
     value: true
   },
@@ -181,6 +181,14 @@ properties = {
     scope: ["post","operation"],
     type: "integer",
     value: 4000
+  },
+  lowMemoryMode: {
+    title: "Low Memory Mode",
+    description: "When enabled, the post-processor will output gcode in a way that minimizes memory usage on the machine controller. Specifically, it will convert arcs and helical moves into a series of linear moves. If you receive 'OutOfMemory' errors on your mainboard then enabling this may help.",
+    group: "configuration",
+    scope: "post",
+    type: "boolean",
+    value: false
   }
 };
 
@@ -405,6 +413,7 @@ function onOpen() {
   writeComment("You are solely responsible for any injuries or damage caused by not heeding this warning!");
   writeln("");
   writeComment("Begin preamble");
+  writeln("");
 
   // Output tool details if enabled and tools are configured
   var tools  = getToolTable();
@@ -427,9 +436,9 @@ function onOpen() {
   }
 
   // Output job setup commands if necessary
-  if(properties.outputJobSetup) {
+  if(getProperty("outputJobSetup")) {
     // If homeBeforeStart enabled, output G.HOME
-    if(properties.homeBeforeStart) {
+    if(getProperty("jobHomeBeforeStart")) {
       writeComment("Home before start");
       writeBlock(gCodesF.format(G.HOME));
       writeln("");
@@ -443,6 +452,7 @@ function onOpen() {
 
     writeComment("WCS Probing Mode: {mode}".supplant({mode: getProperty("jobWCSProbeMode")}));
     if(getProperty("jobWCSProbeMode") === wcsProbeMode.ATSTART) {
+      writeln("")
       for(var i = 0; i < seenWCS.length; i++) {
         // MillenniumOS uses 1-indexed WCS numbers.
         // WCS 1 is G54, WCS 2 is G55, etc.
@@ -571,7 +581,7 @@ function onParameter(param, value) {
     break;
 
     // DEBUG: Uncomment this to write comments for all unhandled parameters.
-    //default:
+    // default:
     //  writeComment("{p}: {v}".supplant({p: param, v: value}));
   }
 }
@@ -949,6 +959,9 @@ function onCircular(clockwise, cx, cy, cz, x, y, z, f) {
   // Linearize circular moves on non-major planes.
   if(plane === -1) {
     writeComment("Linearized non-major-plane arc move");
+    linearize(tolerance);
+  } else if(getProperty("lowMemoryMode")) {
+    writeComment("Linearized circular move - low memory mode enabled");
     linearize(tolerance);
   } else {
 
