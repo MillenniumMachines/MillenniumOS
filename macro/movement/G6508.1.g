@@ -190,11 +190,11 @@ G6550 I{var.probeId} Z{var.safeZ}
 ; on each axis.
 ; The lines do not currently cross because we probed inwards
 ; from the corner. We need to extend the lines to the edge
-; of the work area, ""OK""and then identify where they cross.
-; those lines cross. This is the corner position.
+; of the work area, and then identify where they cross.
+; This is the corner position.
 ; The X surface is defined by the line var.pX[0] -> var.pX[1]
 ; and var.pY[0] -> var.pY[1], and the Y surface is defined
-; by the line var.pX[2] to var.pY[3] and var.pY[2] to var.pY[3].
+; by the line var.pX[2] -> var.pX[3] and var.pY[2] -> var.pY[3].
 
 ; Calculate normals for both lines
 var mX = { (var.pY[1] - var.pY[0]) / (var.pX[1] - var.pX[0]) }

@@ -4,6 +4,9 @@
 ;
 ; USAGE: "M7001"
 
+if { !inputs[state.thisInput].active }
+    M99
+
 ; Disable the daemon process
 set global.mosVSEnabled  = false
 

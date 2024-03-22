@@ -84,11 +84,6 @@ var dirXY = { vector(3, {{null, null}, {null, null}}) }
 ; the overtravel distance, at the same 3 points around the center
 ; of the boss, at 120 degree intervals.
 
-
-
-; Commented due to memory limitations
-; M7500 S{"Boss Radius=" ^ var.cR }
-
 ; Start position probe 1
 set var.dirXY[0][0] = { var.sX + var.cR + var.clearance, var.sY }
 
@@ -115,10 +110,6 @@ var safeZ = { move.axes[2].machinePosition }
 ; Probe each of the 3 points
 while { iterations < #var.dirXY }
     ; Perform a probe operation towards the center of the boss
-    ; Commented due to memory limitations
-    ; M7500 S{"Starting location X=" ^ var.dirXY[iterations][0][0] ^ " Y=" ^ var.dirXY[iterations][0][1] ^ " Z=" ^ var.sZ }
-    ; Commented due to memory limitations
-    ; M7500 S{"Target location X=" ^ var.dirXY[iterations][1][0] ^ " Y=" ^ var.dirXY[iterations][1][1] ^ " Z=" ^ var.sZ }
     G6512 I{var.probeId} J{var.dirXY[iterations][0][0]} K{var.dirXY[iterations][0][1]} L{var.sZ} X{var.dirXY[iterations][1][0]} Y{var.dirXY[iterations][1][1]}
 
     ; Save the probed co-ordinates
