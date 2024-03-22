@@ -4,6 +4,9 @@
 ;
 ; USAGE: "M7000 P<period-in-ms> V<variance>"
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
 
 if { !exists(param.P) }
     abort { "Must specify period (P..) in milliseconds to complete a speed adjustment cycle" }

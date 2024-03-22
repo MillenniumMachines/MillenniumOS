@@ -146,7 +146,7 @@ properties = {
     title: "Home before start",
     description: "When enabled, machine will home in X, Y and Z directions prior to executing any operations.",
     group: "homePositions",
-    scope: "machine",
+    scope: ["machine","post"],
     type: "boolean",
     value: true
   },
@@ -167,7 +167,7 @@ properties = {
     value: true
   },
   vsscVariance: {
-    title: "Variable Spindle Speed Control Variance",
+    title: "Variable Spindle Speed Control Variance (rpm)",
     description: "Total variance in rpm to adjust around the requested spindle speed when VSSC is enabled. A value of 100 will vary the spindle speed from 50rpm below to 50rpm above the requested value.",
     group: "spindle",
     scope: ["post","operation"],
@@ -175,12 +175,20 @@ properties = {
     value: 200
   },
   vsscPeriod: {
-    title: "Variable Spindle Speed Control Period",
+    title: "Variable Spindle Speed Control Period (ms)",
     description: "Period in milliseconds over which rpm is varied around the requested spindle speed when VSSC is enabled.",
     group: "spindle",
     scope: ["post","operation"],
     type: "integer",
     value: 4000
+  },
+  lowMemoryMode: {
+    title: "Low Memory Mode",
+    description: "When enabled, the post-processor will output gcode in a way that minimizes memory usage on the machine controller. Specifically, it will convert arcs and helical moves into a series of linear moves. If you receive 'OutOfMemory' errors on your mainboard then enabling this may help.",
+    group: "configuration",
+    scope: "post",
+    type: "boolean",
+    value: false
   }
 };
 
@@ -271,6 +279,14 @@ var M = {
 };
 
 var CYCLE = {
+  // Great consistency on the cycle type names here
+  DRILLING: 'drilling',
+  CHIP_BREAKING: 'chip-breaking',
+  COUNTER_BORING: 'counter-boring',
+  DEEP_DRILLING: 'deep-drilling',
+  BREAK_THROUGH: 'break-through-drilling',
+  BORING: 'boring',
+  THREAD_MILLING: 'thread-milling',
   PROBING_X: 'probing-x',
   PROBING_Y: 'probing-y',
   PROBING_Z: 'probing-z',
@@ -360,11 +376,6 @@ function writeBlock() {
   writeWords(text);
 }
 
-// Function onComment. Called for manual NC comment commands
-function onComment(text) {
-  writeComment(text);
-}
-
 // Function onOpen. Called at start of each CAM operation
 function onOpen() {
   var seenWCS = [];
@@ -405,6 +416,7 @@ function onOpen() {
   writeComment("You are solely responsible for any injuries or damage caused by not heeding this warning!");
   writeln("");
   writeComment("Begin preamble");
+  writeln("");
 
   // Output tool details if enabled and tools are configured
   var tools  = getToolTable();
@@ -427,9 +439,9 @@ function onOpen() {
   }
 
   // Output job setup commands if necessary
-  if(properties.outputJobSetup) {
+  if(getProperty("outputJobSetup")) {
     // If homeBeforeStart enabled, output G.HOME
-    if(properties.homeBeforeStart) {
+    if(getProperty("jobHomeBeforeStart")) {
       writeComment("Home before start");
       writeBlock(gCodesF.format(G.HOME));
       writeln("");
@@ -443,6 +455,7 @@ function onOpen() {
 
     writeComment("WCS Probing Mode: {mode}".supplant({mode: getProperty("jobWCSProbeMode")}));
     if(getProperty("jobWCSProbeMode") === wcsProbeMode.ATSTART) {
+      writeln("")
       for(var i = 0; i < seenWCS.length; i++) {
         // MillenniumOS uses 1-indexed WCS numbers.
         // WCS 1 is G54, WCS 2 is G55, etc.
@@ -541,16 +554,6 @@ function onParameter(param, value) {
     break;
 
     // Generate errors on unsupported parameter values
-    case 'operation:isMillingStrategy':
-      if(value !== 1) {
-        error("Non milling strategies are not supported by MillenniumOS!");
-      }
-    break;
-    case 'operation:tool_isMill':
-      if(value !== 1) {
-        error("Non milling tools are not supported by MillenniumOS!");
-      }
-    break;
     case 'operation:tool_clockwise':
       if(value !== 1) {
         error("Anti-clockwise spindle rotation is not supported by MillenniumOS!");
@@ -571,8 +574,8 @@ function onParameter(param, value) {
     break;
 
     // DEBUG: Uncomment this to write comments for all unhandled parameters.
-    //default:
-    //  writeComment("{p}: {v}".supplant({p: param, v: value}));
+    // default:
+    //   writeComment("{p}: {v}".supplant({p: param, v: value}));
   }
 }
 
@@ -659,6 +662,7 @@ function onSection() {
 
   // Output operation details after WCS and tool changing.
   writeComment("Begin {c} {s}: {v}".supplant({c: curOp['ctx'], s: curOp['strat'], v: curOp['comment']}));
+  writeln("");
 
   resetAll();
 
@@ -679,6 +683,8 @@ function onSection() {
 
 // At the end of every section
 function onSectionEnd() {
+  // Write a newline to delineate
+  writeln("");
 
   if(getProperty("vsscEnabled")) {
     writeComment("Disable Variable Spindle Speed Control");
@@ -688,8 +694,6 @@ function onSectionEnd() {
 
   // Reset all variable outputs ready for the next section
   resetAll();
-  // Write a newline to delineate
-  writeln("");
 }
 
 // Change sign of value based on
@@ -704,14 +708,8 @@ function approach(sign, value) {
   return error("Invalid probing approach.");
 }
 
-function onCyclePoint() {
-  // We only support canned cycles for probing
-  if(!isProbeOperation()) {
-    return;
-  }
-  writeComment("Probing cycle: {type}".supplant({type: cycleType}));
-
-  var probeVars = [];
+// Handle probing cycle points
+function onProbingCyclePoint(x, y, z, cycle) {
   switch(cycleType) {
     case CYCLE.PROBING_X:
       probeVars.concat([
@@ -749,11 +747,11 @@ function onCyclePoint() {
           xPVar.format(x + approach(cycle.approach1, cycle.probeClearance)),
           yPVar.format(y + approach(cycle.approach2, cycle.probeClearance)),
       ]);
-      // Add P and Q variables if probe spacing is defined, which
+      // Add H and I variables if probe spacing is defined, which
       // will perform an extra probe along each axis and can calculate
       // the angle of the probed corner.
       if(cycle.probeSpacing !== undefined) {
-        probeVars.push("P{xS} Q{yS}".supplant({xS: cycle.probeSpacing, yS: cycle.probeSpacing}))
+        probeVars.push("H{xS} I{yS}".supplant({xS: cycle.probeSpacing, yS: cycle.probeSpacing}))
       }
     default:
       error("Unsupported probing cycle type: {type}".supplant({type: cycleType}));
@@ -762,8 +760,47 @@ function onCyclePoint() {
   writeBlock(probeVars);
 }
 
+// Handle drilling cycle points
+function onDrillingCyclePoint(x, y, z, cycle) {
+  repositionToCycleClearance(cycle, x, y, z);
+  expandCyclePoint(x, y, z);
+}
+
+function onCycle() {
+  writeComment("Cycle Type: {type}".supplant({type: cycleType}));
+  writeln("");
+}
+
+// Called when a cycle point is generated
+function onCyclePoint(x, y, z) {
+  if(isProbingCycle()) {
+    return onProbingCyclePoint(x, y, z, cycle);
+  }
+
+  switch(cycleType) {
+    case CYCLE.CHIP_BREAKING:
+    case CYCLE.DRILLING:
+    case CYCLE.COUNTER_BORING:
+    case CYCLE.DEEP_DRILLING:
+    case CYCLE.BREAK_THROUGH:
+    case CYCLE.BORING:
+    case CYCLE.THREAD_MILLING:
+      return onDrillingCyclePoint(x, y, z, cycle);
+
+    case CYCLE.PROBING_X:
+    case CYCLE.PROBING_Y:
+    case CYCLE.PROBING_Z:
+    case CYCLE.PROBING_XY_OUTER_CORNER:
+      return onProbingCyclePoint(x, y, z, cycle);
+
+    default:
+      return error("Unsupported cycle type: {type}".supplant({type: cycleType}));
+  }
+}
+
 // Called when a spindle speed change is requested
 function onSpindleSpeed(rpm) {
+  writeln("")
   writeComment("Spindle speed changed");
   writeBlock(mFmt.format(M.SPINDLE_ON_CW), sVar.format(rpm));
 }
@@ -811,6 +848,7 @@ function onLinear(x, y, z, f) {
   var isHorizontal = (a1 || a2) && !a3;
   var isVertical = !a1 && !a2 && a3;
   if ((isHorizontal || isVertical) && warpable) {
+      writeln("");
       writeComment("Warp move");
       writeBlock(gCodesF.format(0), a1, a2, a3);
       fVar.reset();
@@ -877,10 +915,12 @@ function outputPlaneCommand(plane) {
     default:
       return;
   }
-  writeln("");
-  writeComment("Switch to {plane} plane for arc moves".supplant({plane: planeStr}));
-  writeBlock(gCodes.format(code));
-  writeln("");
+  var pc = gCodes.format(code);
+  if (pc !== "") {
+    writeln("");
+    writeComment("Switch to {plane} plane for arc moves".supplant({plane: planeStr}));
+    writeBlock(pc);
+  }
 }
 
 // Output 360 degree arc move on given plane.
@@ -948,7 +988,12 @@ function onCircular(clockwise, cx, cy, cz, x, y, z, f) {
 
   // Linearize circular moves on non-major planes.
   if(plane === -1) {
+    writeln("");
     writeComment("Linearized non-major-plane arc move");
+    linearize(tolerance);
+  } else if(getProperty("lowMemoryMode")) {
+    writeln("");
+    writeComment("Linearized circular move - low memory mode enabled");
     linearize(tolerance);
   } else {
 
@@ -966,6 +1011,7 @@ function onCircular(clockwise, cx, cy, cz, x, y, z, f) {
     } else if(isFullCircle()) {
       // - and helical, linearize it
       if(isHelical()) {
+        writeln("");
         writeComment("Linearized helical full-circle movement");
         linearize(tolerance);
       } else {
@@ -980,6 +1026,29 @@ function onCircular(clockwise, cx, cy, cz, x, y, z, f) {
   }
 }
 
+function onManualNC(command, value) {
+  switch(command) {
+    case COMMAND_COMMENT:
+      return writeComment(value);
+
+    case COMMAND_DISPLAY_MESSAGE:
+      return writeConfirmableDialog(value);
+
+    case COMMAND_PASS_THROUGH:
+      return writeBlock(value);
+
+    default:
+      return error("Unsupported manual NC command: {command}".supplant({command: command}));
+  }
+}
+
+function writeConfirmableDialog(text) {
+  writeln("");
+  writeComment("Output confirmable dialog to operator");
+  writeBlock("M3000 R\"Fusion360\" S\"{text}\"".supplant({text: text}));
+  writeln("");
+}
+
 function onClose() {
   writeComment("Begin postamble");
 
@@ -992,8 +1061,5 @@ function onClose() {
   writeComment("Double-check spindle is stopped!");
   writeBlock(mFmt.format(M.SPINDLE_OFF));
   writeln("");
-
-  writeComment("End Program");
-  writeBlock(mCodes.format(0));
 }
 

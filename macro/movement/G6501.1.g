@@ -84,11 +84,6 @@ var dirXY = { vector(3, {{null, null}, {null, null}}) }
 ; the overtravel distance, at the same 3 points around the center
 ; of the boss, at 120 degree intervals.
 
-
-
-; Commented due to memory limitations
-; M7500 S{"Boss Radius=" ^ var.cR }
-
 ; Start position probe 1
 set var.dirXY[0][0] = { var.sX + var.cR + var.clearance, var.sY }
 
@@ -115,10 +110,6 @@ var safeZ = { move.axes[2].machinePosition }
 ; Probe each of the 3 points
 while { iterations < #var.dirXY }
     ; Perform a probe operation towards the center of the boss
-    ; Commented due to memory limitations
-    ; M7500 S{"Starting location X=" ^ var.dirXY[iterations][0][0] ^ " Y=" ^ var.dirXY[iterations][0][1] ^ " Z=" ^ var.sZ }
-    ; Commented due to memory limitations
-    ; M7500 S{"Target location X=" ^ var.dirXY[iterations][1][0] ^ " Y=" ^ var.dirXY[iterations][1][1] ^ " Z=" ^ var.sZ }
     G6512 I{var.probeId} J{var.dirXY[iterations][0][0]} K{var.dirXY[iterations][0][1]} L{var.sZ} X{var.dirXY[iterations][1][0]} Y{var.dirXY[iterations][1][1]}
 
     ; Save the probed co-ordinates
@@ -128,6 +119,11 @@ while { iterations < #var.dirXY }
 var sM1 = { (var.pXY[1][1] - var.pXY[0][1]) / (var.pXY[1][0] - var.pXY[0][0]) }
 var sM2 = { (var.pXY[2][1] - var.pXY[1][1]) / (var.pXY[2][0] - var.pXY[1][0]) }
 
+; Validate the slopes. These should never be NaN but if they are,
+; we can't calculate the bore center position and we must abort.
+if { isnan(var.sM1) || isnan(var.sM2) }
+    abort { "Could not calculate boss center position!" }
+
 var m1X = { (var.pXY[1][0] + var.pXY[0][0]) / 2 }
 var m1Y = { (var.pXY[1][1] + var.pXY[0][1]) / 2 }
 var m2X = { (var.pXY[2][0] + var.pXY[1][0]) / 2 }
@@ -135,6 +131,9 @@ var m2Y = { (var.pXY[2][1] + var.pXY[1][1]) / 2 }
 
 var pM1 = { -1 / var.sM1 }
 var pM2 = { -1 / var.sM2 }
+
+if { var.pM1 == var.pM2 }
+    abort { "Could not calculate boss center position!" }
 
 ; Solve the equations of the lines formed by the perpendicular bisectors to find the circumcenter X,Y
 var cX = { (var.pM2 * var.m2X - var.pM1 * var.m1X + var.m1Y - var.m2Y) / (var.pM2 - var.pM1) }

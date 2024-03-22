@@ -93,6 +93,11 @@ while { iterations < #var.dirXY }
 var sM1 = { (var.pXY[1][1] - var.pXY[0][1]) / (var.pXY[1][0] - var.pXY[0][0]) }
 var sM2 = { (var.pXY[2][1] - var.pXY[1][1]) / (var.pXY[2][0] - var.pXY[1][0]) }
 
+; Validate the slopes. These should never be NaN but if they are,
+; we can't calculate the bore center position and we must abort.
+if { isnan(var.sM1) || isnan(var.sM2) }
+    abort { "Could not calculate bore center position!" }
+
 var m1X = { (var.pXY[1][0] + var.pXY[0][0]) / 2 }
 var m1Y = { (var.pXY[1][1] + var.pXY[0][1]) / 2 }
 var m2X = { (var.pXY[2][0] + var.pXY[1][0]) / 2 }
@@ -100,6 +105,9 @@ var m2Y = { (var.pXY[2][1] + var.pXY[1][1]) / 2 }
 
 var pM1 = { -1 / var.sM1 }
 var pM2 = { -1 / var.sM2 }
+
+if { var.pM1 == var.pM2 }
+    abort { "Could not calculate bore center position!" }
 
 ; Solve the equations of the lines formed by the perpendicular bisectors to find the circumcenter X,Y
 var cX = { (var.pM2 * var.m2X - var.pM1 * var.m1X + var.m1Y - var.m2Y) / (var.pM2 - var.pM1) }

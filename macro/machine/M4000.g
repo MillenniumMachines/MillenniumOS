@@ -8,6 +8,10 @@
 ; containing tool information that is useful for our purposes. This includes tool radius,
 ; deflection values in X and Y (for probe tools), and more in future.
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
 if { !exists(param.P) || !exists(param.R) || !exists(param.S) }
     abort { "Must provide tool number (P...), radius (R...) and description (S...) to register tool!" }
 
