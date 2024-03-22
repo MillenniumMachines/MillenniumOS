@@ -15,10 +15,10 @@ if { !inputs[state.thisInput].active }
 M598
 
 if { !exists(param.I) || param.I == null || sensors.probes[param.I].type < 5 || sensors.probes[param.I].type > 8 }
-    abort { "Must provide a valid probe ID (I..)!" }
+    abort { "G6512.1: Must provide a valid probe ID (I..)!" }
 
 if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
-    abort { "Must provide a valid target position in one or more axes (X.. Y.. Z..)!" }
+    abort { "G6512.1: Must provide a valid target position in one or more axes (X.. Y.. Z..)!" }
 
 ; Allow the number of retries to be overridden
 var retries = { (exists(param.R) && param.R != null) ? param.R : sensors.probes[param.I].maxProbeCount }
@@ -75,16 +75,11 @@ var pV = { vector(3, sensors.probes[param.I].tolerance + 10) }
 ; Probe until we hit a retry limit.
 ; We may also abort early if we reach the requested tolerance
 while { iterations <= var.retries }
-    ; Commented due to memory limitations
-    ; M7500 S{ "Probe " ^ param.I ^ ": Starting probe " ^ iterations+1 ^ "/" ^ var.retries ^ " using G38.2" }
     ; Probe towards surface
     ; NOTE: This has potential to move in all 3 axes!
     G53 G38.2 K{ param.I } X{ var.tP[0] } Y{ var.tP[1] } Z{ var.tP[2] }
     ; Abort if an error was encountered
     if { result != 0 }
-        ; Commented due to memory limitations
-    ; M7500 S{ "G38.2 reported an error, result=" ^ result }
-
         ; Reset probing speed limits
         M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
 
@@ -92,7 +87,8 @@ while { iterations <= var.retries }
         ; This is a safety precaution to prevent subsequent X/Y moves from
         ; crashing the probe.
         G27 Z1
-        abort { "MillenniumOS: Probe " ^ param.I ^ " experienced an error, aborting!" }
+
+        abort { "G6512.1: Probe " ^ param.I ^ " experienced an error, aborting!" }
 
     ; Wait for all moves in the queue to finish
     M400
@@ -133,43 +129,41 @@ while { iterations <= var.retries }
             set var.pV[1] = { var.nS[1] / (iterations) }
             set var.pV[2] = { var.nS[2] / (iterations) }
 
-            ; Commented due to memory limitations
-    ; M7500 S{ "Probe " ^ iterations ^ " Mean Location: X=" ^ var.nM[0] ^ " Y=" ^ var.nM[1] ^ " Z=" ^ var.nM[2] }
-            ; Commented due to memory limitations
-    ; M7500 S{ "Probe " ^ iterations ^ " Cumulative Variance: X=" ^ var.nS[0] ^ " Y=" ^ var.nS[1] ^ " Z=" ^ var.nS[2] }
-            ; Commented due to memory limitations
-    ; M7500 S{ "Probe " ^ iterations ^ " Variance: X=" ^ var.pV[0] ^ " Y=" ^ var.pV[1] ^ " Z=" ^ var.pV[2] }
-
     ; Wait for all moves in the queue to finish
     M400
 
-    ; Apply correct back-off distance
-    var backoff = { iterations == 0 ? sensors.probes[param.I].diveHeights[0] : sensors.probes[param.I].diveHeights[1] }
+    ; If we have not moved from the starting position, do not back off.
+    ; bN will return NaN if the start and current positions are the same
+    ; and this will cause unintended behaviour.
+    if { var.sP[0] != var.cP[0] || var.sP[1] != var.cP[1] || var.sP[2] != var.cP[2] }
 
-    ; Calculate normal
-    ; This is the distance between the current and starting position
-    ; in a straight line.
-    var bN = { sqrt(pow(var.sP[0] - var.cP[0], 2) + pow(var.sP[1] - var.cP[1], 2) + pow(var.sP[2] - var.cP[2], 2)) }
+        ; Apply correct back-off distance
+        var backoff = { iterations == 0 ? sensors.probes[param.I].diveHeights[0] : sensors.probes[param.I].diveHeights[1] }
 
-    ; In some cases, our back-off distance might be higher than
-    ; the distance we've travelled from the starting location.
-    ; In this case, we should travel back to the starting location
-    ; instead, because otherwise we risk crashing into things (like
-    ; the other side of a bore that we just probed).
-    ; If the backoff distance is higher than the normal from from the
-    ; starting location, then we use the normal as the backoff distance.
-    ; This is essentially the same as multiplying var.d{X,Y,Z} by 1.
+        ; Calculate normal
+        ; This is the distance between the current and starting position
+        ; in a straight line.
+        var bN = { sqrt(pow(var.sP[0] - var.cP[0], 2) + pow(var.sP[1] - var.cP[1], 2) + pow(var.sP[2] - var.cP[2], 2)) }
 
-    ; Calculate normalized direction and backoff per axis,
-    ; and apply to current position.
-    var bPX = { var.cP[0] + ((var.sP[0] - var.cP[0]) / var.bN * ((var.backoff > var.bN) ? var.bN : var.backoff)) }
-    var bPY = { var.cP[1] + ((var.sP[1] - var.cP[1]) / var.bN * ((var.backoff > var.bN) ? var.bN : var.backoff)) }
-    var bPZ = { var.cP[2] + ((var.sP[2] - var.cP[2]) / var.bN * ((var.backoff > var.bN) ? var.bN : var.backoff)) }
+        ; In some cases, our back-off distance might be higher than
+        ; the distance we've travelled from the starting location.
+        ; In this case, we should travel back to the starting location
+        ; instead, because otherwise we risk crashing into things (like
+        ; the other side of a bore that we just probed).
+        ; If the backoff distance is higher than the normal from from the
+        ; starting location, then we use the normal as the backoff distance.
+        ; This is essentially the same as multiplying var.d{X,Y,Z} by 1.
 
-    ; This move probably doesn't need to be protected since we
-    ; can only move back to the starting location, which is
-    ; where we already moved _from_.
-    G6550 I{ param.I } X{ var.bPX } Y{ var.bPY } Z{ var.bPZ }
+        ; Calculate normalized direction and backoff per axis,
+        ; and apply to current position.
+        var bPX = { var.cP[0] + ((var.sP[0] - var.cP[0]) / var.bN * ((var.backoff > var.bN) ? var.bN : var.backoff)) }
+        var bPY = { var.cP[1] + ((var.sP[1] - var.cP[1]) / var.bN * ((var.backoff > var.bN) ? var.bN : var.backoff)) }
+        var bPZ = { var.cP[2] + ((var.sP[2] - var.cP[2]) / var.bN * ((var.backoff > var.bN) ? var.bN : var.backoff)) }
+
+        ; This move probably doesn't need to be protected since we
+        ; can only move back to the starting location, which is
+        ; where we already moved _from_.
+        G6550 I{ param.I } X{ var.bPX } Y{ var.bPY } Z{ var.bPZ }
 
     ; If axis has moved, check if we're within tolerance on that axis.
     ; We can only abort early if we're within tolerance on all moved (probed) axes.
@@ -184,17 +178,11 @@ while { iterations <= var.retries }
     ; If we're within tolerance on all axes, we can stop probing
     ; and report the result.
     if { var.tR }
-        ; Commented due to memory limitations
-    ; M7500 S{ "Probe " ^ param.I ^ ": Reached requested tolerance " ^ sensors.probes[param.I].tolerance ^ "mm after " ^ iterations+1 ^ "/" ^ var.retries ^ " probes" }
         break
 
     ; Dwell so machine can settle, if necessary
     if { sensors.probes[param.I].recoveryTime > 0.0 }
         G4 P{ ceil(sensors.probes[param.I].recoveryTime * 1000) }
-
-
-; Commented due to memory limitations
-; M7500 S{ "Probe cycle finished, setting vars" }
 
 ; Reset probing speed limits
 M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }

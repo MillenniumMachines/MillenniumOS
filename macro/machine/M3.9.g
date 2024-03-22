@@ -8,6 +8,10 @@
 ; time only needs to exist in one place.
 ; USAGE: M3.9 [S<rpm>] [P<spindle-id>] [D<override-dwell-seconds>]
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
 ; Only warn the user if the job is not paused, pausing or resuming.
 if { !global.mosEM && state.status != "resuming" && state.status != "pausing" && state.status != "paused" }
     M291 P{"<b>CAUTION</b>: Spindle will now start. Check that workpiece and tool are secure, and all safety precautions have been taken before pressing <b>Continue</b>."} R"MillenniumOS: Warning" S4 K{"Continue", "Pause"} F0

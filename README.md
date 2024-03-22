@@ -1,4 +1,4 @@
-# MillenniumOS (MOS) - An "Operations System" for RepRapFirmware.
+# MillenniumOS (MOS) - An "Operations System" for RepRapFirmware
 
 Cheap and easy manual and automatic work-piece probing, toolchanges and toolsetting and more!
 
@@ -16,20 +16,32 @@ We build _on top of_ RepRapFirmware, providing operators of the Millennium Machi
 
 ## Usage
 
-- Configure your toolsetter and optionally, touch probe, in RRF. Please see [here](#rrf-config) for instructions.
-- Download the ZIP file of a release.
-- Extract the ZIP file onto the root of your SD card, or upload the ZIP directly into Duet Web Control. If uploading, you can use the **"Upload System Files"** button in the **Files** -> **System** window, and you do not need to extract the ZIP file first.
-- Add `M98 P"mos.g"` to the bottom of your `config.g` file. You can edit this via the **Files** -> **System** window.
-- Restart RRF (`M999`)
-- Follow the configuration wizard in Duet Web Control that will guide you through the necessary configuration settings.
-- Install one of the post-processors from [here](./post-processors/) into your CAM tool of choice.
+Please follow the installation instructions on our [documentation](https://millenniummachines.github.io/docs/millennium-os/manual/installation/) site. If you have not already installed a supported RRF configuration, then you should follow the instructions for the Milo [here](https://millenniummachines.github.io/docs/milo/manual/chapters/90_install_rrf/).
 
-## Notes
+The information below is for advanced users who want to understand further how MillenniumOS works, and what it is capable of. For normal usage, all the information you need is in the documentation.
+
+## Liability
+
+You are fully responsible for running the code contained in this library on your own machine. It has been tested on a number of different machines by different people, and is written from a safety-first perspective, but it is a fool who thinks that they can write software without bugs, and it is a (somewhat lesser) fool to _use_ that software and not expect occasional shenanigans. These shenanigans might cos you money in the best case, and blood in the worst - and by using this software you agree that we are not liable for any losses that might occur during your use of the software.
+
+It is up to you, and only you, to take the relevant precautions when using MillenniumOS - run your tool paths without a workpiece installed and spindle disabled, test the probing routines with soft(er) items (e.g. a roll of tape for bore probe, a cardboard box for block or corner probes), and stay away from the machine when it is moving!
+
+Remember that this is designed for machines that can really hurt you if you're not careful. This software tries its best to protect you but nothing can stand in the way of a really determined idiot :sweat_smile:
+
+## Bugs, Issues, Support
+
+If you find any bugs or issues, please create an issue on this repository. Best-effort support is available via our [Discord](https://discord.gg/ya4UUj7ax2).
+
+---
+
+## Information for Advanced users and Developers
+
+### Notes
 
 - You _must_ be using RRF `v3.5.0-rc.3` or above. MOS uses many 'meta gcode' features that do not exist in earlier versions.
 - MOS includes its own `daemon.g` file to implement repetitive tasks, such as VSSC. If you want to implement your own repetitive tasks, you should create a `user-daemon.g` file in the `/sys` directory, which MillenniumOS will run during its' own daemon loop. Disabling the MOS daemon tasks will also disable any `user-daemon.g` tasks. Do not use any long-running loops inside `user-daemon.g` as this will interfere with MOS's own daemon behaviour.
 
-## RRF Config
+### RRF Config
 
 You need a working RRF config with all of your machine axes moving in the right direction before you start.
 
@@ -63,11 +75,11 @@ M558 K1 P8 C"xstopmax" H10 A10 S0.01 T1200 F300:60
 
 ```
 
-### Tool Definition
+#### Tool Definition
 
 You will also want to remove any manual tool definitions from your configuration, as MillenniumOS manages tools through the `M4000` and `M4001` custom M-codes - remove any lines in your `config.g` that use the `M563` command, and also any lines which refer to tools which would have been created by these commands (e.g. `G10 P<toolnumber>`).
 
-### Touch Probe Type Configuration
+#### Touch Probe Type Configuration
 
 Some touch probes may not filter their outputs, which means they can be subject to bouncing. This is where, when the switch or detection mechanism inside the touch probe changes state, it flaps between the two states before settling into its' final position. This can cause issues in MillenniumOS with protected moves, as we stop moving when the probe is activated or deactivated but by the time we check the probe status, it might have flipped.
 
@@ -75,7 +87,7 @@ The solution for this is to define the touch probe as ID _Zero_ and the probe ty
 
 Your touch probe may not need filtering, and you can test this by moving it to a different probe ID (2, for example) and changing the type to 8 like the toolsetter definition.
 
-## Warnings and Known Issues
+### Warnings and Known Issues
 
 Due to some issues with RRF as it currently stands, there are a small number of situations where you can shoot yourself in the foot when running MillenniumOS macros outside of a print file. These are:
 
@@ -87,21 +99,9 @@ Due to some issues with RRF as it currently stands, there are a small number of 
 
 - Memory limits on the `stm32f4` chip are very restrictive - MOS uses quite a lot of global variables for communication between macros and configuration, and is pushing the limits of this chip. You may receive `OutOfMemory` crashes (check `M122` after an unexpected reboot to confirm) if you use global variables in other places in your configuration. The only way around this issue at the moment is to reduce the number and size of global variables in other locations - MillenniumOS is already about as efficient as it can be.
 
-## Bugs, Issues, Support
-
-If you find any bugs or issues, please create an issue on this repository. Best-effort support is available via our [Discord](https://discord.gg/ya4UUj7ax2).
-
-### Troubleshooting
+#### Troubleshooting
 
 To help us work out any issues, please run `M7600 D1` and paste the whole output into any issue you create, or attach with any help request in Discord. This output includes the value of MOS specific variables and also the contents of the RRF object model - specifically the limits, move, sensors, spindles, state and tool keys which are essential for debugging MillenniumOS functionality (or lack thereof).
-
-## Liability
-
-You are fully responsible for running the code contained in this library on your own machine. It has been tested on a number of different machines by different people, and is written from a safety-first perspective, but it is a fool who thinks that they can write software without bugs, and it is a (somewhat lesser) fool to _use_ that software and not expect occasional shenanigans. These shenanigans might cos you money in the best case, and blood in the worst - and by using this software you agree that we are not liable for any losses that might occur during your use of the software.
-
-It is up to you, and only you, to take the relevant precautions when using MillenniumOS - run your tool paths without a workpiece installed and spindle disabled, test the probing routines with soft(er) items (e.g. a roll of tape for bore probe, a cardboard box for block or corner probes), and stay away from the machine when it is moving!
-
-Remember that this is designed for machines that can really hurt you if you're not careful. This software tries its best to protect you but nothing can stand in the way of a really determined idiot :sweat_smile:
 
 ---
 

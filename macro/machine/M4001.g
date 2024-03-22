@@ -2,6 +2,10 @@
 ;
 ; Removes a tool by index
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
 ; Read tool number to remove
 if { !exists(param.P) }
     abort "Must provide tool number (P...) to remove from tool list!"

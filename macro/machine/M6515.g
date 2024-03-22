@@ -8,9 +8,6 @@
 if { !inputs[state.thisInput].active }
     M99
 
-; Make sure we're in the default motion system
-M598
-
 if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
     abort { "M6515: Must provide at least one of X, Y and Z parameters!" }
 

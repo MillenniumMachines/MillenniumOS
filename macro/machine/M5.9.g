@@ -10,6 +10,10 @@
 ; time only needs to exist in one place.
 ; USAGE: M5.9 [D<override-dwell-seconds>]
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
 ; Spindles only need to be stopped if they're actually running.
 ; The base M5 code will stop the spindle for the current tool, or
 ; all spindles if no tool is selected. To avoid having to wait the

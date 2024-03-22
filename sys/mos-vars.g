@@ -163,13 +163,20 @@ global mosDTR = null
 ; Protected move configuration
 global mosPMBO = null
 
-; Manual probing configuration
-global mosMPST = 1200
-global mosMPSF = 300
-global mosMPSS = 60
+; Manual probing feed rates - travel, rough, fine
+global mosMPS = { 1200, 300, 60 }
 
 ; Manual probing back off
 global mosMPBO = 5
+
+; Manual probing distance names
+global mosMPDN = { "50mm", "10mm", "5mm", "1mm", "0.1mm", "0.01mm", "Finish", "Back-Off 1mm" }
+
+; Manual probing distance values
+global mosMPD  = { 50, 10, 5, 1, 0.1, 0.01, 0, -1 }
+
+; Manual probing slow speed index
+global mosMPSI = 3
 
 ; The last tool in the table is used for probing
 ; operations. It is either a dedicated touch probe,

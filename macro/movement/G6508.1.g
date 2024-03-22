@@ -179,9 +179,10 @@ G6512 D1 I{var.probeId} J{var.dirXY[3][0][0]} K{var.dirXY[3][0][1]} L{var.sZ} Y{
 set var.pX[3] = { global.mosPCX }
 set var.pY[3] = { global.mosPCY }
 
-; Return to our starting position and then raise the probe
+; Return to our starting position
 G6550 I{var.probeId} Y{var.dirXY[3][0][1]}
 
+; Raise the probe
 G6550 I{var.probeId} Z{var.safeZ}
 
 ; Calculate corner position
@@ -189,11 +190,11 @@ G6550 I{var.probeId} Z{var.safeZ}
 ; on each axis.
 ; The lines do not currently cross because we probed inwards
 ; from the corner. We need to extend the lines to the edge
-; of the work area, ""OK""and then identify where they cross.
-; those lines cross. This is the corner position.
+; of the work area, and then identify where they cross.
+; This is the corner position.
 ; The X surface is defined by the line var.pX[0] -> var.pX[1]
 ; and var.pY[0] -> var.pY[1], and the Y surface is defined
-; by the line var.pX[2] to var.pY[3] and var.pY[2] to var.pY[3].
+; by the line var.pX[2] -> var.pX[3] and var.pY[2] -> var.pY[3].
 
 ; Calculate normals for both lines
 var mX = { (var.pY[1] - var.pY[0]) / (var.pX[1] - var.pX[0]) }
@@ -204,8 +205,16 @@ var eX = { var.pX[0] - (var.clearance * cos(atan2(var.pY[1] - var.pY[0], var.pX[
 var eY = { var.pY[2] - (var.clearance * sin(atan2(var.pY[3] - var.pY[2], var.pX[3] - var.pX[2]))) }
 
 ; Calculate the intersection of the extended lines
-var cX = { (var.eY - var.pY[0] + (var.mX * var.pX[0]) - (var.mY * var.eX)) / (var.mX - var.mY) }
-var cY = { (var.mX * (var.cX - var.pX[0])) + var.pY[0] }
+; If the gradient of either line is 0, then the
+; intersection on that axis is the first probed point.
+var cX = { (isnan(var.mX)) ? ((var.eY - var.pY[0] + (var.mX * var.pX[0]) - (var.mY * var.eX)) / (var.mX - var.mY)) : var.pX[0] }
+var cY = { (isnan(var.mY)) ? ((var.mX * (var.cX - var.pX[0])) + var.pY[0]) : var.pY[2] }
+
+; We validate mX and mY above so these should never be NaN
+; but check anyway, because RRF does weird things when given
+; NaN values.
+if { isnan(var.cX) || isnan(var.cY) }
+    abort { "Could not calculate corner position!" }
 
 ; Calculate the angle of the surfaces in relation to the X
 ; axis. A square workpiece squared to the table should have
