@@ -174,15 +174,14 @@ M400
 ; divide by zero.
 var mag = { sqrt(pow(var.tPX - var.sX, 2) + pow(var.tPY - var.sY, 2)) }
 
-if { var.mag == 0 }
-    abort { "G6512: Probe target position is the same as the starting position. Cannot calculate direction vector." }
+; Only compensate for the tool radius if the probe has moved in the relevant axes.
+if { var.mag != 0 }
+    ; Tool deflection in X and Y, if set.
+    var dD = { (global.mosTT[state.currentTool][1] == null) ? { 0.0, 0.0 } : global.mosTT[state.currentTool][1] }
 
-; Tool deflection in X and Y, if set.
-var dD = { (global.mosTT[state.currentTool][1] == null) ? { 0.0, 0.0 } : global.mosTT[state.currentTool][1] }
-
-; Adjust the final position along the direction of movement in X and Y by the tool radius.
-set global.mosPCX = { global.mosPCX + (global.mosTT[state.currentTool][0] - var.dD[0]) * ((var.tPX - var.sX) / var.mag) }
-set global.mosPCY = { global.mosPCY + (global.mosTT[state.currentTool][0] - var.dD[1]) * ((var.tPY - var.sY) / var.mag) }
+    ; Adjust the final position along the direction of movement in X and Y by the tool radius.
+    set global.mosPCX = { global.mosPCX + (global.mosTT[state.currentTool][0] - var.dD[0]) * ((var.tPX - var.sX) / var.mag) }
+    set global.mosPCY = { global.mosPCY + (global.mosTT[state.currentTool][0] - var.dD[1]) * ((var.tPY - var.sY) / var.mag) }
 
 ; We do not adjust by the tool radius in Z.
 

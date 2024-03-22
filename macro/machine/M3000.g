@@ -7,6 +7,10 @@
 ; machine is currently running a job. The Cancel option
 ; will abort the current job.
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
 if { !exists(param.S) || !exists(param.R) }
     abort { "Must provide dialog title (R""..."") and message (S""..."")!" }
 

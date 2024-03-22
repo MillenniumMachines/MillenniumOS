@@ -207,8 +207,8 @@ var eY = { var.pY[2] - (var.clearance * sin(atan2(var.pY[3] - var.pY[2], var.pX[
 ; Calculate the intersection of the extended lines
 ; If the gradient of either line is 0, then the
 ; intersection on that axis is the first probed point.
-var cX = { (var.mX == 0) ? ((var.eY - var.pY[0] + (var.mX * var.pX[0]) - (var.mY * var.eX)) / (var.mX - var.mY)) : var.pX[0] }
-var cY = { (var.mY == 0) ? ((var.mX * (var.cX - var.pX[0])) + var.pY[0]) : var.pY[2] }
+var cX = { (isnan(var.mX)) ? ((var.eY - var.pY[0] + (var.mX * var.pX[0]) - (var.mY * var.eX)) / (var.mX - var.mY)) : var.pX[0] }
+var cY = { (isnan(var.mY)) ? ((var.mX * (var.cX - var.pX[0])) + var.pY[0]) : var.pY[2] }
 
 ; We validate mX and mY above so these should never be NaN
 ; but check anyway, because RRF does weird things when given

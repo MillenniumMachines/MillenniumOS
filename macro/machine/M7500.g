@@ -7,6 +7,9 @@
 ;
 ; Usage: M7500 S"message"
 
+if { !inputs[state.thisInput].active }
+    M99
+
 if { global.mosDebug }
     if { !exists(param.S)}
         M99

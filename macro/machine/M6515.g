@@ -4,6 +4,10 @@
 ; of the machine. It will trigger an abort if any of the positions
 ; are outside of the machine limits.
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
 if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
     abort { "M6515: Must provide at least one of X, Y and Z parameters!" }
 

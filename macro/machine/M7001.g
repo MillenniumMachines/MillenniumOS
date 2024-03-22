@@ -4,6 +4,7 @@
 ;
 ; USAGE: "M7001"
 
+; Make sure this file is not executed by the secondary motion system
 if { !inputs[state.thisInput].active }
     M99
 

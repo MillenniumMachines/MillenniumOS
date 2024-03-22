@@ -10,6 +10,10 @@ Parking is used widely throughout probing and tool changing to move the spindle 
 
 When using multiple milling tools, we must compensate for length differences between the tools. G37 can be used to (re-)calculate the length of the current tool in relation to a reference surface. `G37` is used widely by CNC mills to probe tool lengths but is not implemented by RRF, so again we implement our own.
 
+### `M3000` - PROMPT OPERATOR WITH CONFIRMABLE DIALOG
+
+Takes both `R` (title) and `S` (message) string parameters, and will display an RRF dialog box. If the machine is currently processing a file and not paused, the dialog box will contain Continue, Pause and Cancel options. If M3000 is called while the machine is not processing a file, only Continue and Cancel options will be shown. This can be used by post-processors to display messages to the operator.
+
 ### `M6515` - CHECK CO-ORDINATES ARE WITHIN MACHINE LIMITS
 
 Takes at least one of X, Y and Z co-ordinates and checks that they are within the axes limits of the machine, otherwise triggers an abort. This is used by other macros to make sure we do not try to move outside of machine limits.
