@@ -31,6 +31,9 @@ if { !exists(param.H) || !exists(param.I) }
 if { !exists(param.P) }
     abort { "Must provide a probe depth below the top surface using the P parameter!" }
 
+if { (!exists(param.Q) || param.Q == 0) && !exists(param.H) || !exists(param.I) }
+    abort { "Must provide an approximate X length and Y length using H and I parameters when using full probe, Q0!" }
+
 if { !exists(param.N) || param.N < 0 || param.N >= (#global.mosCnr) }
     abort { "Must provide a valid corner index using the N parameter!" }
 
@@ -66,7 +69,7 @@ if { global.mosWPSfcPos == null || global.mosWPSfcAxis != "Z" }
     abort { "G6520: Failed to probe the top surface of the workpiece!" }
 
 ; Probe the corner surface
-G6508.1 R0 W{exists(param.W)? param.W : null} H{param.H} I{param.I} N{param.N} T{param.T} O{param.O} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{ global.mosWPSfcPos - param.P}
+G6508.1 R0 W{exists(param.W)? param.W : null} Q{param.Q} H{param.H} I{param.I} N{param.N} T{param.T} O{param.O} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{ global.mosWPSfcPos - param.P}
 if { global.mosWPCnrNum == null }
     abort { "G6520: Failed to probe the corner surface of the workpiece!" }
 
