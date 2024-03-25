@@ -42,7 +42,7 @@ if { state.nextTool == global.mosPTID }
     ; If touch probe is enabled, prompt the operator to install
     ; it and check for activation.
     if { global.mosFeatTouchProbe }
-        M291 P{"Please install your touch probe into the spindle and make sure it is connected.<br/>When ready, press <b>OK</b>, and then manually activate it until it is detected."} R"MillenniumOS: Probe Tool" S4 K{"Continue", "Cancel"}
+        M291 P{"Please install your touch probe into the spindle and make sure it is connected.<br/>When ready, press <b>Continue</b>, and then manually activate it until it is detected."} R"MillenniumOS: Probe Tool" S4 K{"Continue", "Cancel"}
         if { input != 0 }
             abort { "Tool change aborted by operator!" }
 
@@ -56,7 +56,7 @@ if { state.nextTool == global.mosPTID }
             abort {"Did not detect a touch probe with ID " ^ global.mosTPID ^ "! Please check your probe connection and run T" ^ global.mosPTID ^ " again to verify it is connected."}
     else
         ; If no touch probe enabled, ask user to install datum tool.
-        M291 P{"Please install your datum tool into the spindle. When ready, press <b>OK</b>."} R"MillenniumOS: Probe Tool" S4 K{"Continue", "Cancel"}
+        M291 P{"Please install your datum tool into the spindle. When ready, press <b>Continue</b>."} R"MillenniumOS: Probe Tool" S4 K{"Continue", "Cancel"}
         if { input != 0 }
             abort { "Tool change aborted by operator, aborting job!" }
         echo { "Touch probe feature disabled, manual probing will use an installed datum tool." }

@@ -16,8 +16,8 @@ if { exists(param.W) && param.W != null && (param.W < 1 || param.W > limits.work
 if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
     abort { "Must provide a start position to probe from using J, K and L parameters!" }
 
-if { (!exists(param.P) || param.P == 0) && !exists(param.H) || !exists(param.I) }
-    abort { "Must provide an approximate X length and Y length using H and I parameters when using full probe, P0!" }
+if { (!exists(param.Q) || param.Q == 0) && !exists(param.H) || !exists(param.I) }
+    abort { "Must provide an approximate X length and Y length using H and I parameters when using full probe, Q0!" }
 
 ; Maximum of 4 corners (0..3)
 if { !exists(param.N) || param.N < 0 || param.N >= 3 }
@@ -27,7 +27,7 @@ if { !exists(param.N) || param.N < 0 || param.N >= 3 }
 var pID = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
 ; Probe mode defaults to (0=Full)
-var pMO = { exists(param.P)? param.P : 0 }
+var pMO = { exists(param.Q)? param.Q : 0 }
 
 set global.mosWPCnrNum =  null
 set global.mosWPCnrDeg = null
@@ -75,22 +75,20 @@ var clearance = { (exists(param.T) ? param.T : global.mosCL) + ((state.currentTo
 var overtravel = { (exists(param.O) ? param.O : global.mosOT) - ((state.currentTool <= limits.tools-1 && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
 
 ; Check that the clearance distance isn't
-; higher than the width or height of the block.
+; higher than the width or height of the block if
+; in full mode.
 ; Since we use the clearance distance to choose
 ; how far along each surface we should probe from
 ; the expected corners, a clearance higher than
 ; the width or height would mean we would try to
 ; probe off the edge of the block.
-if { var.clearance >= var.fX || var.clearance >= var.fY }
+if { var.pMO == 0 && (var.clearance >= var.fX || var.clearance >= var.fY) }
     abort { "Clearance distance is higher than the length of the surfaces to be probed! Cannot probe." }
 
 ; The overtravel distance does not have the same
 ; requirement, as it is only used to adjust the
 ; probe target towards or away from the target
 ; surface rather.
-
-; Commented due to memory limitations
-; M7500 S{"Distance Modifiers adjusted for Tool Radius - Clearance=" ^ var.clearance ^ " Overtravel=" ^ var.overtravel }
 
 ; Y start location (K) direction is dependent on the chosen corner.
 ; If this is the front left corner, then our first probe is at
@@ -103,7 +101,7 @@ if { var.clearance >= var.fX || var.clearance >= var.fY }
 ; If we add var.fY, then we need to subtract var.clearance and vice
 ; versa.
 ; For each probe point: {start x, start y}, {target x, target y}
-var dirXY = { vector(4, {{null, null}, {null, null}}) }
+var dirXY = { vector(4 - var.pMO * 2, {{null, null}, {null, null}}) }
 
 ; Assign start and target positions based on direction
 var dirX = { (param.N == 0 || param.N == 3) ? -1 : 1 }
@@ -118,9 +116,11 @@ var targetY = { var.sY + var.dirY * var.overtravel }
 ; Set dirXY for X probes
 set var.dirXY[0][0] = { var.startX, var.sY + var.dirY * var.clearance }
 set var.dirXY[0][1] = { var.targetX, var.sY + var.dirY * var.clearance }
+
+; Only probe the second X point if we're in full mode
 if { var.pMO == 0 }
-    set var.dirXY[1][0] = { var.startX, var.sY + var.dirY * (var.fY - var.clearance) }
-    set var.dirXY[1][1] = { var.targetX, var.sY + var.dirY * (var.fY - var.clearance) }
+    set var.dirXY[2][0] = { var.startX, var.sY + var.dirY * (var.fY - var.clearance) }
+    set var.dirXY[2][1] = { var.targetX, var.sY + var.dirY * (var.fY - var.clearance) }
 
 ; Set dirXY for Y probes
 set var.dirX = { -var.dirX }
@@ -131,15 +131,17 @@ set var.targetX = { var.sX + var.dirX * var.overtravel }
 set var.startY = { var.sY + var.dirY * var.clearance }
 set var.targetY = { var.sY + var.dirY * var.overtravel }
 
-set var.dirXY[2][0] = { var.sX + var.dirX * var.clearance, var.startY }
-set var.dirXY[2][1] = { var.sX + var.dirX * var.clearance, var.targetY }
+set var.dirXY[1][0] = { var.sX + var.dirX * var.clearance, var.startY }
+set var.dirXY[1][1] = { var.sX + var.dirX * var.clearance, var.targetY }
 
+; Only probe the second Y point if we're in full mode
 if { var.pMO == 0 }
     set var.dirXY[3][0] = { var.sX + var.dirX * (var.fX - var.clearance), var.startY }
     set var.dirXY[3][1] = { var.sX + var.dirX * (var.fX - var.clearance), var.targetY }
 
-var pX = { null, null, null, null }
-var pY = { null, null, null, null }
+; Assign result variables
+var pX = { vector(4 - var.pMO * 2, null) }
+var pY = { vector(4 - var.pMO * 2, null) }
 
 ; Move outside X surface
 G6550 I{var.pID} X{var.dirXY[0][0][0]}
@@ -159,30 +161,30 @@ set var.pY[0] = { var.dirXY[0][0][1] }
 G6550 I{var.pID} X{var.dirXY[0][0][0]}
 
 if { var.pMO == 0 }
-    G6512 D1 I{var.pID} J{var.dirXY[1][0][0]} K{var.dirXY[1][0][1]} L{var.sZ} X{var.dirXY[1][1][0]}
-    set var.pX[1] = { global.mosPCX }
-    set var.pY[1] = { var.dirXY[1][0][1] }
+    G6512 D1 I{var.pID} J{var.dirXY[2][0][0]} K{var.dirXY[2][0][1]} L{var.sZ} X{var.dirXY[2][1][0]}
+    set var.pX[2] = { global.mosPCX }
+    set var.pY[2] = { var.dirXY[2][0][1] }
 
     ; Return to our starting position.
-    G6550 I{var.pID} X{var.dirXY[1][0][0]}
+    G6550 I{var.pID} X{var.dirXY[2][0][0]}
 
 ; Move to new start position in Y first
 ; NOTE: Always move in Y first. We probe
 ; X and then Y, if we move in X first then
 ; we will collide with the workpiece when
 ; we switch 'sides'.
-G6550 I{var.pID} Y{var.dirXY[2][0][1]}
+G6550 I{var.pID} Y{var.dirXY[1][0][1]}
 
 ; And then X
-G6550 I{var.pID} X{var.dirXY[2][0][0]}
+G6550 I{var.pID} X{var.dirXY[1][0][0]}
 
 ; Run Y probes
-G6512 D1 I{var.pID} J{var.dirXY[2][0][0]} K{var.dirXY[2][0][1]} L{var.sZ} Y{var.dirXY[2][1][1]}
-set var.pX[2] = { var.dirXY[2][0][0] }
-set var.pY[2] = { global.mosPCY }
+G6512 D1 I{var.pID} J{var.dirXY[1][0][0]} K{var.dirXY[1][0][1]} L{var.sZ} Y{var.dirXY[1][1][1]}
+set var.pX[1] = { var.dirXY[1][0][0] }
+set var.pY[1] = { global.mosPCY }
 
 ; Return to our starting position
-G6550 I{var.pID} Y{var.dirXY[2][0][1]}
+G6550 I{var.pID} Y{var.dirXY[1][0][1]}
 
 if { var.pMO == 0 }
     G6512 D1 I{var.pID} J{var.dirXY[3][0][0]} K{var.dirXY[3][0][1]} L{var.sZ} Y{var.dirXY[3][1][1]}
@@ -196,6 +198,8 @@ if { var.pMO == 0 }
 G6550 I{var.pID} Z{var.safeZ}
 
 ; Calculate corner position
+var cX = null
+var cY = null
 
 ; Full mode (P=0) or unset
 if { var.pMO == 0 }
@@ -216,14 +220,14 @@ if { var.pMO == 0 }
     var mY = { (var.pY[3] - var.pY[2]) / (var.pX[3] - var.pX[2]) }
 
     ; Extend both lines by the clearance distance
-    var eX = { var.pX[0] - (var.clearance * cos(atan2(var.pY[1] - var.pY[0], var.pX[1] - var.pX[0]))) }
-    var eY = { var.pY[2] - (var.clearance * sin(atan2(var.pY[3] - var.pY[2], var.pX[3] - var.pX[2]))) }
+    var eX = { var.pX[0] - (var.clearance * cos(atan2(var.pY[2] - var.pY[0], var.pX[2] - var.pX[0]))) }
+    var eY = { var.pY[1] - (var.clearance * sin(atan2(var.pY[3] - var.pY[1], var.pX[3] - var.pX[1]))) }
 
     ; Calculate the intersection of the extended lines
     ; If the gradient of either line is 0, then the
     ; intersection on that axis is the first probed point.
-    var cX = { (isnan(var.mX)) ? ((var.eY - var.pY[0] + (var.mX * var.pX[0]) - (var.mY * var.eX)) / (var.mX - var.mY)) : var.pX[0] }
-    var cY = { (isnan(var.mY)) ? ((var.mX * (var.cX - var.pX[0])) + var.pY[0]) : var.pY[2] }
+    set var.cX = { (isnan(var.mX)) ? ((var.eY - var.pY[0] + (var.mX * var.pX[0]) - (var.mY * var.eX)) / (var.mX - var.mY)) : var.pX[0] }
+    set var.cY = { (isnan(var.mY)) ? ((var.mX * (var.cX - var.pX[0])) + var.pY[0]) : var.pY[1] }
 
     ; We validate mX and mY above so these should never be NaN
     ; but check anyway, because RRF does weird things when given
@@ -236,8 +240,8 @@ if { var.pMO == 0 }
     ; an angle of 90 degrees for aX (the X surface is perpendicular
     ; to the X axis) and 0 degrees for aY (the Y surface is parallel
     ; to the X axis).
-    var aX = { atan2(var.pY[1] - var.pY[0], var.pX[1] - var.pX[0]) }
-    var aY = { atan2(var.pY[3] - var.pY[2], var.pX[3] - var.pX[2]) }
+    var aX = { atan2(var.pY[2] - var.pY[0], var.pX[2] - var.pX[0]) }
+    var aY = { atan2(var.pY[3] - var.pY[1], var.pX[3] - var.pX[1]) }
 
     ; This is the corner angle
     set global.mosWPCnrDeg = { abs(degrees(var.aX - var.aY)) }
@@ -245,7 +249,7 @@ if { var.pMO == 0 }
 else
     ; Calculate corner position in quick mode.
     set var.cX = { var.pX[0] }
-    set var.cY = { var.pY[0] }
+    set var.cY = { var.pY[1] }
 
     set global.mosWPCnrDeg = { 90 }
 
