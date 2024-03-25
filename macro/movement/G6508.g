@@ -25,9 +25,12 @@ M598
 
 ; Display description of rectangle block probe if not already displayed this session
 if { global.mosTM && !global.mosDD10 }
-    M291 P"This probe cycle finds the X and Y co-ordinates of the corner of a rectangular workpiece by probing twice each along the 2 edges that form the corner." R"MillenniumOS: Probe Outside Corner " T0 S2
-    M291 P"You will be asked to enter approximate <b>surface lengths</b> for the surfaces forming the corner, a <b>clearance distance</b> and an <b>overtravel distance</b>." R"MillenniumOS: Probe Outside Corner" T0 S2
-    M291 P"These define how far the probe will move along the surfaces from the corner location before probing, and how far inwards from the expected surface the probe can move before erroring if not triggered." R"MillenniumOS: Probe Outside Corner" T0 S2
+    M291 P"This probe cycle finds the X and Y co-ordinates of the corner of a rectangular workpiece by probing along the 2 edges that form the corner." R"MillenniumOS: Probe Outside Corner " T0 S2
+    M291 P"In <b>Full</b> mode, this cycle will take 2 probe points on each edge, allowing us to calculate the position and angle of the corner and the rotation of the workpiece." R"MillenniumOS: Probe Outside Corner" T0 S2
+    M291 P"You will be asked to enter an approximate <b>surface length</b> for the surfaces forming the corner, to calculate the 4 probe locations." R"MillenniumOS: Probe Outside Corner" T0 S2
+    M291 P"In <b>Quick</b> mode, this cycle will take 1 probe point on each edge, assuming the corner is square and the workpiece is aligned with the table, and will return the extrapolated position of the corner." R"MillenniumOS: Probe Outside Corner" T0 S2
+    M291 P"For both modes, you will be asked to enter a <b>clearance distance</b> and an <b>overtravel distance</b>." R"MillenniumOS: Probe Outside Corner" T0 S2
+    M291 P"These define how far the probe will move along the surfaces from the corner location before probing, and how far inwards from the expected surface the probe can move before erroring when not triggered." R"MillenniumOS: Probe Outside Corner" T0 S2
     M291 P"You will then jog the tool over the corner to be probed.<br/><b>CAUTION</b>: Jogging in RRF does not watch the probe status, so you could cause damage if moving in the wrong direction!" R"MillenniumOS: Probe Outside Corner" T0 S2
     M291 P"You will then be asked for a <b>probe depth</b>. This is how far the probe will move downwards before probing towards the corner surfaces. Press <b>OK</b> to continue." R"MillenniumOS: Probe Outside Corner" T0 S3
     if { result != 0 }
@@ -40,25 +43,36 @@ if { global.mosPTID != state.currentTool }
 
 var tR = { global.mosTT[state.currentTool][0]}
 
-var sW = { (global.mosWPDims[0] != null) ? global.mosWPDims[0] : 100 }
-M291 P{"Please enter approximate <b>surface length</b> along the X axis in mm.<br/><b>NOTE</b>: Along the X axis means the surface facing towards or directly away from the operator."} R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{var.sW}
+M291 P{"Please select the probing mode to use.<br/><b>Full</b> will probe 2 points on each horizontal surface, while <b>Quick</b> will probe only 1 point."} R"MillenniumOS: Probe Outside Corner" T0 S4 K{"Full","Quick"} F0
 if { result != 0 }
     abort { "Outside corner probe aborted!" }
 
-var xSurfaceLength = { input }
+var mode = { input }
 
-if { var.xSurfaceLength < var.tR }
-    abort { "X surface length too low. Cannot probe distances smaller than the tool radius (" ^ var.tR ^ ")!"}
+var xSL  = null
+var ySL  = null
 
-var sL = { (global.mosWPDims[1] != null) ? global.mosWPDims[1] : 100 }
-M291 P{"Please enter approximate <b>surface length</b> along the Y axis in mm.<br/><b>NOTE</b>: Along the Y axis means the surface to the left or the right of the operator."} R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{var.sL}
-if { result != 0 }
-    abort { "Outside corner probe aborted!" }
+; 0 = Full mode, 1 = Quick mode
+if { var.mode == 0 }
+    var sW = { (global.mosWPDims[0] != null) ? global.mosWPDims[0] : 100 }
+    M291 P{"Please enter approximate <b>surface length</b> along the X axis in mm.<br/><b>NOTE</b>: Along the X axis means the surface facing towards or directly away from the operator."} R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{var.sW}
+    if { result != 0 }
+        abort { "Outside corner probe aborted!" }
 
-var ySurfaceLength = { input }
+    set var.xSL = { input }
 
-if { var.ySurfaceLength < var.tR }
-    abort { "Y surface length too low. Cannot probe distances smaller than the tool radius (" ^ var.tR ^ ")!"}
+    if { var.xSL < var.tR }
+        abort { "X surface length too low. Cannot probe distances smaller than the tool radius (" ^ var.tR ^ ")!"}
+
+    var sL = { (global.mosWPDims[1] != null) ? global.mosWPDims[1] : 100 }
+    M291 P{"Please enter approximate <b>surface length</b> along the Y axis in mm.<br/><b>NOTE</b>: Along the Y axis means the surface to the left or the right of the operator."} R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{var.sL}
+    if { result != 0 }
+        abort { "Outside corner probe aborted!" }
+
+    set var.ySL = { input }
+
+    if { var.ySL < var.tR }
+        abort { "Y surface length too low. Cannot probe distances smaller than the tool radius (" ^ var.tR ^ ")!"}
 
 ; Prompt for clearance distance
 M291 P"Please enter <b>clearance</b> distance in mm.<br/>This is how far far out we move from the expected surface to account for any innaccuracy in the corner location." R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{global.mosCL}
@@ -104,4 +118,4 @@ if { global.mosTM }
     if { result != 0 }
         abort { "Outside corner probe aborted!" }
 
-G6508.1 W{exists(param.W)? param.W : null} H{var.xSurfaceLength} I{var.ySurfaceLength} N{var.corner} T{var.clearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
+G6508.1 W{exists(param.W)? param.W : null} Q{var.mode} H{var.xSL} I{var.ySL} N{var.corner} T{var.clearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
