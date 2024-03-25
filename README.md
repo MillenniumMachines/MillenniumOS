@@ -18,13 +18,11 @@ We build _on top of_ RepRapFirmware, providing operators of the Millennium Machi
 
 Please follow the installation instructions on our [documentation](https://millenniummachines.github.io/docs/millennium-os/manual/installation/) site. If you have not already installed a supported RRF configuration, then you should follow the instructions for the Milo [here](https://millenniummachines.github.io/docs/milo/manual/chapters/90_install_rrf/).
 
-The information below is for advanced users who want to understand further how MillenniumOS works, and what it is capable of. For normal usage, all the information you need is in the documentation.
-
 ## Liability
 
-You are fully responsible for running the code contained in this library on your own machine. It has been tested on a number of different machines by different people, and is written from a safety-first perspective, but it is a fool who thinks that they can write software without bugs, and it is a (somewhat lesser) fool to _use_ that software and not expect occasional shenanigans. These shenanigans might cos you money in the best case, and blood in the worst - and by using this software you agree that we are not liable for any losses that might occur during your use of the software.
+You are fully responsible for running the code contained in this library on your own machine. It has been tested on a number of different machines by different people, and is written from a safety-first perspective, but it is a fool who thinks that they can write software without bugs, and it is a (somewhat lesser) fool to _use_ that software and not expect occasional shenanigans. These shenanigans might cost you money in the best case, and blood in the worst - and by using this software you agree that we are not liable for any losses that might occur to you or others during your use of the software.
 
-It is up to you, and only you, to take the relevant precautions when using MillenniumOS - run your tool paths without a workpiece installed and spindle disabled, test the probing routines with soft(er) items (e.g. a roll of tape for bore probe, a cardboard box for block or corner probes), and stay away from the machine when it is moving!
+It is up to you, and only you, to take the relevant precautions when using MillenniumOS - run your tool paths without a workpiece installed and spindle disabled, test the probing routines with soft(er) items (e.g. a roll of tape for bore probe, a cardboard box for block or corner probes), stay away from the machine when it is moving and ___ALWAYS WEAR EYE PROTECTION___!
 
 Remember that this is designed for machines that can really hurt you if you're not careful. This software tries its best to protect you but nothing can stand in the way of a really determined idiot :sweat_smile:
 
@@ -35,6 +33,8 @@ If you find any bugs or issues, please create an issue on this repository. Best-
 ---
 
 ## Information for Advanced users and Developers
+
+The information contained here is for advanced users who want to understand further how MillenniumOS works, and what it is capable of. For normal usage, all the information you need is in the [documentation](https://millenniummachines.github.io/docs/millennium-os/manual/installation/).
 
 ### Notes
 
