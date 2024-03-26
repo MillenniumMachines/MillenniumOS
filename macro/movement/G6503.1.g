@@ -334,5 +334,5 @@ if { !exists(param.R) || param.R != 0 }
 
 ; Set WCS origin to the probed center, if requested
 if { exists(param.W) && param.W != null }
-    echo { "MillenniumOS: Setting WCS " ^ param.W ^ " X,Y origin to center of rectangle block" }
+    echo { "MillenniumOS: Setting WCS " ^ param.W ^ " X,Y origin to center of rectangle block." }
     G10 L2 P{param.W} X{global.mosWPCtrPos[0]} Y{global.mosWPCtrPos[1]}

@@ -31,9 +31,10 @@ if { global.mosTM && !global.mosDD11 }
     M291 P"You will be asked to enter an approximate <b>surface length</b> for the surfaces forming the corner, to calculate the 4 probe locations." R"MillenniumOS: Probe Vise Corner" T0 S2
     M291 P"In <b>Quick</b> mode, this cycle will take 1 probe point on each edge, assuming the corner is square and the workpiece is aligned with the table, and will return the extrapolated position of the corner." R"MillenniumOS: Probe Vise Corner" T0 S2
     M291 P"For both modes, you will be asked to enter a <b>clearance distance</b> and an <b>overtravel distance</b>." R"MillenniumOS: Probe Vise Corner" T0 S2
-    M291 P"These define how far the probe will move along the surfaces from the corner location before probing, and how far inwards from the expected surface the probe can move before erroring if not triggered." R"MillenniumOS: Probe Vise Corner" T0 S2
-    M291 P"You will then jog the tool over the corner to be probed.<br/><b>CAUTION</b>: Jogging in RRF does not watch the probe status, so you could cause damage if moving in the wrong direction!" R"MillenniumOS: Probe Vise Corner" T0 S3
-    if { result != 0 }
+    M291 P"These define how far the probe will move along the surfaces from the corner location before probing, and how far past the expected surface the probe can move before erroring if not triggered." R"MillenniumOS: Probe Vise Corner" T0 S2
+    M291 P"You will then jog the tool over the corner to be probed.<br/><b>CAUTION</b>: Jogging in RRF does not watch the probe status - <b>Be Careful!</b>" R"MillenniumOS: Probe Vise Corner" T0 S2
+    M291 P"Finally, you will be asked to select the corner that is being probed, and the depth below the top surface to probe the corner surfaces at, in mm." R"MillenniumOS: Probe Vise Corner" S4 K{"Continue", "Cancel"} F0
+    if { input != 0 }
         abort { "Vise corner probe aborted!" }
     set global.mosDD11 = true
 
@@ -76,7 +77,7 @@ if { var.mode == 0 }
         abort { "Y surface length too low. Cannot probe distances smaller than the tool radius (" ^ var.tR ^ ")!"}
 
 ; Prompt for clearance distance
-M291 P"Please enter <b>clearance</b> distance in mm.<br/>This is how far far out we move from the expected surface to account for any innaccuracy in the corner location." R"MillenniumOS: Probe Vise Corner" J1 T0 S6 F{global.mosCL}
+M291 P"Please enter <b>clearance</b> distance in mm.<br/>This is how far away from the expected surface we start probing from, to account for any innaccuracy in the corner location." R"MillenniumOS: Probe Vise Corner" J1 T0 S6 F{global.mosCL}
 if { result != 0 }
     abort { "Vise corner probe aborted!" }
 
@@ -85,7 +86,7 @@ if { var.clearance < var.tR }
     abort { Clearance distance too low. Cannot probe distances smaller than the tool radius (" ^ var.tR ^ ")!"}
 
 ; Prompt for overtravel distance
-M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far far in we move from the expected surface to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Vise Corner" J1 T0 S6 F{global.mosOT}
+M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far we move past the expected surface to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Vise Corner" J1 T0 S6 F{global.mosOT}
 if { result != 0 }
     abort { "Vise corner probe aborted!" }
 
@@ -115,8 +116,8 @@ if { var.probeDepth < 0 }
 ; Run the block probe cycle
 if { global.mosTM }
     var cN = { global.mosCnr[var.corner] }
-    M291 P{"We will now probe the top surface, then move outside the <b>" ^ var.cN ^ "</b> corner and down " ^ var.probeDepth ^ "mm, then probe 2 points " ^ var.clearance ^ "mm from each end of the corner surfaces." } R"MillenniumOS: Probe Vise Corner" T0 S3
-    if { result != 0 }
+    M291 P{"We will now probe the top surface, then move outside the <b>" ^ var.cN ^ "</b> corner, down " ^ var.probeDepth ^ "mm, and probe each surface forming the corner." } R"MillenniumOS: Probe Vise Corner" T0 S4 K{"Continue", "Cancel"} F0
+    if { input != 0 }
         abort { "Vise corner probe aborted!" }
 
 G6520.1 W{exists(param.W)? param.W : null} Q{var.mode} H{var.xSL} I{var.ySL} N{var.corner} T{var.clearance} O{var.overtravel} P{var.probeDepth} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition}

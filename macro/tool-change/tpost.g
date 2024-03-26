@@ -34,7 +34,12 @@ G27 Z1
 ; reference surface so we can make this calculation.
 ; Touchprobe tool ID is only set if the touchprobe feature is enabled.
 if { state.currentTool == global.mosPTID }
-    if { global.mosFeatTouchProbe }
+
+    ; We only need to probe the reference surface with both toolsetter and
+    ; touch probe activated. If the toolsetter is not activated, we can't
+    ; compensate for tool lengths automatically so we need to re-set Z origin
+    ; on each tool change.
+    if { global.mosFeatTouchProbe && global.mosFeatToolSetter }
         ; We abort the tool change if the touch probe is not detected
         ; so at this point we can safely assume the probe is connected.
         M291 P{"<b>Touch Probe Detected</b>.<br/>We will now probe the reference surface. Move away from the machine <b>BEFORE</b> pressing <b>OK</b>!"} R"MillenniumOS: Tool Change" S2
@@ -45,14 +50,20 @@ if { state.currentTool == global.mosPTID }
         G6511 S0 R1
         if { global.mosTSAP == null }
             abort { "Touch probe reference surface probe failed." }
-    else
+    ; If the toolsetter is enabled but not the touch probe, then we asked
+    ; the operator to install the datum tool, and we need to know its length
+    ; so we can compensate automatically on tool change.
+    elif { global.mosFeatToolSetter }
             M291 P{"<b>Datum Tool Installed</b>.<br/>We will now probe the tool length. Move away from the machine <b>BEFORE</b> pressing <b>OK</b>!"} R"MillenniumOS: Tool Change" S2
 
         ; Probe datum tool length
         G37
-else
-    ; Probe non-probe tool length
+elif { global.mosFeatToolSetter }
+    ; Probe non-probe tool length using the toolsetter
     G37
+else
+    ; Probe Z origin using installed tool
+    G37.1
 
 ; Continue after operator confirmation if necessary
 ; Note: we use global.mosTM here instead of global.mosEM.

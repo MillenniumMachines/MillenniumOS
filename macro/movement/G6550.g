@@ -39,9 +39,6 @@ if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
 
 var manualProbe = { !exists(param.I) || param.I == null }
 
-if { var.manualProbe && global.mosFeatTouchProbe }
-    abort { "G6550: Attempt to use unprotected move with touch probe enabled. Did you pass the probe ID (I...)?" }
-
 ; Make sure machine is stationary before checking machine positions
 M400
 
@@ -68,8 +65,6 @@ G94
 ; So just run the move as normal with our manual
 ; probing travel speed and then return.
 if { var.manualProbe }
-    ; Commented due to memory limitations
-    ; M7500 S{"Unprotected move to X=" ^ var.tPX ^ " Y=" ^ var.tPY ^ " Z=" ^ var.tPZ ^ " as touch probe is not available."}
     G53 G1 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } F{ global.mosMPS[0] }
     M99
 

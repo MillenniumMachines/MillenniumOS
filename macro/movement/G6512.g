@@ -100,7 +100,7 @@ if { !exists(param.L) }
     abort { "G6512: Must provide Z height to begin probing at (L..)!" }
 
 if { state.currentTool >= #tools || state.currentTool < 0 }
-    abort { "G6512: No tool selected, or MillenniumOS tool table is invalid. Select a probe tool before probing."}
+    abort { "G6512: No tool selected! Select a tool before probing."}
 
 var sZ = { param.L }
 
@@ -128,14 +128,14 @@ G94
 ; If starting probe height is above safe height (current Z),
 ; then move to the starting probe height first.
 if { var.sZ > var.safeZ }
-    G6550 I{ param.I } Z{ var.sZ }
+    G6550 I{ exists(param.I) ? param.I : null } Z{ var.sZ }
 
 ; Move to starting position in X and Y
-G6550 I{ param.I } X{ var.sX } Y{ var.sY }
+G6550 I{ exists(param.I) ? param.I : null } X{ var.sX } Y{ var.sY }
 
 ; Move to probe height.
 ; No-op if we already moved above.
-G6550 I{ param.I } Z{ var.sZ }
+G6550 I{ exists(param.I) ? param.I : null } Z{ var.sZ }
 
 ; Run automated probing cycle
 if { var.manualProbe }
@@ -147,7 +147,7 @@ else
 ; If probing move is called with D parameter,
 ; we stay at the same height.
 if { !exists(param.D) }
-    G6550 I{ param.I } Z{ var.safeZ }
+    G6550 I{ exists(param.I) ? param.I : null } Z{ var.safeZ }
 
 M400
 
