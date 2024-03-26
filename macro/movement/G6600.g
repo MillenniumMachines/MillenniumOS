@@ -40,15 +40,24 @@ if { global.mosTM && !global.mosDD0 }
     M291 P{"Before executing cutting operations, it is necessary to identify where the workpiece for a part is. We will do this by probing and setting a work co-ordinate system (WCS) origin point."} R"MillenniumOS: Probe Workpiece" T0 S2
     M291 P{"The origin of a WCS is the reference point for subsequent cutting operations, and must match the chosen reference point in your CAM software."} R"MillenniumOS: Probe Workpiece" T0 S2
     M291 P{"You will need to select an appropriate probe cycle type (or types!) based on the shape of your workpiece."} R"MillenniumOS: Probe Workpiece" T0 S2
-    M291 P{"For a square or rectangular workpiece, you should start with the <b>Vise Corner</b> probing cycle to identify your origin corner and Z height."} R"MillenniumOS: Probe Workpiece" T0 S2
-    M291 P{"For a round workpiece, you should start with the <b>Circular Boss</b> and <b>Single Surface (Z)</b> cycle to identify the center of the circle as your origin and Z height."} R"MillenniumOS: Probe Workpiece" T0 S2
-    M291 P{"<b>NOTE</b>: Surfaces are named assuming that you (the operator) are standing in front of the machine, with the Z column at the <b>BACK</b>."} R"MillenniumOS: Probe Workpiece" T0 S2
 
     ; If user does not have a touch probe configured,
     ; walk them through the manual probing procedure.
-    if { global.mosPTID == null }
-        M291 P{"Your machine does not have a touch probe configured, so probing will involve manually jogging the machine until an installed tool or metal dowel touches the workpiece."} R"MillenniumOS: Probe Workpiece" T0 S2
-        M291 P{"You will be walked through this process so it should be relatively foolproof, but <b>it is possible to damage your tool, spindle or workpiece</b> if you press the wrong jog button!"} R"MillenniumOS: Probe Workpiece" T0 S2
+    if { ! global.mosFeatTouchProbe }
+        M291 P{"Your machine does not have a <b>Touch Probe</b> configured, so probing will involve manually jogging the machine until an installed tool or metal dowel touches the workpiece."} R"MillenniumOS: Probe Workpiece" T0 S2
+
+    if { global.mosFeatToolSetter }
+        M291 P{"For a square or rectangular workpiece, you should start with the <b>Vise Corner</b> probing cycle to identify your origin corner in X and Y, and Z height."} R"MillenniumOS: Probe Workpiece" T0 S2
+        M291 P{"For a round workpiece, you should start with the <b>Circular Boss</b> and <b>Single Surface (Z)</b> cycle to identify the center of the circle as your origin in X and Y, and Z height."} R"MillenniumOS: Probe Workpiece" T0 S2
+    else
+        ; If the user does not have a toolsetter, then they need to
+        ; reset the Z origin on every toolchange anyway.
+        M291 P{"Your machine does not have a <b>Toolsetter</b> so you will be guided through re-probing the Z origin during each tool change.<br/>You can safely skip probing on the Z axis at this point."} R"MillenniumOS: Probe Workpiece" T0 S2
+        M291 P{"For a square or rectangular workpiece, you should start with the <b>Outside Corner</b> probing cycle to identify your origin corner in X and Y."} R"MillenniumOS: Probe Workpiece" T0 S2
+        M291 P{"For a round workpiece, you should start with the <b>Circular Boss</b> cycle to identify the center of the circle as your origin in X and Y."} R"MillenniumOS: Probe Workpiece" T0 S2
+
+    M291 P{"<b>NOTE</b>: Surfaces are named assuming that you (the operator) are standing in front of the machine, with the Z column at the <b>BACK</b>."} R"MillenniumOS: Probe Workpiece" T0 S2
+
     set global.mosDD0 = true
 
 ; Ask user for work offset to set.
@@ -70,13 +79,6 @@ if { var.workOffset == null && global.mosTM && !global.mosDD1 }
     M291 P{"Probing can still run without a WCS origin being set. The output of the probing cycle will be available in the global variables specific to the probe cycle."} R"MillenniumOS: Probe Workpiece" T0 S2
     set global.mosDD1=true
 
-; If WCS is set via parameter, warn about setting WCS origin
-if { exists(param.W) && global.mosTM }
-    M291 P{"Probing will set the origin of WCS " ^ var.workOffset ^ " (" ^ var.workOffsetCodes[var.workOffset] ^ ") to the probed location."} R"MillenniumOS: Probe Workpiece" T0 S3
-    if { result != 0 }
-        abort {"Operator cancelled probe cycle, please set WCS origin manually or restart probing with <b>G6600</b>"}
-        M99
-
 ; Show operator existing WCS origin co-ordinates.
 if { var.workOffset != null }
     ; Get work offset name (G54, G55, etc) and origin co-ordinates
@@ -88,6 +90,12 @@ if { var.workOffset != null }
     ; If tutorial mode, show operator the WCS origin if any axes are set.
     if { global.mosTM && (var.pdX != 0 || var.pdY != 0 || var.pdZ != 0) }
         M291 P{"WCS " ^ var.workOffset ^ " (" ^ var.workOffsetName ^ ") has origin:<br/>X=" ^ var.pdX ^ " Y=" ^ var.pdY ^ " Z=" ^ var.pdZ} R"MillenniumOS: Probe Workpiece" T0 S2
+
+    ; Otherwise, tell the operator which WCS origin will be set.
+    elif { global.mosTM }
+        M291 P{"Probing will set the origin of WCS " ^ var.workOffset ^ " (" ^ var.workOffsetCodes[var.workOffset] ^ ") to the probed location."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue","Cancel"}
+        if { input != 0 }
+            abort {"Operator cancelled probe cycle, please set WCS origin manually or restart probing with <b>G6600</b>"}
 
     ; If work offset origin is already set
     if { var.pdX != 0 && var.pdY != 0 && var.pdZ != 0 }
@@ -137,7 +145,12 @@ if { input != null }
     if { var.workOffset != null }
         var paZ = { (move.axes[0].workplaceOffsets[var.workOffset-1] == 0)? " X" : "" }
         set var.paZ = { var.paZ ^ ((move.axes[1].workplaceOffsets[var.workOffset-1] == 0)? " Y" : "") }
-        set var.paZ = { var.paZ ^ ((move.axes[2].workplaceOffsets[var.workOffset-1] == 0)? " Z" : "") }
+
+        ; Only warn about Z if toolsetter is enabled.
+        ; Without a toolsetter, the first tool change
+        ; will prompt to zero the Z height again.
+        if { global.mosFeatToolSetter }
+            set var.paZ = { var.paZ ^ ((move.axes[2].workplaceOffsets[var.workOffset-1] == 0)? " Z" : "") }
 
         if { var.paZ != "" }
             M291 P{"Probe cycle complete, but axes<b>" ^ var.paZ ^ "</b> in <b>WCS " ^ var.workOffset ^ "</b> have not been probed yet. Run another probe cycle?"} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Yes", "No"}

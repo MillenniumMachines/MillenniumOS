@@ -20,8 +20,8 @@ if { global.mosTM && !global.mosDD3 }
     M291 P"This probe cycle finds the X and Y co-ordinates of the center of a circular boss (protruding feature) on a workpiece by probing towards the approximate center of the boss in 3 directions." R"MillenniumOS: Probe Boss" T0 S2
     M291 P"You will be asked to enter an approximate <b>boss diameter</b> and <b>clearance distance</b>.<br/>These define how far the probe will move away from the centerpoint before probing back inwards." R"MillenniumOS: Probe Boss" T0 S2
     M291 P"You will then jog the tool over the approximate center of the boss.<br/><b>CAUTION</b>: Jogging in RRF does not watch the probe status, so you could cause damage if moving in the wrong direction!" R"MillenniumOS: Probe Boss" T0 S2
-    M291 P"You will then be asked for a <b>probe depth</b>. This is how far the probe will move downwards after moving outside of the boss diameter, and before probing towards the centerpoint. Press ""OK"" to continue." R"MillenniumOS: Probe Boss" T0 S3
-    if { result != 0 }
+    M291 P"You will then be asked for a <b>probe depth</b>. This is how far the probe will move downwards before probing back towards the centerpoint." R"MillenniumOS: Probe Boss" T0 S4 K{"Continue", "Cancel"} F0
+    if { input != 0 }
         abort { "Boss probe aborted!" }
     set global.mosDD3 = true
 
@@ -72,8 +72,8 @@ if { var.probingDepth <= 0}
 
 ; Run the boss probe cycle
 if { global.mosTM }
-    M291 P{"Probe will now move outwards by " ^ {(var.bossDiameter/2) + var.clearance} ^ "mm and then downwards " ^ var.probingDepth ^ "mm, before probing towards the edge in 3 directions."} R"MillenniumOS: Probe Boss" T0 S3
-    if { result != 0 }
+    M291 P{"Probe will now move outwards by " ^ {(var.bossDiameter/2) + var.clearance} ^ "mm, then downwards " ^ var.probingDepth ^ "mm, before probing back towards the center at 3 points."} R"MillenniumOS: Probe Boss" T0 S4 K{"Continue", "Cancel"} F0
+    if { input != 0 }
         abort { "Boss probe aborted!" }
 
 G6501.1 W{exists(param.W)? param.W : null} H{var.bossDiameter} T{var.clearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}

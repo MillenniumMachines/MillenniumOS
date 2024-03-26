@@ -22,9 +22,9 @@ G27 Z1
 ; If probe tool is selected
 if { state.currentTool == global.mosPTID }
     if { global.mosFeatTouchProbe }
-        M291 P{"Please remove the touch probe now and stow it safely away from the machine. Click <b>OK</b> when stowed safely."} R{"MillenniumOS: Touch Probe"} S2
+        M291 P{"Please remove the <b>Touch Probe</b> now and stow it safely away from the machine. Click <b>OK</b> when stowed safely."} R{"MillenniumOS: Touch Probe"} S2
     else
-        M291 P{"Please remove the datum tool now and stow it safely away from the machine. Click <b>OK</b> when stowed safely."} R{"MillenniumOS: Datum Tool"} S2
+        M291 P{"Please remove the <b>Datum Tool</b> now and stow it safely away from the machine. Click <b>OK</b> when stowed safely."} R{"MillenniumOS: Datum Tool"} S2
 
 ; Set tool change state to tfree complete
 set global.mosTCS = 1

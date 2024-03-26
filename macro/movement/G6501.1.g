@@ -166,5 +166,5 @@ if { !exists(param.R) || param.R != 0 }
 
 ; Set WCS origin to the probed boss center, if requested
 if { exists(param.W) && param.W != null }
-    echo { "MillenniumOS: Setting WCS " ^ param.W ^ " X,Y origin to center of boss" }
+    echo { "MillenniumOS: Setting WCS " ^ param.W ^ " X,Y origin to center of boss." }
     G10 L2 P{param.W} X{var.cX} Y{var.cY}

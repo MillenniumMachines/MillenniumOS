@@ -34,8 +34,8 @@ if { global.mosTM && !global.mosDD4 }
     M291 P"<b>CAUTION</b>: Jogging in RRF does <b>NOT</b> watch the probe status. Be careful!" R"MillenniumOS: Probe Surface" T0 S2
     M291 P"<b>CAUTION</b>: For X or Y surfaces, the probe will move down <b>BEFORE</b> moving horizontally to detect a surface. Bear this in mind when selecting a starting position." R"MillenniumOS: Probe Surface" T0 S2
     M291 P"For X or Y surfaces, you will then be asked for a <b>probe depth</b>. This is how far your probe will move down from the starting position before moving in X or Y." R"MillenniumOS: Probe Surface" T0 S2
-    M291 P"Finally, you will be asked to set a <b>probe distance</b>. This is how far the probe will move towards a surface before returning an error if it did not trigger." R"MillenniumOS: Probe Surface" T0 S3
-    if { result != 0 }
+    M291 P"Finally, you will be asked to set a <b>probe distance</b>. This is how far the probe will move towards a surface before returning an error if it did not trigger." R"MillenniumOS: Probe Surface" T0 S4 K{"Continue", "Cancel"} F0
+    if { input != 0 }
         abort { "Surface probe aborted!" }
 
     set global.mosDD4 = true
@@ -45,7 +45,7 @@ if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
 
 ; Prompt for overtravel distance
-M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far far in we move from the expected surface to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{global.mosOT}
+M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far we move past the expected surface to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Surface" J1 T0 S6 F{global.mosOT}
 if { result != 0 }
     abort { "Single Surface probe aborted!" }
 
@@ -78,7 +78,7 @@ if { !var.isZProbe }
     if { var.probeDepth < 0 }
         abort { "Probing depth was negative!" }
 
-M291 P"Please enter the distance to probe towards the surface in mm." R"MillenniumOS: Probe Surface" J1 T0 S6 F{global.mosOT}
+M291 P"Please enter the distance to probe towards the surface in mm." R"MillenniumOS: Probe Surface" J1 T0 S6 F{global.mosCL}
 if { result != 0 }
     abort { "Surface probe aborted!" }
 
@@ -89,12 +89,12 @@ if { var.probeDist < 0 }
 
 if { global.mosTM }
     if { !var.isZProbe }
-        M291 P{"Probe will now move down <b>" ^ var.probeDepth ^ "</b> mm and probe towards the <b>" ^ var.surfaceLocationNames[var.probeAxis] ^ "</b> surface." } R"MillenniumOS: Probe Surface" T0 S3
-        if { result != 0 }
+        M291 P{"Probe will now move down <b>" ^ var.probeDepth ^ "</b> mm and probe towards the <b>" ^ var.surfaceLocationNames[var.probeAxis] ^ "</b> surface." } R"MillenniumOS: Probe Surface" T0 S4 K{"Continue", "Cancel"} F0
+        if { input != 0 }
             abort { "Single Surface probe aborted!" }
     else
-        M291 P{"Probe will now move towards the <b>" ^ var.surfaceLocationNames[var.probeAxis] ^ "</b> surface." } R"MillenniumOS: Probe Surface" T0 S3
-        if { result != 0 }
+        M291 P{"Probe will now move towards the <b>" ^ var.surfaceLocationNames[var.probeAxis] ^ "</b> surface." } R"MillenniumOS: Probe Surface" T0 S4 K{"Continue", "Cancel"} F0
+        if { input != 0 }
             abort { "Single Surface probe aborted!" }
 
 

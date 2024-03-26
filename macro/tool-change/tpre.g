@@ -42,7 +42,7 @@ if { state.nextTool == global.mosPTID }
     ; If touch probe is enabled, prompt the operator to install
     ; it and check for activation.
     if { global.mosFeatTouchProbe }
-        M291 P{"Please install your touch probe into the spindle and make sure it is connected.<br/>When ready, press <b>Continue</b>, and then manually activate it until it is detected."} R"MillenniumOS: Probe Tool" S4 K{"Continue", "Cancel"}
+        M291 P{"Please install your <b>Touch Probe</b> into the spindle and make sure it is connected.<br/>When ready, press <b>Continue</b>, and then manually activate it until it is detected."} R"MillenniumOS: Probe Tool" S4 K{"Continue", "Cancel"}
         if { input != 0 }
             abort { "Tool change aborted by operator!" }
 
@@ -53,17 +53,17 @@ if { state.nextTool == global.mosPTID }
 
         ; Check if requested probe ID was detected.
         if { global.mosPD != global.mosTPID }
-            abort {"Did not detect a touch probe with ID " ^ global.mosTPID ^ "! Please check your probe connection and run T" ^ global.mosPTID ^ " again to verify it is connected."}
+            abort {"Did not detect a <b>Touch Probe</b> with ID " ^ global.mosTPID ^ "! Please check your Probe connection and run T" ^ global.mosPTID ^ " again to verify it is connected."}
     else
         ; If no touch probe enabled, ask user to install datum tool.
-        M291 P{"Please install your datum tool into the spindle. When ready, press <b>Continue</b>."} R"MillenniumOS: Probe Tool" S4 K{"Continue", "Cancel"}
+        M291 P{"Please install your <b>Datum Tool</b> into the spindle. When ready, press <b>Continue</b>."} R"MillenniumOS: Probe Tool" S4 K{"Continue", "Cancel"}
         if { input != 0 }
             abort { "Tool change aborted by operator, aborting job!" }
-        echo { "Touch probe feature disabled, manual probing will use an installed datum tool." }
+        echo { "Touch Probe feature disabled, manual probing will use an installed datum tool." }
 else
 
-    if { global.mosFeatTouchProbe && global.mosTSAP == null }
-        abort { "Touch probe feature is enabled but reference surface has not been probed. Please run G6511 first, then back to this tool using T" ^ state.nextTool ^ "."}
+    if { global.mosFeatTouchProbe && global.mosFeatToolSetter && global.mosTSAP == null }
+        abort { "Touch Probe and Toolsetter are enabled but reference surface has not been probed. Please run G6511 first, then switch back to this tool using T" ^ state.nextTool ^ "."}
 
     ; All other tools cannot be detected so we just have to
     ; trust the operator did the right thing given the

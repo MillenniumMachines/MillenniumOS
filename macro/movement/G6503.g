@@ -22,8 +22,8 @@ if { global.mosTM && !global.mosDD5 }
     M291 P"You will be asked to enter an approximate <b>width</b> and <b>height</b> of the block, and a <b>clearance distance</b>." R"MillenniumOS: Probe Rect. Block" T0 S2
     M291 P"These define how far the probe will move away from the center point before moving downwards and probing back towards the relevant surfaces." R"MillenniumOS: Probe Rect. Block" T0 S2
     M291 P"You will then jog the tool over the approximate center of the block.<br/><b>CAUTION</b>: Jogging in RRF does not watch the probe status, so you could cause damage if moving in the wrong direction!" R"MillenniumOS: Probe Rect. Block" T0 S2
-    M291 P"You will then be asked for a <b>probe depth</b>. This is how far the probe will move downwards before probing towards the centerpoint. Press ""OK"" to continue." R"MillenniumOS: Probe Rect. Block" T0 S3
-    if { result != 0 }
+    M291 P"Finally, you will be asked for a <b>probe depth</b>. This is how far the probe will move downwards before probing towards the centerpoint." R"MillenniumOS: Probe Rect. Block" T0 S4 K{"Continue", "Cancel"} F0
+    if { input != 0 }
         abort { "Rectangle block probe aborted!" }
     set global.mosDD5 = true
 
@@ -54,7 +54,7 @@ if { var.blockLength < 1 }
     abort { "Block length too low!" }
 
 ; Prompt for clearance distance
-M291 P"Please enter <b>clearance</b> distance in mm.<br/>This is how far out we move from the expected surfaces to account for any innaccuracy in the center location." R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{global.mosCL}
+M291 P"Please enter <b>clearance</b> distance in mm.<br/>This is how far away from the expected surfaces we start probing from, to account for any innaccuracy in the center location." R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{global.mosCL}
 if { result != 0 }
     abort { "Rectangle block probe aborted!" }
 
@@ -64,7 +64,7 @@ if { var.clearance < 1 }
     abort { "Clearance distance too low!" }
 
 ; Prompt for overtravel distance
-M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far in we move from the expected surfaces to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{global.mosOT}
+M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far we move past the expected surfaces to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{global.mosOT}
 if { result != 0 }
     abort { "Rectangle block probe aborted!" }
 
@@ -87,8 +87,8 @@ if { var.probingDepth < 0 }
 
 ; Run the block probe cycle
 if { global.mosTM }
-    M291 P{"Probe will now move outside each surface and down by " ^ var.probingDepth ^ "mm, before probing towards the center."} R"MillenniumOS: Probe Rect. Block" T0 S3
-    if { result != 0 }
+    M291 P{"Probe will now move outside each surface and down by " ^ var.probingDepth ^ "mm, before probing towards the center."} R"MillenniumOS: Probe Rect. Block" T0 S4 K{"Continue", "Cancel"} F0
+    if { input != 0 }
         abort { "Rectangle block probe aborted!" }
 
 G6503.1 W{exists(param.W)? param.W : null} H{var.blockWidth} I{var.blockLength} T{var.clearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
