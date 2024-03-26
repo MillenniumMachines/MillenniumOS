@@ -50,6 +50,17 @@ jobs:
           asset_name: millennium-os-${{ github.ref_name }}-post-f360.cps
           asset_content_type: application/octet-stream
 
+      - name: Upload FreeCAD Post-processor
+        id: upload-freecad-post
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/millennium_os_post.py
+          asset_name: millennium_os_${{ github.ref_name }}_post.py
+          asset_content_type: application/octet-stream
+
       - name: Upload F360 Machine Definition
         id: upload-f360-mch-std
         uses: actions/upload-release-asset@v1
