@@ -16,7 +16,11 @@ We build _on top of_ RepRapFirmware, providing operators of the Millennium Machi
 
 ## Usage
 
-Please follow the installation instructions on our [documentation](https://millenniummachines.github.io/docs/millennium-os/manual/installation/) site. If you have not already installed a supported RRF configuration, then you should follow the instructions for the Milo [here](https://millenniummachines.github.io/docs/milo/manual/chapters/90_install_rrf/).
+Please follow the installation instructions on our [documentation](https://millenniummachines.github.io/docs/millennium-os/) site.
+
+If you have not already installed a supported RRF configuration, then you should follow the instructions for the [Milo](https://millenniummachines.github.io/docs/milo/).
+
+If you are not using a Millennium Machine, you will need to create a compatible configuration yourself.
 
 ## Liability
 
