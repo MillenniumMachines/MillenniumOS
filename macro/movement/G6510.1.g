@@ -85,7 +85,7 @@ if { !exists(param.R) || param.R != 0 }
 
 ; Set WCS if required
 if { exists(param.W) && param.W != null }
-    echo { "MillenniumOS: Setting WCS " ^ param.W ^ " " ^ var.sAxis ^ " origin to probed co-ordinate" }
+    echo { "MillenniumOS: Setting WCS " ^ param.W ^ " " ^ var.sAxis ^ " origin to probed co-ordinate." }
     if { var.probeAxis <= 1 }
         G10 L2 P{param.W} X{global.mosWPSfcPos}
     elif { var.probeAxis <= 3 }
