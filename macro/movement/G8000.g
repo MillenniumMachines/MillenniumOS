@@ -101,20 +101,20 @@ echo >>{var.wizTVF} {"set global.mosTM = " ^ var.wizTutorialMode}
 ; If MOS already loaded and not resetting the whole configuration,
 ; ask if user wants to reconfigure each of the feature sets.
 if { !var.wizReset && global.mosLdd && !var.wizResumed }
-    M291 P{"Would you like to change the <b>Spindle</b> configuration?"} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"}
+    M291 P{"Would you like to change the <b>Spindle</b> configuration?"} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F1
     set var.wizSpindleReset = { (input == 0) }
 
 ; If MOS already loaded, ask if user wants to reconfigure datum tool
 if { !var.wizReset && global.mosLdd && !var.wizResumed }
-    M291 P{"Would you like to change the <b>Datum Tool</b> configuration?"} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"}
+    M291 P{"Would you like to change the <b>Datum Tool</b> configuration?"} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F1
     set var.wizDatumToolReset = { (input == 0) }
 
 if { !var.wizReset && global.mosLdd && !var.wizResumed }
-    M291 P{"Would you like to change the <b>Toolsetter</b> configuration?"} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"}
+    M291 P{"Would you like to change the <b>Toolsetter</b> configuration?"} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F1
     set var.wizToolSetterReset = { (input == 0) }
 
 if { !var.wizReset && global.mosLdd && !var.wizResumed }
-    M291 P{"Would you like to change the <b>Touch Probe</b> configuration?"} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"}
+    M291 P{"Would you like to change the <b>Touch Probe</b> configuration?"} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F1
     set var.wizTouchProbeReset = { (input == 0) }
 
 ; Nullify settings if reset
@@ -129,11 +129,17 @@ var wizTouchProbeRadius = { (exists(global.mosTPR) && global.mosTPR != null && !
 var wizTouchProbeDeflection = { (exists(global.mosTPD) && global.mosTPD != null && !var.wizReset && !var.wizTouchProbeReset) ? global.mosTPD : null }
 var wizProtectedMoveBackOff = { (exists(global.mosPMBO) && global.mosPMBO != null && !var.wizReset && !var.wizTouchProbeReset && !var.wizToolSetterReset) ? global.mosPMBO : null }
 
-; Touch Probe Ref Surface is reconfigured if toolsetter _or_
-; touch probe are reconfigured.
+; Touch Probe Ref Surface is reconfigured only if the toolsetter
+; is reconfigured. This means you can reconfigure just the touch
+; probe, and there is no need to use the datum tool or do manual
+; probes if you just want to change the touch probe settings (like
+; deflection).
+; This is OK, because the reference surface is only used if both
+; touch probe _and_ toolsetter are enabled, so we can treat it as
+; a toolsetter setting rather than a touch probe one.
 ; No need to update this if the datum tool changes since it is
 ; a Z calculation, and radius does not apply.
-var wizTouchProbeReferencePos = { (exists(global.mosTPRP) && global.mosTPRP != null && !var.wizReset && !var.wizToolSetterReset && !var.wizTouchProbeReset) ? global.mosTPRP : null }
+var wizTouchProbeReferencePos = { (exists(global.mosTPRP) && global.mosTPRP != null && !var.wizReset && !var.wizToolSetterReset) ? global.mosTPRP : null }
 
 ; Spindle ID Detection
 if { var.wizSpindleID == null }
@@ -326,8 +332,8 @@ if { var.wizFeatureToolSetter }
         set var.wizToolSetterPos[0] = { move.axes[0].machinePosition }
         set var.wizToolSetterPos[1] = { move.axes[1].machinePosition }
 
-        ; Write toolsetter X and Y position to the resume file
-        echo >>{var.wizTVF} {"set global.mosTSP = " ^ var.wizToolSetterPos }
+    ; Write toolsetter X and Y position to the resume file
+    echo >>{var.wizTVF} {"set global.mosTSP = " ^ var.wizToolSetterPos }
 
 
     if { var.needsToolSetterZPos }
