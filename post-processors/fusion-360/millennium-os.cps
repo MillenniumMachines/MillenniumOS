@@ -25,7 +25,18 @@ String.prototype.supplant = function (o) {
     return this.replace(/{([^{}]*)}/g,
         function (a, b) {
             var r = o[b];
-            return typeof r === 'string' || typeof r === 'number' ? r : a;
+            switch(typeof r) {
+              case 'string':
+                // Allow only alphanumeric characters, colons, periods,
+                // commas, underscores, hyphens and spaces. Replace all
+                // double quotes with two double quotes so these are escaped
+                // by RRF when outputted.
+                return r.replace(/([^"0-9a-z\.:,=_\-\s])/gi, "").replace(/"/g, '""')
+              case 'number':
+                return r;
+              default:
+                return a;
+            }
         }
     );
 };
