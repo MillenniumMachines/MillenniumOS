@@ -23,6 +23,7 @@ import sys
 import pprint
 import argparse
 import shlex
+import re
 from enum import StrEnum, Flag, auto
 from contextlib import contextmanager
 import FreeCAD
@@ -142,6 +143,11 @@ parser.add_argument('--vssc', action=argparse.BooleanOptionalAction, default=Tru
     which helps to avoid harmonic resonance between tool and work piece.
     """)
 
+
+# RRF Strings are not allowed to contain certain characters and
+# quotes must be doubled up.
+def rrf_safe_string(s):
+    return re.sub(r'([^"0-9a-z\.:,=_\-\s])', "", s, flags=re.IGNORECASE).replace('"', '""')
 
 # Define output class. This is used to output both
 # commands and their nested variables. Output() instances
@@ -672,7 +678,7 @@ class MillenniumOSPostProcessor(PostProcessor):
                 # Output tool info
                 for index, tool in tools.items():
                     tool_desc = ' '.join([tool['name'], "F={flutes} L={flute_length} CR={corner_radius}".format(**tool['params'])])
-                    self.M(MCODES.ADD_TOOL, P=index, R=tool['params']['radius'], S=tool_desc, ctrl=Control.FORCE)
+                    self.M(MCODES.ADD_TOOL, P=index, R=tool['params']['radius'], S=rrf_safe_string(tool_desc), ctrl=Control.FORCE)
                 self.brk()
 
             if self.args.home_before_start:
