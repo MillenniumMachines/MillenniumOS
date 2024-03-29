@@ -286,7 +286,8 @@ var M = {
   VSSC_ENABLE: 7000,
   VSSC_DISABLE: 7001,
   SPINDLE_ON_CW: 3.9,
-  SPINDLE_OFF: 5.9
+  SPINDLE_OFF: 5.9,
+  CALL_MACRO: 98,
 };
 
 var CYCLE = {
@@ -667,7 +668,20 @@ function onSection() {
     // We must use mFmt directly rather than mCodes here
     // because modal groups do not correctly handle
     // decimals.
-    writeBlock(mFmt.format(M.SPINDLE_ON_CW), s);
+
+    // Use M98 to call the M3.9 macro, as there is currently an RRF bug that
+    // prevents delays from running in macros called directly.
+    // More info here: https://forum.duet3d.com/topic/35300/odd-g4-behaviour-from-macro-called-from-sd-file/13?_=1711622479937
+    // NOTE: The P parameter conflicts between M98 and M3, so
+    // using this approach we _cannot_ target a specific spindle.
+    // We don't do that anyway, because we select a tool before
+    // setting the spindle speed, but it's worth noting - if there
+    // is no tool selected, then this command will return an error.
+    writeBlock(mFmt.format(M.CALL_MACRO), 'P"M{code}.g"'.supplant({code: M.SPINDLE_ON_CW}), s);
+
+    // Uncomment this when RRF fixes delays not running in macros called
+    // directly.
+    //writeBlock(mFmt.format(M.SPINDLE_ON_CW), s);
     writeln("");
   }
 
@@ -1070,7 +1084,18 @@ function onClose() {
   writeln("");
 
   writeComment("Double-check spindle is stopped!");
-  writeBlock(mFmt.format(M.SPINDLE_OFF));
+  // Use M98 to call the M3.9 macro, as there is currently an RRF bug that
+  // prevents delays from running in macros called directly.
+  // More info here: https://forum.duet3d.com/topic/35300/odd-g4-behaviour-from-macro-called-from-sd-file/13?_=1711622479937
+  // NOTE: The P parameter conflicts between M98 and M3, so
+  // using this approach we _cannot_ target a specific spindle.
+  // We don't do that anyway, because we select a tool before
+  // setting the spindle speed, but it's worth noting - if there
+  // is no tool selected, then this command will return an error.
+writeBlock(mFmt.format(M.CALL_MACRO), 'P"M{code}.g"'.supplant({code: M.SPINDLE_OFF}));
+  // Uncomment this when RRF fixes delays not running in macros called
+  // directly.
+  // writeBlock(mFmt.format(M.SPINDLE_OFF));
   writeln("");
 }
 
