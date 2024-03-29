@@ -59,6 +59,7 @@ class GCODES:
 
 class MCODES:
     # Define M code constants for non-standard or regularly used mcodes.
+    CALL_MACRO   = 98
     ADD_TOOL     = 4000
     VSSC_ENABLE  = 7000
     VSSC_DISABLE = 7001
@@ -469,6 +470,7 @@ class MillenniumOSPostProcessor(PostProcessor):
 
     _M   = Output(fmt=FORMATS.CMD, prefix='M', vars = [
             Output(prefix='I', ctrl=Control.FORCE),
+            Output(prefix='P', typ=str, fmt=FORMATS.STR, ctrl=Control.FORCE),
             Output(prefix='P', fmt=FORMATS.TOOLS, ctrl=Control.FORCE),
             Output(prefix='R', typ=str, fmt=FORMATS.STR, ctrl=Control.FORCE),
             Output(prefix='R', fmt=FORMATS.AXES, ctrl=Control.FORCE),
@@ -575,6 +577,19 @@ class MillenniumOSPostProcessor(PostProcessor):
 
         if ARGS.RPM in params and code in self._SPINDLE_ACTIONS_START:
             self.comment("Start spindle at requested RPM and wait for it to accelerate")
+
+        # Use M98 to call the M3.9 macro, as there is currently an RRF bug that
+        # prevents delays from running in macros called directly.
+        # More info here: https://forum.duet3d.com/topic/35300/odd-g4-behaviour-from-macro-called-from-sd-file/13?_=1711622479937
+        # NOTE: The P parameter conflicts between M98 and M3, so
+        # using this approach we _cannot_ target a specific spindle.
+        # We don't do that anyway, because we select a tool before
+        # setting the spindle speed, but it's worth noting - if there
+        # is no tool selected, then this command will return an error.
+        if code in self._SPINDLE_ACTIONS:
+            macro = "M{}.g".format(code + self._SPINDLE_WAIT_SUFFIX)
+            code = MCODES.CALL_MACRO
+            params['P'] = macro
 
         # Call our suffixed spindle control codes
         if code in self._SPINDLE_ACTIONS:
