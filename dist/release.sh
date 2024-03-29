@@ -22,7 +22,7 @@ ${SYNC_CMD} post-processors/**/* ${TMP_DIR}/posts/
 
 find ${TMP_DIR}
 
-[[ -f ${ZIP_PATH} ]] && rm ${ZIP_PATH}
+[[ -f "${ZIP_PATH}" ]] && rm "${ZIP_PATH}"
 
 cd "${TMP_DIR}"
 mv sys/daemon.g sys/daemon.install
