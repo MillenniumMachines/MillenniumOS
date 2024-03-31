@@ -227,12 +227,12 @@ echo >>{var.wizTVF} {"set global.mosSDS = " ^ var.wizSpindleDecelSec}
 
 if { var.wizDatumToolRadius == null }
     if { var.wizTutorialMode }
-        M291 P{"We now need to choose a <b>datum tool</b>, which can be a metal dowel, a gauge pin or flat tipped endmill."} R"MillenniumOS: Configuration Wizard" S2 T0
+        M291 P{"We now need to choose a <b>Datum Tool</b>, which can be a metal dowel, a gauge pin or flat tipped endmill."} R"MillenniumOS: Configuration Wizard" S2 T0
         M291 P{"You will be asked to install this tool in the spindle when necessary for manual probes."} R"MillenniumOS: Configuration Wizard" S2 T0:W
-        M291 P{"With the Touch Probe feature <b>disabled</b>, the <b>datum tool</b> can be used to probe workpieces and calculate tool offsets."} R"MillenniumOS: Configuration Wizard" S2 T0
-        M291 P{"With the Touch Probe feature <b>enabled</b>, the <b>datum tool</b> will be used to take initial measurements that the touch probe requires to calculate offsets correctly."} R"MillenniumOS: Configuration Wizard" S2 T0
-        M291 P{"<b>CAUTION</b>: Once the <b>datum tool</b> has been configured, you <b>MUST</b> use the same tool when probing workpieces manually or the results will not be accurate!"} R"MillenniumOS: Configuration Wizard" S2 T0
-    M291 P{"Please enter the <b>radius</b> of your chosen <b>datum tool</b>, in mm. You should measure the diameter with calipers or a micrometer and divide by 2."} R"MillenniumOS: Configuration Wizard" S6 L0.5 H5 F3.0
+        M291 P{"With the Touch Probe feature <b>disabled</b>, the <b>Datum Tool</b> can be used to probe workpieces and calculate tool offsets."} R"MillenniumOS: Configuration Wizard" S2 T0
+        M291 P{"With the Touch Probe feature <b>enabled</b>, the <b>Datum Tool</b> will be used to take initial measurements that the touch probe requires to calculate offsets correctly."} R"MillenniumOS: Configuration Wizard" S2 T0
+        M291 P{"<b>CAUTION</b>: Once the <b>Datum Tool</b> has been configured, you <b>MUST</b> use the same tool when probing workpieces manually or the results will not be accurate!"} R"MillenniumOS: Configuration Wizard" S2 T0
+    M291 P{"Please enter the <b>radius</b> of your chosen <b>Datum Tool</b>, in mm. You should measure the diameter with calipers or a micrometer and divide by 2."} R"MillenniumOS: Configuration Wizard" S6 L0.5 H5 F3.0
     set var.wizDatumToolRadius = { input }
 
 ; Write datum tool radius to the resume file
@@ -308,7 +308,7 @@ if { var.wizFeatureToolSetter }
             G28
 
         ; Prompt the user to install a datum tool for the initial probe.
-        M291 P{"Please install your <b>datum tool</b> into the spindle with 15-20mm of stickout.<br/><b>CAUTION</b>: Do not remove or adjust it until prompted!"} R"MillenniumOS: Configuration Wizard" S2 T0
+        M291 P{"Please install your <b>Datum Tool</b> into the spindle so it is able to reach your toolsetter and reference surface.<br/><b>CAUTION</b>: Do not remove or adjust it until prompted!"} R"MillenniumOS: Configuration Wizard" S2 T0
 
         ; Remove any existing probe tool so
         ; it can be redefined.
@@ -324,7 +324,7 @@ if { var.wizFeatureToolSetter }
 
 
     if { var.needsToolSetterXYPos }
-        M291 P{"Now we need to calibrate the toolsetter position in X and Y.<br/>Please jog the <b>datum tool</b> over the center of the toolsetter and press <b>OK</b>."} R"MillenniumOS: Configuration Wizard" X1 Y1 Z1 S3
+        M291 P{"Now we need to calibrate the toolsetter position in X and Y.<br/>Please jog the <b>Datum Tool</b> over the center of the toolsetter and press <b>OK</b>."} R"MillenniumOS: Configuration Wizard" X1 Y1 Z1 S3
         if { result != 0 }
             abort { "MillenniumOS: Operator aborted toolsetter calibration!" }
 
@@ -351,7 +351,7 @@ if { var.wizFeatureToolSetter }
             ; Move to the toolsetter position
             G53 G0 X{var.wizToolSetterPos[0]} Y{var.wizToolSetterPos[1]}
 
-        M291 P{"Please jog the <b>datum tool</b> less than 10mm above the activation point of the toolsetter, then press <b>OK</b> to probe the activation height."} R"MillenniumOS: Configuration Wizard" Z1 S3
+        M291 P{"Please jog the <b>Datum Tool</b> less than 10mm above the activation point of the toolsetter, then press <b>OK</b> to probe the activation height."} R"MillenniumOS: Configuration Wizard" Z1 S3
         if { result != 0 }
             abort { "MillenniumOS: Operator aborted toolsetter calibration!" }
 
@@ -371,7 +371,7 @@ if { var.wizFeatureToolSetter }
             M291 P"When using both a toolsetter and touch probe, we need to probe a flat reference surface with the touch probe at the start of each job to enable accurate Z positioning and tool offsets." R"MillenniumOS: Configuration Wizard" S2 T0
             M291 P"You can use the machine table itself or your fixture plate as the reference surface, but the height between the reference surface and the toolsetter activation point <b>MUST NOT</b> change." R"MillenniumOS: Configuration Wizard" S2 T0
 
-            M291 P"We now need to measure the distance between the toolsetter activation point and your reference surface using the <b>datum tool</b> to touch the reference surface and record a position." R"MillenniumOS: Configuration Wizard" S3 T0
+            M291 P"We now need to measure the distance between the toolsetter activation point and your reference surface using the <b>Datum Tool</b> to touch the reference surface and record a position." R"MillenniumOS: Configuration Wizard" S3 T0
             if { result != 0 }
                 abort { "MillenniumOS: Operator aborted touch probe calibration!" }
 
@@ -380,7 +380,7 @@ if { var.wizFeatureToolSetter }
         ; Disable the touch probe feature temporarily so we force a manual probe.
         set global.mosFeatTouchProbe = false
 
-        M291 P{"Please jog the <b>datum tool</b> just less than 20mm over the reference surface, but not touching, then press <b>OK</b>."} R"MillenniumOS: Configuration Wizard" X1 Y1 Z1 S3
+        M291 P{"Please jog the <b>Datum Tool</b> just less than 20mm over the reference surface, but not touching, then press <b>OK</b>."} R"MillenniumOS: Configuration Wizard" X1 Y1 Z1 S3
         if { result != 0 }
             abort { "MillenniumOS: Operator aborted touch probe calibration!" }
 
@@ -388,7 +388,7 @@ if { var.wizFeatureToolSetter }
         set var.wizTouchProbeReferencePos = { move.axes[0].machinePosition, move.axes[1].machinePosition, null }
 
         if { var.wizTutorialMode }
-            M291 P{"Using the following probing interface, please move the <b>datum tool</b> until it is just touching the reference surface, then press <b>Finish</b>."} R"MillenniumOS: Configuration Wizard" S2 T0
+            M291 P{"Using the following probing interface, please move the <b>Datum Tool</b> until it is just touching the reference surface, then press <b>Finish</b>."} R"MillenniumOS: Configuration Wizard" S2 T0
 
         ; Distance to move towards target is the lower of (min Z - current Z) or 20mm.
         G6510.1 R0 W{null} H4 I{min(abs(move.axes[2].min - move.axes[2].machinePosition), 20)} O0 J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition}
@@ -412,7 +412,7 @@ if { var.wizFeatureToolSetter }
         ; Remove the temporary datum tool.
         M4001 P{global.mosPTID}
 
-        M291 P{"You may now remove the <b>datum tool</b> from the spindle."} R"MillenniumOS: Configuration Wizard" S2 T0
+        M291 P{"You may now remove the <b>Datum Tool</b> from the spindle."} R"MillenniumOS: Configuration Wizard" S2 T0
 
 
 ; Touch Probe ID Detection and deflection calibration.
