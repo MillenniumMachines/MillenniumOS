@@ -117,6 +117,8 @@ while { true }
 
     ; Generate the new position based on the increment chosen
     ; and move to the new position.
+    ; TODO: Check this move is within machine bounds
+    ; Can this be done using G6550?
     G53 G1 X{ var.cP[0] - ((var.dC[0] / var.mag) * var.dI) } Y{ var.cP[1] - ((var.dC[1] / var.mag) * var.dI) } Z{ var.cP[2] - ((var.dC[2] / var.mag) * var.dI) } F{ var.moveSpeed }
 
     ; Wait for all moves in the queue to finish
