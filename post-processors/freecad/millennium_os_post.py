@@ -99,8 +99,8 @@ class Control(Flag):
     NONZERO = auto()
 
 # User-configurable arguments.
-parser = argparse.ArgumentParser(prog="millennium_milo_v1.5",
-    description="Millennium Machines Milo v1.5 Post Processor for FreeCAD")
+parser = argparse.ArgumentParser(prog="MillenniumOS {}".format(RELEASE.VERSION),
+    description="MillenniumOS {} Post Processor for FreeCAD".format(RELEASE.VERSION))
 
 parser.add_argument('--show-editor', action=argparse.BooleanOptionalAction, default=True,
     help="Show Gcode in FreeCAD Editor before saving to file.")
@@ -337,7 +337,7 @@ class PostProcessor:
         # Switch to PRE section
         with self.Section(Section.PRE):
             self.comment('Exported by FreeCAD')
-            self.comment('Post Processor: {}'.format(self.name, self.vendor))
+            self.comment('Post Processor: {} by {}'.format(self.name, self.vendor))
             self.comment('Output Time: {}'.format(datetime.now(timezone.utc)))
             self.brk()
 
@@ -494,7 +494,7 @@ class MillenniumOSPostProcessor(PostProcessor):
     _T   = Output(fmt=FORMATS.CMD, prefix='T', ctrl=Control.FORCE)
 
     def __init__(self, args={}):
-        post_name = "MillenniumOS {} for Milo v1.5".format(RELEASE.VERSION)
+        post_name = "MillenniumOS {}".format(RELEASE.VERSION)
 
         super().__init__(post_name, vendor=RELEASE.VENDOR, args=args)
         self._MOVES           = self._LINEAR_MOVES + self._ARC_MOVES
