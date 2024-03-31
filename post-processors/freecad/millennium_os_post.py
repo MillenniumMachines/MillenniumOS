@@ -99,20 +99,30 @@ class Control(Flag):
     NONZERO = auto()
 
 # User-configurable arguments.
-parser = argparse.ArgumentParser(prog="millennium_milo_v1.5",
-    description="Millennium Machines Milo v1.5 Post Processor for FreeCAD")
+parser = argparse.ArgumentParser(prog="MillenniumOS {}".format(RELEASE.VERSION),
+    description="MillenniumOS {} Post Processor for FreeCAD".format(RELEASE.VERSION))
 
 parser.add_argument('--show-editor', action=argparse.BooleanOptionalAction, default=True,
     help="Show Gcode in FreeCAD Editor before saving to file.")
 
+parser.add_argument("--output-job-setup", action=argparse.BooleanOptionalAction, default=True,
+    help="""
+    When enabled, the post-processor will output supplemental commands to make sure the machine
+    is properly configured before starting a job. These commands include homing the machine,
+    probing and zeroing any used WCSs. Individual supplemental commands can be enabled,
+    disabled and configured separately but disabling this allows advanced operators to
+    setup the machine for the job using their own workflow, while still outputting
+    known-good operation gcode from this post.
+    """)
+
 parser.add_argument('--output-machine', action=argparse.BooleanOptionalAction, default=True,
     help="Output machine settings header.")
 
-parser.add_argument('--output-tools', action=argparse.BooleanOptionalAction, default=True,
-    help="Output tool details. Disabling this will make tool changes much harder!")
-
 parser.add_argument('--output-version', action=argparse.BooleanOptionalAction, default=True,
     help="Output version details header.")
+
+parser.add_argument('--output-tools', action=argparse.BooleanOptionalAction, default=True,
+    help="Output tool details. Disabling this will make tool changes much harder!")
 
 parser.add_argument('--home-before-start', action=argparse.BooleanOptionalAction, default=True,
     help="When enabled, machine will home in X, Y and Z directions prior to executing any operations.")
@@ -327,7 +337,7 @@ class PostProcessor:
         # Switch to PRE section
         with self.Section(Section.PRE):
             self.comment('Exported by FreeCAD')
-            self.comment('Post Processor: {}'.format(self.name, self.vendor))
+            self.comment('Post Processor: {} by {}'.format(self.name, self.vendor))
             self.comment('Output Time: {}'.format(datetime.now(timezone.utc)))
             self.brk()
 
@@ -484,7 +494,7 @@ class MillenniumOSPostProcessor(PostProcessor):
     _T   = Output(fmt=FORMATS.CMD, prefix='T', ctrl=Control.FORCE)
 
     def __init__(self, args={}):
-        post_name = "MillenniumOS {} for Milo v1.5".format(RELEASE.VERSION)
+        post_name = "MillenniumOS {}".format(RELEASE.VERSION)
 
         super().__init__(post_name, vendor=RELEASE.VENDOR, args=args)
         self._MOVES           = self._LINEAR_MOVES + self._ARC_MOVES
@@ -687,6 +697,7 @@ class MillenniumOSPostProcessor(PostProcessor):
             # Parsing must be completed to enumerate all tools.
             tools = self.toolinfo()
 
+            # Output tool details if enabled and tools are configured
             if self.args.output_tools and tools:
                 self.brk()
                 self.comment("Pass tool details to firmware")
@@ -696,22 +707,23 @@ class MillenniumOSPostProcessor(PostProcessor):
                     self.M(MCODES.ADD_TOOL, P=index, R=tool['params']['radius'], S=rrf_safe_string(tool_desc), ctrl=Control.FORCE)
                 self.brk()
 
-            if self.args.home_before_start:
-                self.comment("Home before start")
-                self.G(GCODES.HOME)
-                self.brk()
+            # Output job setup commands if necessary
+            if self.args.output_job_setup:
+                if self.args.home_before_start:
+                    self.comment("Home before start")
+                    self.G(GCODES.HOME)
+                    self.brk()
 
-            if tools:
                 self.comment("Probe reference surface if necessary")
                 self.G(GCODES.PROBE_REFERENCE_SURFACE)
                 self.brk()
 
-            # Output probe commands if probe method is AT_START
-            self.comment("WCS Probing Mode: {}".format(self.args.probe_mode));
-            self.brk()
-            if self.args.probe_mode == PROBE.AT_START:
-                for wcs in self.used_wcs:
-                    self.probe(wcs)
+                # Output probe commands if probe method is AT_START
+                self.comment("WCS Probing Mode: {}".format(self.args.probe_mode));
+                self.brk()
+                if self.args.probe_mode == PROBE.AT_START:
+                    for wcs in self.used_wcs:
+                        self.probe(wcs)
 
             self.comment("Movement configuration")
             self.G(90) # Absolute moves
