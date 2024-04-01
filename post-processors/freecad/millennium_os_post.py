@@ -103,7 +103,7 @@ parser = argparse.ArgumentParser(prog="MillenniumOS {}".format(RELEASE.VERSION),
     description="MillenniumOS {} Post Processor for FreeCAD".format(RELEASE.VERSION))
 
 parser.add_argument('--show-editor', action=argparse.BooleanOptionalAction, default=True,
-    help="Show Gcode in FreeCAD Editor before saving to file.")
+    help="Show gcode in FreeCAD Editor before saving to file.")
 
 parser.add_argument("--output-job-setup", action=argparse.BooleanOptionalAction, default=True,
     help="""

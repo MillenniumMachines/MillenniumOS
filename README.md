@@ -1,10 +1,10 @@
 # MillenniumOS (MOS) - An "Operations System" for RepRapFirmware
 
-Cheap and easy manual and automatic work-piece probing, toolchanges and toolsetting and more!
+Cheap and easy manual and automatic work-piece probing, toolchanges, toolsetting and more!
 
 This is an "operations system" rather than an "operating system" in the traditional sense.
 
-We build _on top of_ RepRapFirmware, providing operators of the Millennium Machines Milo V1.5 with a new-machinist-friendly workflow for work piece and tool probing, and safe, effective tool changes.
+We build _on top of_ RepRapFirmware, providing operators of the Millennium Machines Milo V1.5 with a new-machinist-friendly workflow for work-piece and tool probing, and safe, effective tool changes.
 
 ## Features
 
