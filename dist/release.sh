@@ -29,6 +29,6 @@ mv sys/daemon.g sys/daemon.install
 echo "Replacing %%MOS_VERSION%% with ${COMMIT_ID}..."
 sed -si -e "s/%%MOS_VERSION%%/${COMMIT_ID}/g" {sys/mos.g,posts/*}
 cp -v posts/* "${WD}/dist"
-zip -x 'README.md' -x 'posts/' -x 'posts/**' -r "${WD}/dist/${ZIP_NAME}" *
+zip -x 'README.md' -x 'posts/' -x 'posts/**' -r "${ZIP_PATH}" *
 cd "${WD}"
 rm -rf "${TMP_DIR}"
