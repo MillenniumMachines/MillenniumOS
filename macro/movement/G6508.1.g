@@ -20,7 +20,7 @@ if { (!exists(param.Q) || param.Q == 0) && !exists(param.H) || !exists(param.I) 
     abort { "Must provide an approximate X length and Y length using H and I parameters when using full probe, Q0!" }
 
 ; Maximum of 4 corners (0..3)
-if { !exists(param.N) || param.N < 0 || param.N >= 3 }
+if { !exists(param.N) || param.N < 0 || param.N > 3 }
     abort { "Must provide a valid corner index (N..)!" }
 
 ; Probe ID
@@ -114,8 +114,8 @@ var startY = { var.sY + var.dirY * var.clearance }
 var targetY = { var.sY + var.dirY * var.overtravel }
 
 ; Set dirXY for X probes
-set var.dirXY[0][0] = { var.startX, var.sY + var.dirY * var.clearance }
-set var.dirXY[0][1] = { var.targetX, var.sY + var.dirY * var.clearance }
+set var.dirXY[0][0] = { var.startX, var.startY }
+set var.dirXY[0][1] = { var.targetX, var.startY }
 
 ; Only probe the second X point if we're in full mode
 if { var.pMO == 0 }
@@ -128,11 +128,12 @@ set var.dirY = { -var.dirY }
 
 set var.startX = { var.sX + var.dirX * var.clearance }
 set var.targetX = { var.sX + var.dirX * var.overtravel }
+
 set var.startY = { var.sY + var.dirY * var.clearance }
 set var.targetY = { var.sY + var.dirY * var.overtravel }
 
-set var.dirXY[1][0] = { var.sX + var.dirX * var.clearance, var.startY }
-set var.dirXY[1][1] = { var.sX + var.dirX * var.clearance, var.targetY }
+set var.dirXY[1][0] = { var.startX, var.startY }
+set var.dirXY[1][1] = { var.startX, var.targetY }
 
 ; Only probe the second Y point if we're in full mode
 if { var.pMO == 0 }
