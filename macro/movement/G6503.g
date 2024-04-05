@@ -19,7 +19,7 @@ M598
 ; Display description of rectangle block probe if not already displayed this session
 if { global.mosTM && !global.mosDD5 }
     M291 P"This probe cycle finds the X and Y co-ordinates of the center of a rectangular block (protruding feature) on a workpiece by probing towards the block surfaces from all 4 directions." R"MillenniumOS: Probe Rect. Block " T0 S2
-    M291 P"You will be asked to enter an approximate <b>width</b> and <b>height</b> of the block, and a <b>clearance distance</b>." R"MillenniumOS: Probe Rect. Block" T0 S2
+    M291 P"You will be asked to enter an approximate <b>width</b> and <b>length</b> of the block, and a <b>clearance distance</b>." R"MillenniumOS: Probe Rect. Block" T0 S2
     M291 P"These define how far the probe will move away from the center point before moving downwards and probing back towards the relevant surfaces." R"MillenniumOS: Probe Rect. Block" T0 S2
     M291 P"You will then jog the tool over the approximate center of the block.<br/><b>CAUTION</b>: Jogging in RRF does not watch the probe status, so you could cause damage if moving in the wrong direction!" R"MillenniumOS: Probe Rect. Block" T0 S2
     M291 P"Finally, you will be asked for a <b>probe depth</b>. This is how far the probe will move downwards before probing towards the centerpoint." R"MillenniumOS: Probe Rect. Block" T0 S4 K{"Continue", "Cancel"} F0

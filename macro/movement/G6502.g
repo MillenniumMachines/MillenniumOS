@@ -19,7 +19,7 @@ M598
 ; Display description of rectangle pocket probe if not already displayed this session
 if { global.mosTM && !global.mosDD6 }
     M291 P"This probe cycle finds the X and Y co-ordinates of the center of a rectangular pocket (recessed feature) on a workpiece by moving into the pocket and probing towards each surface." R"MillenniumOS: Probe Rect. Pocket " T0 S2
-    M291 P"You will be asked to enter an approximate <b>width</b> and <b>height</b> of the pocket, and a <b>clearance distance</b>." R"MillenniumOS: Probe Rect. Pocket" T0 S2
+    M291 P"You will be asked to enter an approximate <b>width</b> and <b>length</b> of the pocket, and a <b>clearance distance</b>." R"MillenniumOS: Probe Rect. Pocket" T0 S2
     M291 P"These define how far the probe will move away from the center point before starting to probe towards the relevant surfaces." R"MillenniumOS: Probe Rect. Pocket" T0 S2
     M291 P"You will then jog the tool over the approximate center of the pocket.<br/><b>CAUTION</b>: Jogging in RRF does not watch the probe status, so you could cause damage if moving in the wrong direction!" R"MillenniumOS: Probe Rect. Pocket" T0 S2
     M291 P"You will then be asked for a <b>probe depth</b>. This is how far the probe will move downwards into the pocket before probing towards the edges." R"MillenniumOS: Probe Rect. Pocket" T0 S4 K{"Continue", "Cancel"} F0
