@@ -33,7 +33,8 @@ if { global.mosTM && !global.mosDD11 }
     M291 P"For both modes, you will be asked to enter a <b>clearance distance</b> and an <b>overtravel distance</b>." R"MillenniumOS: Probe Vise Corner" T0 S2
     M291 P"These define how far the probe will move along the surfaces from the corner location before probing, and how far past the expected surface the probe can move before erroring if not triggered." R"MillenniumOS: Probe Vise Corner" T0 S2
     M291 P"You will then jog the tool over the corner to be probed.<br/><b>CAUTION</b>: Jogging in RRF does not watch the probe status - <b>Be Careful!</b>" R"MillenniumOS: Probe Vise Corner" T0 S2
-    M291 P"Finally, you will be asked to select the corner that is being probed, and the depth below the top surface to probe the corner surfaces at, in mm." R"MillenniumOS: Probe Vise Corner" S4 K{"Continue", "Cancel"} F0
+    M291 P"Finally, you will be asked to select the corner that is being probed, and the depth below the top surface to probe the corner surfaces at, in mm." R"MillenniumOS: Probe Vise Corner" S2
+    M291 P"If you are still unsure, you can <a target=""_blank"" href=""https://mos.diycnc.xyz/usage/vise-corner"">View the Vise Corner Documentation</a> for more details." R"MillenniumOS: Probe Vise Corner" T0 S4 K{"Continue", "Cancel"} F0
     if { input != 0 }
         abort { "Vise corner probe aborted!" }
     set global.mosDD11 = true

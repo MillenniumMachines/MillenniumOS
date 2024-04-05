@@ -198,7 +198,7 @@ global mosPD = null
 ; displayed during this session. The first 2 indexes
 ; are used by the G6600 macro, the others are used by
 ; G6500 to G6509, one each, in order. G6520 uses mosDD11,
-; and G37.1 uses the last index.
+; and G37.1 uses mosDD12. mosDD13 is used during tool changes.
 global mosDD0 = false
 global mosDD1 = false
 global mosDD2 = false
@@ -212,3 +212,4 @@ global mosDD9 = false
 global mosDD10 = false
 global mosDD11 = false
 global mosDD12 = false
+global mosDD13 = false
