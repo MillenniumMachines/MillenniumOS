@@ -101,6 +101,13 @@ if { global.mosTT[state.currentTool][0] > var.tSR }
         var tX = { global.mosTSP[0] + global.mosTT[state.currentTool][0] * cos(var.angle) }
         var tY = { global.mosTSP[1] + global.mosTT[state.currentTool][0] * sin(var.angle) }
 
+        ; Some people have their touch probe mounted at their X or Y axis min or max. We can still
+        ; probe a tool with a radius larger than the toolsetter surface radius, but we need to ignore
+        ; the probe start points that are outside of the machine limits.
+        if { var.tX < move.axes[0].min || var.tX > move.axes[0].max || var.tY < move.axes[1].min || var.tY > move.axes[1].max }
+            echo {"Probe point " ^ iterations+1 ^ " is outside of machine limits. Skipping."}
+            continue
+
         ; Probe the point to see if we're activated.
         G6512 D1 E0 I{global.mosTSID} J{var.tX} K{var.tY} L{move.axes[2].machinePosition} Z{var.pZ[0]}
 
