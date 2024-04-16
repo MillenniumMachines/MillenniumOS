@@ -74,8 +74,45 @@ echo {"Probing tool #" ^ state.currentTool ^ " length at X=" ^ global.mosTSP[0] 
 ; due to a homing issue or missing steps, there's a high chance we
 ; will plunge the tool into the table.
 
-; Probe towards axis minimum until toolsetter is activated
-G6512 I{global.mosTSID} J{global.mosTSP[0]} K{global.mosTSP[1]} L{move.axes[2].max} Z{move.axes[2].min}
+var aP = 0
+
+; Toolsetter surface radius
+var tSR = 3
+
+; If radius of tool is greater than radius of the toolsetter, then we use a
+; modified probing mechanism to identify the longest (lowest) point of the tool
+if { global.mosTT[state.currentTool][0] > var.tSR }
+    ; The following probes will only go as low as the central point, var.pZ[0]
+    ; Calculate the number of probe points to get 100% coverage of the tool radius,
+    ; based on the toolsetter surface radius.
+    var points = { ceil((2 * pi * global.mosTT[state.currentTool][0]) / (2 * var.tSR)) }
+    echo {"Tool #" ^ state.currentTool ^ " requires " ^ var.points ^ " probe points for full coverage."}
+
+    ; We record the center point and each of the points on the tool radius
+    var pZ = { vector(var.points+1, move.axes[2].min) }
+
+    ; Only probe once, this tells us the activation point at the center of the tool.
+    ; Do _not_ return to the safe position. Back-off position is fine.
+    G6512 D1 I{global.mosTSID} J{global.mosTSP[0]} K{global.mosTSP[1]} L{move.axes[2].max} Z{move.axes[2].min} R0
+    set var.pZ[0] = global.mosPCZ
+
+    while { iterations < var.points }
+        var angle = { radians(360 / var.points) * iterations }
+        var tX = { global.mosTSP[0] + global.mosTT[state.currentTool][0] * cos(var.angle) }
+        var tY = { global.mosTSP[1] + global.mosTT[state.currentTool][0] * sin(var.angle) }
+
+        ; Probe the point to see if we're activated.
+        G6512 D1 E0 I{global.mosTSID} J{var.tX} K{var.tY} L{move.axes[2].machinePosition} Z{var.pZ[0]}
+
+        ; Set the height to the probed point
+        set var.pZ[iterations+1] = global.mosPCZ
+
+    set var.aP = { max(var.pZ) }
+
+else
+    ; Probe towards axis minimum until toolsetter is activated
+    G6512 I{global.mosTSID} J{global.mosTSP[0]} K{global.mosTSP[1]} L{move.axes[2].max} Z{move.axes[2].min}
+    set var.aP = global.mosPCZ
 
 ; If touch probe is configured, then our position in Z is relative to
 ; the installed height of the touch probe, which we don't know. What we
@@ -89,9 +126,9 @@ G6512 I{global.mosTSID} J{global.mosTSP[0]} K{global.mosTSP[1]} L{move.axes[2].m
 
 var toolOffset = 0
 if { global.mosFeatTouchProbe }
-    set var.toolOffset = { -(global.mosPCZ - global.mosTSAP) }
+    set var.toolOffset = { -(var.aP - global.mosTSAP) }
 else
-    set var.toolOffset = { -(abs(global.mosTSP[2]) - abs(global.mosPCZ)) }
+    set var.toolOffset = { -(abs(global.mosTSP[2]) - abs(var.aP)) }
 
 echo {"Tool #" ^ state.currentTool ^ " Offset=" ^ var.toolOffset ^ "mm"}
 

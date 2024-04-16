@@ -23,6 +23,9 @@ if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
 ; Allow the number of retries to be overridden
 var retries = { (exists(param.R) && param.R != null) ? param.R : sensors.probes[param.I].maxProbeCount }
 
+; Errors
+var errors = { !exists(param.E) || param.E == 1 }
+
 ; Use absolute positions in mm and feeds in mm/min
 G90
 G21
@@ -77,18 +80,30 @@ var pV = { vector(3, sensors.probes[param.I].tolerance + 10) }
 while { iterations <= var.retries }
     ; Probe towards surface
     ; NOTE: This has potential to move in all 3 axes!
-    G53 G38.2 K{ param.I } X{ var.tP[0] } Y{ var.tP[1] } Z{ var.tP[2] }
-    ; Abort if an error was encountered
-    if { result != 0 }
-        ; Reset probing speed limits
-        M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
 
-        ; Park at Z max.
-        ; This is a safety precaution to prevent subsequent X/Y moves from
-        ; crashing the probe.
-        G27 Z1
+    ; If errors are enabled then use G38.2 which will error
+    ; if the probe is not activated by the time we reach the target.
+    ; This is not always what we want, so allow specification of E0 to
+    ; disable error reporting. This is used for features like tool
+    ; offsetting where we don't want to error if the toolsetter is not
+    ; activated at one probe point.
 
-        abort { "G6512.1: Probe " ^ param.I ^ " experienced an error, aborting!" }
+    if { var.errors }
+        G53 G38.2 K{ param.I } X{ var.tP[0] } Y{ var.tP[1] } Z{ var.tP[2] }
+        ; Abort if an error was encountered
+        if { result != 0 }
+            ; Reset probing speed limits
+            M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
+
+            ; Park at Z max.
+            ; This is a safety precaution to prevent subsequent X/Y moves from
+            ; crashing the probe.
+            G27 Z1
+
+            abort { "G6512.1: Probe " ^ param.I ^ " experienced an error, aborting!" }
+    else
+        ; Disable errors by using G38.3
+        G53 G38.3 K{ param.I } X{ var.tP[0] } Y{ var.tP[1] } Z{ var.tP[2] }
 
     ; Wait for all moves in the queue to finish
     M400
@@ -167,13 +182,15 @@ while { iterations <= var.retries }
 
     ; If axis has moved, check if we're within tolerance on that axis.
     ; We can only abort early if we're within tolerance on all moved (probed) axes.
+    ; If we're not performing error checking, then we can abort early if the current
+    ; position is the same as the target position (i.e. the probe was not activated)
     var tR = true
     if { var.tP[0] != var.sP[0] }
-        set var.tR = { var.tR && var.pV[0] <= sensors.probes[param.I].tolerance }
+        set var.tR = { var.tR && (var.pV[0] <= sensors.probes[param.I].tolerance || (!var.errors && abs(var.cP[0] - var.tP[0]) <= sensors.probes[param.I].tolerance)) }
     if { var.tP[1] != var.sP[1] }
-        set var.tR = { var.tR && var.pV[1] <= sensors.probes[param.I].tolerance }
+        set var.tR = { var.tR && (var.pV[1] <= sensors.probes[param.I].tolerance || (!var.errors && abs(var.cP[1] - var.tP[1]) <= sensors.probes[param.I].tolerance)) }
     if { var.tP[2] != var.sP[2] }
-        set var.tR = { var.tR && var.pV[2] <= sensors.probes[param.I].tolerance }
+        set var.tR = { var.tR && (var.pV[2] <= sensors.probes[param.I].tolerance || (!var.errors && abs(var.cP[2] - var.tP[2]) <= sensors.probes[param.I].tolerance)) }
 
     ; If we're within tolerance on all axes, we can stop probing
     ; and report the result.
