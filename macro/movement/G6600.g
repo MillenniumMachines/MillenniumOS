@@ -25,6 +25,9 @@ M598
 ; end up jogging the spindle around while it is running.
 G27 Z1
 
+if { !exists(global.mosLdd) || !global.mosLdd }
+    abort {"MillenniumOS is not loaded! Please restart your mainboard and check for any startup errors!"}
+
 ; Default to null work offset, which will not set origin
 ; on a work offset.
 var workOffset = null
