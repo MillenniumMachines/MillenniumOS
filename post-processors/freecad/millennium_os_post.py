@@ -470,11 +470,12 @@ class MillenniumOSPostProcessor(PostProcessor):
             Output(prefix='X', fmt=FORMATS.AXES),
             Output(prefix='Y', fmt=FORMATS.AXES),
             Output(prefix='Z', fmt=FORMATS.AXES),
-            Output(prefix='I', fmt=FORMATS.AXES, ctrl=Control.NONZERO),
-            Output(prefix='J', fmt=FORMATS.AXES, ctrl=Control.NONZERO),
-            Output(prefix='K', fmt=FORMATS.AXES, ctrl=Control.NONZERO),
-            Output(prefix='F', fmt=FORMATS.FEED, ctrl=Control.NONZERO),
-            Output(prefix='R', fmt=FORMATS.STR),
+            Output(prefix='I', fmt=FORMATS.AXES, ctrl=Control.FORCE),
+            Output(prefix='J', fmt=FORMATS.AXES, ctrl=Control.FORCE),
+            Output(prefix='K', fmt=FORMATS.AXES, ctrl=Control.FORCE),
+            Output(prefix='R', fmt=FORMATS.AXES, ctrl=Control.FORCE),
+            Output(prefix='F', fmt=FORMATS.FEED, ctrl=Control.FORCE),
+            Output(prefix='R', typ=str, fmt=FORMATS.STR),
             Output(prefix='W', fmt=FORMATS.WCS)
         ], ctrl=Control.FORCE)
 
