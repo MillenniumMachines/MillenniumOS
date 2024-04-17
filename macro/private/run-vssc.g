@@ -31,9 +31,9 @@ if { var.elapsedTime < 0 }
 
 ; The lower limit is the previously stored speed minus
 ; half the configured variance, or the maximum spindle speed
-; minus half the variance, whichever is lower - as we
+; minus the variance, whichever is lower - as we
 ; don't want to exceed the maximum spindle speed.
-var lowerLimit = { min((spindles[global.mosSID].max - global.mosVSV/2), global.mosVSPS - global.mosVSV/2) }
+var lowerLimit = { min((spindles[global.mosSID].max - global.mosVSV), global.mosVSPS - global.mosVSV/2) }
 
 ; But it also needs to be higher than the minimum spindle speed.
 set var.lowerLimit = { max(var.lowerLimit, spindles[global.mosSID].min) }
