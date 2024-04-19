@@ -20,7 +20,6 @@
 # - It is the responsibility of your macros and firmware to run any safety checks.
 
 import sys
-import pprint
 import argparse
 import shlex
 import re
@@ -765,9 +764,7 @@ class MillenniumOSPostProcessor(PostProcessor):
         params = {}
 
         for pkey, pvalue in cmd.Parameters.items():
-            v = self._parseparam(code, pkey, pvalue)
-            if v:
-                params[pkey] = v
+            params[pkey] = self._parseparam(code, pkey, pvalue)
 
         match ctype:
             case 'G':
