@@ -65,16 +65,4 @@ else
     ; Probe Z origin using installed tool
     G37.1
 
-; Continue after operator confirmation if necessary
-; Note: we use global.mosTM here instead of global.mosEM.
-; After a tool-change, it is almost certain that the next
-; call will be M3.9, to start the spindle. This already
-; contains an operator confirmation dialog, which appears if
-; expert mode is off, so rather than having both controlled
-; by expert mode, we should show this one if tutorial mode is
-; on. This way, the only way to avoid both confirmations is to
-; enable expert mode _and_ disable tutorial mode.
-if { global.mosTM }
-    M291 P{"Tool change complete. Press <b>OK</b> to continue!"} R"MillenniumOS: Tool Change" S2 T0
-
 set global.mosTCS = null
