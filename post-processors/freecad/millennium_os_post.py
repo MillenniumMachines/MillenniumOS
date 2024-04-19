@@ -28,9 +28,9 @@ from enum import StrEnum, Flag, auto
 from contextlib import contextmanager
 import FreeCAD
 from FreeCAD import Units
-import Path
 import Path.Base.Util as PathUtil
 import Path.Post.Utils as PostUtils
+import PathScripts.PathUtils as PathUtils
 
 from datetime import datetime, timezone
 
@@ -44,8 +44,17 @@ class PROBE:
     NONE = 'NONE'
 
 class GCODES:
-    # Define G code constants for non-standard or regularly used gcodes.
+    RAPID                   = 0
+    LINEAR                  = 1
+    ARC_CW                  = 2
+    ARC_CCW                 = 3
     DWELL                   = 4
+    ABSOLUTE                = 90
+    RELATIVE                = 91
+    INCHES                  = 20
+    MILLIMETERS             = 21
+    FEED_PER_MIN            = 94
+
     PARK                    = 27
     HOME                    = 28
     PROBE_OPERATOR          = 6600
@@ -58,7 +67,6 @@ class GCODES:
     PROBE_VISE_CORNER       = 6520.1
 
 class MCODES:
-    # Define M code constants for non-standard or regularly used mcodes.
     CALL_MACRO   = 98
     ADD_TOOL     = 4000
     VSSC_ENABLE  = 7000
@@ -86,10 +94,16 @@ class UNITS:
 # Used to reference arg values for
 # additional processing
 class ARGS:
-    Z    = 'Z'
-    FEED = 'F'
-    TOOL = 'T'
-    RPM  = 'S'
+    X     = 'X'
+    Y     = 'Y'
+    Z     = 'Z'
+    FEED  = 'F'
+    TOOL  = 'T'
+    RPM   = 'S'
+    ARC_X = 'I'
+    ARC_Y = 'J'
+    ARC_Z = 'K'
+    ARC_R = 'R'
 
 # Define Output control flags
 class Control(Flag):
@@ -323,9 +337,6 @@ class PostProcessor:
         # Set args
         self.args  = args
 
-        # Set default instance vars
-        self.tools = {}
-
         setattr(self, Section.RUN, [])
         setattr(self, Section.PRE, [])
         setattr(self, Section.POST, [])
@@ -368,39 +379,26 @@ class PostProcessor:
                     continue
                 self._parseobj(o)
 
+
     # Default object parsing just outputs a 'begin operation'
     # comment and triggers parsing of each command
     def _parseobj(self, obj):
-        # Save details about tools used
-        tc = PathUtil.toolControllerForOp(obj)
-        if tc:
-            radius = float(tc.Tool.Diameter.getValueAs(UNITS.LENGTH))/2
+        self.brk()
+        if hasattr(obj, 'Proxy'):
+            proxy_type = type(obj.Proxy).__name__
 
-            # Corner radius is a pain here because there's no
-            # obvious concept of a corner radius in FreeCAD.
-            # We can calculate it for the bit types we know are
-            # rounded, bullnose and ballnose.
-            cr = 0
-
-            # A bull nose bit has a flat radius. The corner radius
-            # is the difference between the radius and the flat radius.
-            if tc.Tool.ShapeName == "bullnose":
-                cr = radius - float(tc.Tool.FlatRadius.getValueAs(UNITS.LENGTH))
-
-            # A ball nose bit is rounded all the way to the centre of
-            # the bit. The corner radius is the radius of the bit.
-            elif tc.Tool.ShapeName == "ballnose":
-                cr = radius
-
-            tool_params = {
-                "flutes": tc.Tool.Flutes,
-                "radius": radius,
-                "tool_length": float(tc.Tool.Length.getValueAs(UNITS.LENGTH)),
-                "flute_length": float(tc.Tool.CuttingEdgeHeight.getValueAs(UNITS.LENGTH)),
-                "corner_radius": cr
-            }
-            self.add_tool(tc.ToolNumber, tc.Tool.Label, tool_params)
-
+            match proxy_type:
+                case 'Comment':
+                    # If an oncomment function is available, call it
+                    if hasattr(self, 'oncomment') and callable(getattr(self, 'oncomment')):
+                        self.oncomment(obj)
+                case 'Fixture':
+                    if hasattr(self, 'onfixture') and callable(getattr(self, 'onfixture')):
+                        self.onfixture(obj)
+                case 'ToolController':
+                    self.ontoolcontroller(obj)
+                case _:
+                    self.onoperation(obj)
 
         for c in obj.Path.Commands:
             self._parsecmd(c)
@@ -420,17 +418,6 @@ class PostProcessor:
             if param:
                 params.append(param)
         self.cmd(' '.join(params))
-
-    # Add tool index, description pair to tool info
-    def add_tool(self, index, name, params):
-        if index in self.tools and name != self.tools[index]['name']:
-            raise ValueError("Duplicate tool index {} with different descriptions!".format(index))
-
-        self.tools[index] = {"name": name, "params": params}
-
-    # Return tool info
-    def toolinfo(self):
-        return self.tools
 
     # Output a comment to the active section
     def comment(self, msg):
@@ -467,17 +454,18 @@ class MillenniumOSPostProcessor(PostProcessor):
 
     # Define command output formatters
     _G   = Output(fmt=FORMATS.CMD, prefix='G', vars = [
-            Output(prefix='X', fmt=FORMATS.AXES),
-            Output(prefix='Y', fmt=FORMATS.AXES),
-            Output(prefix='Z', fmt=FORMATS.AXES),
-            Output(prefix='I', fmt=FORMATS.AXES, ctrl=Control.FORCE),
-            Output(prefix='J', fmt=FORMATS.AXES, ctrl=Control.FORCE),
-            Output(prefix='K', fmt=FORMATS.AXES, ctrl=Control.FORCE),
-            Output(prefix='R', fmt=FORMATS.AXES, ctrl=Control.FORCE),
-            Output(prefix='F', fmt=FORMATS.FEED, ctrl=Control.FORCE),
+            Output(prefix=ARGS.X, fmt=FORMATS.AXES),
+            Output(prefix=ARGS.Y, fmt=FORMATS.AXES),
+            Output(prefix=ARGS.Z, fmt=FORMATS.AXES),
+            Output(prefix=ARGS.ARC_X, fmt=FORMATS.AXES, ctrl=Control.NONZERO),
+            Output(prefix=ARGS.ARC_Y, fmt=FORMATS.AXES, ctrl=Control.NONZERO),
+            Output(prefix=ARGS.ARC_Z, fmt=FORMATS.AXES, ctrl=Control.NONZERO),
+            Output(prefix=ARGS.ARC_R, fmt=FORMATS.AXES, ctrl=Control.NONZERO),
+            Output(prefix=ARGS.FEED, fmt=FORMATS.FEED, ctrl=Control.NONZERO),
             Output(prefix='R', typ=str, fmt=FORMATS.STR),
             Output(prefix='W', fmt=FORMATS.WCS)
         ], ctrl=Control.FORCE)
+
 
     _M   = Output(fmt=FORMATS.CMD, prefix='M', vars = [
             Output(prefix='I', ctrl=Control.FORCE),
@@ -500,8 +488,12 @@ class MillenniumOSPostProcessor(PostProcessor):
         super().__init__(post_name, vendor=RELEASE.VENDOR, args=args)
         self._MOVES           = self._LINEAR_MOVES + self._ARC_MOVES
         self._SPINDLE_ACTIONS = self._SPINDLE_ACTIONS_START + self._SPINDLE_ACTIONS_STOP
-        self.active_wcs  = False
-        self.used_wcs    = []
+        self.active_wcs      = False
+        self.used_wcs        = []
+        self.tools           = {}
+        self.xy_seen         = False
+        self.delayed_z       = None
+        self.spindle_started = False
 
         with self.Section(Section.PRE):
             # Warn operator
@@ -520,6 +512,19 @@ class MillenniumOSPostProcessor(PostProcessor):
     def _forceSpindle(self):
         self._M.reset([ARGS.RPM,])
 
+    def _forceArcParams(self):
+        self._G.reset([ARGS.ARC_X, ARGS.ARC_Y, ARGS.ARC_Z, ARGS.ARC_R])
+
+    def _forceLinearParams(self):
+        self._G.reset([ARGS.X, ARGS.Y, ARGS.Z])
+
+    def _forceAll(self):
+        self._forceFeed()
+        self._forceTool()
+        self._forceSpindle()
+        self._forceArcParams()
+        self._forceLinearParams()
+
     def T(self, code):
         cmd, _ = self._T(code)
         if not cmd:
@@ -537,9 +542,11 @@ class MillenniumOSPostProcessor(PostProcessor):
             self._forceTool()
             self._forceFeed()
             self._forceSpindle()
+            self.spindle_started = False
+
 
         # If WCS is changing
-        if code in self._WCS_CHANGES:
+        elif code in self._WCS_CHANGES:
             wcsOffset = int(code - (self._WCS_CHANGES[0]-1))
 
             self.used_wcs.append(wcsOffset)
@@ -552,42 +559,74 @@ class MillenniumOSPostProcessor(PostProcessor):
             # Only probe inline if probe_on_change is set
             if self.args.probe_mode == PROBE.ON_CHANGE:
                 self.probe(wcsOffset)
+                self.spindle_started = False
 
             self.comment("Switch to WCS {}".format(wcsOffset))
             self.active_wcs = True
 
-        if ARGS.FEED in changed:
-            # But the code is a move with only a feed arg
-            # Then do not output the command at all and
-            # make sure it is outputted with the next command
-            if code in self._MOVES and len(changed) == 1:
-                self._forceFeed()
-                return None
-            # And command is a rapid move
-            if code in self._RAPID_MOVES:
-                # Then ignore the feed arg
-                # as rapid moves follow machine limits
-                del cmd[changed[ARGS.FEED]]
-                # Make sure feed is output by the next
-                # non-rapid move.
-                self._forceFeed()
+        elif code in self._MOVES:
+            # Make sure the first arc move after a linear move
+            # contains the right parameters.
+            if code in self._LINEAR_MOVES:
+                self._forceArcParams()
 
-        if code in self._MOVES and not changed:
-            return
+            # Make sure the first linear move after an arc move
+            # contains the right parameters.
+            if code in self._ARC_MOVES:
+                self._forceLinearParams()
+
+            if not changed:
+                return
+
+            # If feed rate was changed
+            if ARGS.FEED in changed:
+                # But the code only has a feed arg
+                # Then do not output the command at all and
+                # make sure it is outputted with the next command
+                if len(changed) == 1:
+                    self._forceFeed()
+                    return
+
+                # And command is a rapid move
+                if code in self._RAPID_MOVES:
+                    # Then ignore the feed arg
+                    # as rapid moves follow machine limits
+                    del cmd[changed[ARGS.FEED]]
+                    # Make sure feed is output by the next
+                    # non-rapid move.
+                    self._forceFeed()
+
+            # If we haven't seen an X/Y move since starting the operation
+            if not self.xy_seen:
+                # And Z has been changed
+                if ARGS.Z in changed:
+                    # Then store the Z height for later
+                    self.delayed_z = [cmd, changed]
+                    return
+
+                if ARGS.X in changed or ARGS.Y in changed:
+                    self.xy_seen = True
+
+            # Otherwise if we have seen an X/Y move and there is a delayed Z,
+            # then output the delayed move.
+            elif self.delayed_z is not None:
+                dcmd, _ = self.delayed_z
+                self.brk()
+                self.comment("Delayed Z move following XY")
+                self.cmd(' '.join(dcmd))
+                self.delayed_z = None
+                self.brk()
 
         return self.cmd(' '.join(cmd))
-
 
     def M(self, code, **params):
         # If code is a tool change, send the T command
         # and return so the M6 is not output.
         if ARGS.TOOL in params and code in self._TOOL_CHANGES:
             self.T(params[ARGS.TOOL])
+            self.spindle_started = False
             self.brk()
             return None
-
-        if ARGS.RPM in params and code in self._SPINDLE_ACTIONS_START:
-            self.comment("Start spindle at requested RPM and wait for it to accelerate")
 
         # Use M98 to call the M3.9 macro, as there is currently an RRF bug that
         # prevents delays from running in macros called directly.
@@ -598,11 +637,20 @@ class MillenniumOSPostProcessor(PostProcessor):
         # setting the spindle speed, but it's worth noting - if there
         # is no tool selected, then this command will return an error.
         if code in self._SPINDLE_ACTIONS:
+
+            if ARGS.RPM in params and code in self._SPINDLE_ACTIONS_START:
+                self.comment("Start spindle at requested RPM and wait for it to accelerate")
+                self.spindle_started = True
+            if code in self._SPINDLE_ACTIONS_STOP:
+                self.spindle_started = False
+
             macro = "M{}.g".format(code + self._SPINDLE_WAIT_SUFFIX)
             code = MCODES.CALL_MACRO
             params['P'] = macro
 
         # Call our suffixed spindle control codes
+        # NOTE: This if and the one above it CANNOT be combined
+        # as the above block modifies the code.
         if code in self._SPINDLE_ACTIONS:
             code += self._SPINDLE_WAIT_SUFFIX
 
@@ -617,27 +665,80 @@ class MillenniumOSPostProcessor(PostProcessor):
         self.G(GCODES.PROBE_OPERATOR, W=wcsOffset)
         self.brk()
 
-    def _parseobj(self, obj):
-        self.brk()
+    # Add tool index, name and params to tool info
+    def addtool(self, index, name, params):
+        if index in self.tools and name != self.tools[index]['name']:
+            raise ValueError("Duplicate tool index {} with different descriptions!".format(index))
 
-        # Call parent object parsing method
-        if hasattr(obj, 'Proxy'):
-            proxy_type = type(obj.Proxy).__name__
+        self.tools[index] = {"name": name, "params": params}
 
-            match proxy_type:
-                case 'Comment':
-                    self.comment("Output confirmable dialog to operator")
-                    self.M(MCODES.SHOW_DIALOG, R="FreeCAD", S=obj.Comment)
-                    return
-                case 'Fixture':
-                    pass
-                case 'ToolController':
-                    self.comment('TC: {}'.format(obj.Tool.Label))
-                case _:
-                    self.comment('Begin Operation: {}'.format(obj.Label))
+    # Return tool info
+    def toolinfo(self):
+        return self.tools
 
-        super()._parseobj(obj)
+    # Note: these functions are called based on the object type - these
+    # do not refer to indivudal gcode commands, but are triggered at the
+    # start of each new object.
+    def oncomment(self, obj):
+        self.comment("Output confirmable dialog to operator")
+        self.M(MCODES.SHOW_DIALOG, R="FreeCAD", S=obj.Comment)
 
+
+    def onfixture(self, _):
+        pass
+
+
+    def onoperation(self, op):
+        self.comment('Begin Operation: {}'.format(op.Label))
+        if not self.spindle_started:
+            raise ValueError("Spindle not started before operation {}".format(op.Label))
+
+        # Some FreeCAD operations (notably: facing) will output a Z
+        # move to the clearance height at the start of the operation
+        # rather than moving to XY first and then down to the clearance
+        # height. MillenniumOS enforces a parking location after
+        # tool-changes so it is safe for us to move in the XY plane
+        # first and then down to the clearance height, and this stops
+        # us from scaring the operator by moving the tool downwards over
+        # the toolsetter rather than over the workpiece first.
+
+        # FreeCAD operations always return to clearance height after
+        # completion so between operations we can move in XY before Z
+        # as well.
+
+        self.xy_seen = False
+
+        self._forceAll()
+
+
+    def ontoolcontroller(self, tc):
+        self.comment('TC: {}'.format(tc.Tool.Label))
+        radius = float(tc.Tool.Diameter.getValueAs(UNITS.LENGTH))/2
+
+        # Corner radius is a pain here because there's no
+        # obvious concept of a corner radius in FreeCAD.
+        # We can calculate it for the bit types we know are
+        # rounded, bullnose and ballnose.
+        cr = 0
+
+        # A bull nose bit has a flat radius. The corner radius
+        # is the difference between the radius and the flat radius.
+        if tc.Tool.ShapeName == "bullnose":
+            cr = radius - float(tc.Tool.FlatRadius.getValueAs(UNITS.LENGTH))
+
+        # A ball nose bit is rounded all the way to the centre of
+        # the bit. The corner radius is the radius of the bit.
+        elif tc.Tool.ShapeName == "ballnose":
+            cr = radius
+
+        tool_params = {
+            "flutes": tc.Tool.Flutes,
+            "radius": radius,
+            "tool_length": float(tc.Tool.Length.getValueAs(UNITS.LENGTH)),
+            "flute_length": float(tc.Tool.CuttingEdgeHeight.getValueAs(UNITS.LENGTH)),
+            "corner_radius": cr
+        }
+        self.addtool(tc.ToolNumber, tc.Label.strip("TC: "), tool_params)
 
     def _parsecmd(self, cmd):
         ctype = cmd.Name[0].upper()
@@ -670,8 +771,8 @@ class MillenniumOSPostProcessor(PostProcessor):
     # Convert necessary parameters based on FreeCAD units.
     def _parseparam(self, code, key, value):
         match key:
-            # Convert FreeCAD feed-rate to machine feed rate
-            # Store as an integer. Point something RPM is not necessary,
+            # Convert FreeCAD feed-rate to machine feed rate and store
+            # as an integer. Point something RPM is not necessary,
             # and if we store these as floats then we have to deal with
             # floating point errors during comparison.
             case ARGS.FEED:
@@ -686,10 +787,10 @@ class MillenniumOSPostProcessor(PostProcessor):
                 return value
 
     def rapid(self, x, y, z):
-        return self.G(0, X=x, Y=y, Z=z, ctrl=Control.FORCE)
+        return self.G(GCODES.RAPID, X=x, Y=y, Z=z, ctrl=Control.FORCE)
 
     def linear(self, x, y, z, f):
-        return self.G(1, X=x, Y=y, Z=z, F=f, ctrl=Control.FORCE)
+        return self.G(GCODES.LINEAR, X=x, Y=y, Z=z, F=f, ctrl=Control.FORCE)
 
     def output(self):
         with self.Section(Section.PRE):
@@ -727,9 +828,9 @@ class MillenniumOSPostProcessor(PostProcessor):
                         self.probe(wcs)
 
             self.comment("Movement configuration")
-            self.G(90) # Absolute moves
-            self.G(21) # All units are millimeters
-            self.G(94) # Feeds are per-minute
+            self.G(GCODES.ABSOLUTE) # Absolute moves
+            self.G(GCODES.MILLIMETERS) # All units are millimeters
+            self.G(GCODES.FEED_PER_MIN) # Feeds are per-minute
             self.brk()
 
             if self.args.vssc:
