@@ -141,6 +141,13 @@ parser.add_argument('--output-tools', action=argparse.BooleanOptionalAction, def
 parser.add_argument('--home-before-start', action=argparse.BooleanOptionalAction, default=True,
     help="When enabled, machine will home in X, Y and Z directions prior to executing any operations.")
 
+parser.add_argument('--allow-zero-rpm', action=argparse.BooleanOptionalAction, default=False,
+    help="""
+    When enabled, we will post-process jobs when the spindle is stationary.
+    This may be useful when using a drag-knife or similar tool but should
+    be left disabled for normal milling operations.
+    """)
+
 probe_mode = parser.add_mutually_exclusive_group(required=False)
 probe_mode.add_argument('--probe-at-start', dest='probe_mode', action='store_const', const=PROBE.AT_START,
     help="When enabled, MillenniumOS will probe a work-piece in each used WCS prior to executing any operations.")
@@ -690,10 +697,12 @@ class MillenniumOSPostProcessor(PostProcessor):
 
     def onoperation(self, op):
         self.comment('Begin Operation: {}'.format(op.Label))
-        if not self.spindle_started:
+
+        # Make sure spindle is started unless we allow zero RPM
+        if not self.spindle_started and not self.args.allow_zero_rpm:
             raise ValueError("Spindle not started before operation {}".format(op.Label))
 
-        # Some FreeCAD operations (notably: facing) will output a Z
+        # Some FreeCAD operations will output a Z
         # move to the clearance height at the start of the operation
         # rather than moving to XY first and then down to the clearance
         # height. MillenniumOS enforces a parking location after
