@@ -23,7 +23,7 @@ G94
 G53 G0 Z{move.axes[2].max}
 
 ; Stop spindle and wait
-M5.9
+M98 P"M5.9.g"
 
 ; If park is called with Z parameter, then the table itself will not be
 ; moved.
