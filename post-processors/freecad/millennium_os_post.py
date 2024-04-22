@@ -66,11 +66,16 @@ class GCODES:
     PROBE_VISE_CORNER       = 6520.1
 
 class MCODES:
-    CALL_MACRO   = 98
-    ADD_TOOL     = 4000
-    VSSC_ENABLE  = 7000
-    VSSC_DISABLE = 7001
-    SHOW_DIALOG  = 3000
+    CALL_MACRO        = 98
+    ADD_TOOL          = 4000
+    VSSC_ENABLE       = 7000
+    VSSC_DISABLE      = 7001
+    ADD_OP_OFFSET     = 2401
+    SKIP_AFTER_OP     = 2400
+    SHOW_DIALOG       = 3000
+    SPINDLE_START_CW  = 3
+    SPINDLE_START_CCW = 4
+    SPINDLE_STOP      = 5
 
 # Define format strings for variable and command types
 class FORMATS:
@@ -145,6 +150,15 @@ parser.add_argument('--allow-zero-rpm', action=argparse.BooleanOptionalAction, d
     When enabled, we will post-process jobs when the spindle is stationary.
     This may be useful when using a drag-knife or similar tool but should
     be left disabled for normal milling operations.
+    """)
+
+parser.add_argument('--skip-ops', action=argparse.BooleanOptionalAction, default=True,
+    help="""
+    When enabled, the post-processor will track the byte-offset of each operation
+    in the output file, and store these in the preamble using M2401. An M2400 command
+    will then be output at the end of the preamble, which will ask the operator if they
+    wish to skip after a specific operation. Turning this off will avoid the prompt to
+    skip operations, and the M2401 and M2400 commands will not be output.
     """)
 
 probe_mode = parser.add_mutually_exclusive_group(required=False)
@@ -351,6 +365,10 @@ class PostProcessor:
         self.oldSection = Section.RUN
         self.curSection = Section.RUN
 
+        # Store current byte position
+        # This only applies to the RUN section.
+        self.bytePos = 0
+
         # Switch to PRE section
         with self.Section(Section.PRE):
             self.comment('Exported by FreeCAD')
@@ -389,7 +407,7 @@ class PostProcessor:
     # Default object parsing just outputs a 'begin operation'
     # comment and triggers parsing of each command
     def _parseobj(self, obj):
-        self.brk()
+        after_func = None
         if hasattr(obj, 'Proxy'):
             proxy_type = type(obj.Proxy).__name__
 
@@ -398,16 +416,23 @@ class PostProcessor:
                     # If an oncomment function is available, call it
                     if hasattr(self, 'oncomment') and callable(getattr(self, 'oncomment')):
                         self.oncomment(obj)
+                        after_func = 'aftercomment'
                 case 'Fixture':
                     if hasattr(self, 'onfixture') and callable(getattr(self, 'onfixture')):
                         self.onfixture(obj)
+                        after_func = 'afterfixture'
                 case 'ToolController':
                     self.ontoolcontroller(obj)
+                    after_func = 'aftertoolcontroller'
                 case _:
                     self.onoperation(obj)
+                    after_func = 'afteroperation'
 
         for c in obj.Path.Commands:
             self._parsecmd(c)
+
+        if after_func is not None and hasattr(self, after_func) and callable(getattr(self, after_func)):
+            getattr(self, after_func)(obj)
 
     # Default parameter parsing just outputs a key value pair
     # and will only accept numeric arguments.
@@ -429,17 +454,23 @@ class PostProcessor:
     def comment(self, msg):
         a = getattr(self, self.curSection)
         a.append('({})'.format(msg))
+        self.bytePos += len(a[-1])+1
 
     # Output a command to the active section
     def cmd(self, cmd):
         if cmd is not None:
             a = getattr(self, self.curSection)
             a.append(cmd)
+            self.bytePos += len(a[-1])+1
+
+    def pos(self):
+        return self.bytePos
 
     # Output a break to the active section
     def brk(self):
         a = getattr(self, self.curSection)
         a.append('')
+        self.bytePos += 1
 
     # Concat and output the sections
     def output(self):
@@ -452,8 +483,8 @@ class MillenniumOSPostProcessor(PostProcessor):
     _RAPID_MOVES           = [0]
     _LINEAR_MOVES          = [0, 1]
     _ARC_MOVES             = [2, 3]
-    _SPINDLE_ACTIONS_START = [3, 4]
-    _SPINDLE_ACTIONS_STOP  = [5]
+    _SPINDLE_ACTIONS_START = [MCODES.SPINDLE_START_CW, MCODES.SPINDLE_START_CCW]
+    _SPINDLE_ACTIONS_STOP  = [MCODES.SPINDLE_STOP]
     _SPINDLE_WAIT_SUFFIX   = .9
     _TOOL_CHANGES          = [6]
     _WCS_CHANGES           = [54, 55, 56, 57, 58, 59, 59.1, 59.2, 59.3]
@@ -469,7 +500,8 @@ class MillenniumOSPostProcessor(PostProcessor):
             Output(prefix=ARGS.ARC_R, fmt=FORMATS.AXES, ctrl=Control.NONZERO),
             Output(prefix=ARGS.FEED, fmt=FORMATS.FEED, ctrl=Control.NONZERO),
             Output(prefix='R', typ=str, fmt=FORMATS.STR),
-            Output(prefix='W', fmt=FORMATS.WCS)
+            Output(prefix='W', fmt=FORMATS.WCS, ctrl=Control.FORCE),
+            Output(prefix='L', typ=int, fmt=FORMATS.WCS, ctrl=Control.FORCE)
         ], ctrl=Control.FORCE)
 
 
@@ -492,14 +524,17 @@ class MillenniumOSPostProcessor(PostProcessor):
         post_name = "MillenniumOS {}".format(RELEASE.VERSION)
 
         super().__init__(post_name, vendor=RELEASE.VENDOR, args=args)
-        self._MOVES           = self._LINEAR_MOVES + self._ARC_MOVES
-        self._SPINDLE_ACTIONS = self._SPINDLE_ACTIONS_START + self._SPINDLE_ACTIONS_STOP
-        self.active_wcs      = False
-        self.used_wcs        = []
-        self.tools           = {}
-        self.xy_seen         = False
-        self.delayed_z       = None
-        self.spindle_started = False
+        self._MOVES            = self._LINEAR_MOVES + self._ARC_MOVES
+        self._SPINDLE_ACTIONS  = self._SPINDLE_ACTIONS_START + self._SPINDLE_ACTIONS_STOP
+        self.active_wcs        = None
+        self.next_wcs          = None
+        self.used_wcs          = {}
+        self.tools             = {}
+        self.xy_seen           = False
+        self.delayed_z         = None
+        self.active_tool       = None
+        self.spindle_started   = False
+        self.offsets           = []
 
         with self.Section(Section.PRE):
             # Warn operator
@@ -524,12 +559,16 @@ class MillenniumOSPostProcessor(PostProcessor):
     def _forceLinearParams(self):
         self._G.reset([ARGS.X, ARGS.Y, ARGS.Z])
 
+    def _forceWcs(self):
+        self._G.reset(self._WCS_CHANGES)
+
     def _forceAll(self):
         self._forceFeed()
         self._forceTool()
         self._forceSpindle()
         self._forceArcParams()
         self._forceLinearParams()
+        self._forceWcs()
 
     def T(self, code):
         cmd, _ = self._T(code)
@@ -555,20 +594,10 @@ class MillenniumOSPostProcessor(PostProcessor):
         elif code in self._WCS_CHANGES:
             wcsOffset = int(code - (self._WCS_CHANGES[0]-1))
 
-            self.used_wcs.append(wcsOffset)
-
-            if self.active_wcs:
-                self.comment("Park ready for WCS change")
-                self.G(GCODES.PARK)
-                self.brk()
-
-            # Only probe inline if probe_on_change is set
-            if self.args.probe_mode == PROBE.ON_CHANGE:
-                self.probe(wcsOffset)
-                self.spindle_started = False
-
-            self.comment("Switch to WCS {}".format(wcsOffset))
-            self.active_wcs = True
+            # Offset, Probed
+            self.used_wcs[wcsOffset] = False
+            self.next_wcs = wcsOffset
+            return
 
         elif code in self._MOVES:
             # Make sure the first arc move after a linear move
@@ -616,7 +645,7 @@ class MillenniumOSPostProcessor(PostProcessor):
             # Otherwise if we have seen an X/Y move and there is a delayed Z,
             # then output the delayed move.
             elif self.delayed_z is not None:
-                dcmd, _ = self.delayed_z
+                dcmd = self.delayed_z[0]
                 self.brk()
                 self.comment("Delayed Z move following XY")
                 self.cmd(' '.join(dcmd))
@@ -629,9 +658,6 @@ class MillenniumOSPostProcessor(PostProcessor):
         # If code is a tool change, send the T command
         # and return so the M6 is not output.
         if ARGS.TOOL in params and code in self._TOOL_CHANGES:
-            self.T(params[ARGS.TOOL])
-            self.spindle_started = False
-            self.brk()
             return None
 
         # Use M98 to call the M3.9 macro, as there is currently an RRF bug that
@@ -643,33 +669,30 @@ class MillenniumOSPostProcessor(PostProcessor):
         # setting the spindle speed, but it's worth noting - if there
         # is no tool selected, then this command will return an error.
         if code in self._SPINDLE_ACTIONS:
+            return
 
-            if ARGS.RPM in params and code in self._SPINDLE_ACTIONS_START:
-                self.comment("Start spindle at requested RPM and wait for it to accelerate")
-                self.spindle_started = True
-            if code in self._SPINDLE_ACTIONS_STOP:
-                self.spindle_started = False
-
-            macro = "M{}.g".format(code + self._SPINDLE_WAIT_SUFFIX)
-            code = MCODES.CALL_MACRO
-            params['P'] = macro
-
-        # Call our suffixed spindle control codes
-        # NOTE: This if and the one above it CANNOT be combined
-        # as the above block modifies the code.
-        if code in self._SPINDLE_ACTIONS:
-            code += self._SPINDLE_WAIT_SUFFIX
-
-        cmd, args = self._M(code, **params)
+        cmd, _ = self._M(code, **params)
         if not cmd:
             return None
 
         self.cmd(' '.join(cmd))
 
-    def probe(self, wcsOffset):
-        self.comment("Probe origin and save in WCS {}".format(wcsOffset))
-        self.G(GCODES.PROBE_OPERATOR, W=wcsOffset)
+    def probe(self, wcsOffset, force=False):
+        # If WCS offset has already been probed and we're not forcing
+        # then return.
+        params = { 'W': wcsOffset }
+
+        comment = "Probe origin and save in WCS {}".format(wcsOffset)
+        if self.used_wcs.get(wcsOffset, False) and not force:
+            params['L'] = 1
+            comment += ". Skip probing if origin already set"
+
+        # Otherwise, probe the WCS and mark it as probed
         self.brk()
+        self.comment(comment)
+        self.G(GCODES.PROBE_OPERATOR, **params)
+        self.brk()
+        self.used_wcs[wcsOffset] = True
 
     # Add tool index, name and params to tool info
     def addtool(self, index, name, params):
@@ -686,6 +709,7 @@ class MillenniumOSPostProcessor(PostProcessor):
     # do not refer to indivudal gcode commands, but are triggered at the
     # start of each new object.
     def oncomment(self, obj):
+        self.brk()
         self.comment("Output confirmable dialog to operator")
         self.M(MCODES.SHOW_DIALOG, R="FreeCAD", S=obj.Comment)
 
@@ -695,6 +719,15 @@ class MillenniumOSPostProcessor(PostProcessor):
 
 
     def onoperation(self, op):
+        self._forceAll()
+        # When skipping operations, output a tool change before
+        # each operation just in case the operation we skip to uses
+        # the same tool as a previous operation that we skipped.
+
+        self.wcs()
+        self.tool()
+        self.spindle()
+
         self.comment('Begin Operation: {}'.format(op.Label))
 
         # Make sure spindle is started unless we allow zero RPM
@@ -716,11 +749,10 @@ class MillenniumOSPostProcessor(PostProcessor):
 
         self.xy_seen = False
 
-        self._forceAll()
 
 
     def ontoolcontroller(self, tc):
-        self.comment('TC: {}'.format(tc.Tool.Label))
+        self.active_tool = tc
         radius = float(tc.Tool.Diameter.getValueAs(UNITS.LENGTH))/2
 
         # Corner radius is a pain here because there's no
@@ -747,6 +779,80 @@ class MillenniumOSPostProcessor(PostProcessor):
             "corner_radius": cr
         }
         self.addtool(tc.ToolNumber, tc.Label.strip("TC: "), tool_params)
+
+    # Append the final position of the operation to the offsets list.
+    def afteroperation(self, op):
+        self.offsets.append([self.pos(), op.Label])
+
+    def wcs(self, force=False):
+        if self.next_wcs is None:
+            return
+
+        if force:
+            self._forceWcs()
+
+        if self.active_wcs is not None:
+            self.brk()
+            self.comment("Park ready for WCS change")
+            self.G(GCODES.PARK)
+
+        # Only probe inline if probe_on_change is set
+        if self.args.probe_mode == PROBE.ON_CHANGE:
+            self.probe(self.next_wcs)
+            self.spindle_started = False
+        else:
+            self.brk()
+
+        self.comment("Switch to WCS {}".format(self.next_wcs))
+        cmd, _ = self._G(self._WCS_CHANGES[self.next_wcs-1])
+        self.cmd(' '.join(cmd))
+        self.brk()
+        self.active_wcs = self.next_wcs
+
+    def tool(self, force=False):
+        if force:
+            self._forceTool()
+        self.comment('TC: {}'.format(self.active_tool.Tool.Label))
+        self.T(self.active_tool.ToolNumber)
+        self.spindle_started = False
+        self.brk()
+
+    def spindle(self, force=False):
+        if force:
+            self._forceSpindle()
+
+        code = MCODES.SPINDLE_START_CW if self.active_tool.SpindleDir == "Forward" else MCODES.SPINDLE_START_CCW
+        rpm = self.active_tool.SpindleSpeed
+
+        code = code if rpm > 0 else MCODES.SPINDLE_STOP
+
+        if code == MCODES.SPINDLE_STOP:
+            self.comment("Stop spindle")
+        else:
+            self.comment("Start spindle at requested RPM and wait for it to accelerate")
+
+        # Call our suffixed spindle control codes
+        # NOTE: This if and the one above it CANNOT be combined
+        # as the above block modifies the code.
+        code += self._SPINDLE_WAIT_SUFFIX
+
+        self.spindle_started = True
+        self.spindle_rpm = rpm
+        self.spindle_direction = code
+
+        cmd, _ = self._M(MCODES.CALL_MACRO, P="{}.g".format(code), S=rpm)
+
+        if not cmd:
+            return None
+
+        self.cmd(' '.join(cmd))
+        self.brk()
+
+    def rapid(self, x, y, z):
+        return self.G(GCODES.RAPID, X=x, Y=y, Z=z, ctrl=Control.FORCE)
+
+    def linear(self, x, y, z, f):
+        return self.G(GCODES.LINEAR, X=x, Y=y, Z=z, F=f, ctrl=Control.FORCE)
 
     def _parsecmd(self, cmd):
         ctype = cmd.Name[0].upper()
@@ -792,15 +898,16 @@ class MillenniumOSPostProcessor(PostProcessor):
             case _:
                 return value
 
-    def rapid(self, x, y, z):
-        return self.G(GCODES.RAPID, X=x, Y=y, Z=z, ctrl=Control.FORCE)
-
-    def linear(self, x, y, z, f):
-        return self.G(GCODES.LINEAR, X=x, Y=y, Z=z, F=f, ctrl=Control.FORCE)
-
     def output(self):
         with self.Section(Section.PRE):
             self.comment("Begin preamble")
+
+            # Output operation offsets
+            if self.args.skip_ops:
+                self.brk()
+                self.comment("Store operation offsets")
+                for index, op in enumerate(self.offsets):
+                    self.M(MCODES.ADD_OP_OFFSET, P=index, R=op[0], S=op[1])
 
             # Parsing must be completed to enumerate all tools.
             tools = self.toolinfo()
@@ -827,10 +934,10 @@ class MillenniumOSPostProcessor(PostProcessor):
                 self.brk()
 
                 # Output probe commands if probe method is AT_START
-                self.comment("WCS Probing Mode: {}".format(self.args.probe_mode));
+                self.comment("WCS Probing Mode: {}".format(self.args.probe_mode))
                 self.brk()
                 if self.args.probe_mode == PROBE.AT_START:
-                    for wcs in self.used_wcs:
+                    for wcs in self.used_wcs.keys():
                         self.probe(wcs)
 
             self.comment("Movement configuration")
@@ -842,6 +949,11 @@ class MillenniumOSPostProcessor(PostProcessor):
             if self.args.vssc:
                 self.comment("Enable Variable Spindle Speed Control")
                 self.M(MCODES.VSSC_ENABLE, P=self.args.vssc_period, V=self.args.vssc_variance)
+
+            if self.args.skip_ops:
+                self.brk()
+                self.comment("Ask operator if they wish to skip to a particular operation")
+                self.M(MCODES.SKIP_AFTER_OP)
 
         # Switch to post to output ending commands
         with self.Section(Section.POST):
@@ -856,9 +968,6 @@ class MillenniumOSPostProcessor(PostProcessor):
                 self.comment("Disable Variable Spindle Speed Control")
                 self.M(MCODES.VSSC_DISABLE)
                 self.brk()
-
-            self.comment("Double-check spindle is stopped!")
-            self.M(self._SPINDLE_ACTIONS_STOP[0])
 
         return super().output()
 

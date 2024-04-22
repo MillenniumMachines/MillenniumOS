@@ -126,6 +126,9 @@ global mosWPSfcPos = null
 ; This is the axis along which the most recent single
 global mosWPSfcAxis = null
 
+; Operation skipping settings
+global mosOI = { vector(50, null) }
+
 ; Daemon settings
 ; Required for regular task updates (e.g. VSSC)
 global mosDAE = true
