@@ -1,4 +1,5 @@
 # Machine Macros
+
 These macros perform machine operations that do not involve any movement of the machine itself. They usually configure settings or similar.
 
 All macros in this directory should be `M` codes.

@@ -99,15 +99,19 @@ if { var.workOffset != null }
 
     ; If work offset origin is already set
     if { var.pdX != 0 && var.pdY != 0 && var.pdZ != 0 }
-        ; Allow operator to continue without resetting the origin and abort the probe
-        M291 P{"WCS " ^ var.workOffset ^ " (" ^ var.workOffsetName ^ ") already has a valid origin.<br/>Click <b>Continue</b> to use the existing origin, or <b>Reset</b> to probe it again."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue","Reset"} F0
-        if { input == 0 }
+        ; If param.L does not exist or is zero
+        if { !exists(param.L) || param.L == 0 }
+            ; Allow operator to continue without resetting the origin and abort the probe
+            M291 P{"WCS " ^ var.workOffset ^ " (" ^ var.workOffsetName ^ ") already has a valid origin.<br/>Click <b>Continue</b> to use the existing origin, or <b>Reset</b> to probe it again."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue","Reset"} F0
+
+        ; If input is 0 or param.L is zero, retain the origin and skip the probe cycle
+        if { (exists(param.L) && param.L == 1) || input == 0 }
             echo {"MillenniumOS: WCS " ^ var.workOffset ^ " (" ^ var.workOffsetName ^ ") origin retained, skipping probe cycle."}
             M99
-
-        ; Force reset the origin as a safety measure.
-        G10 L2 P{var.workOffset} X0 Y0 Z0
-        echo {"MillenniumOS: WCS " ^ var.workOffset ^ " (" ^ var.workOffsetName ^ ") origin reset."}
+        else
+            ; Force reset the origin as a safety measure.
+            G10 L2 P{var.workOffset} X0 Y0 Z0
+            echo {"MillenniumOS: WCS " ^ var.workOffset ^ " (" ^ var.workOffsetName ^ ") origin reset."}
 
 ; Switch to touchprobe if not already connected
 if { global.mosPTID != state.currentTool }
