@@ -711,7 +711,7 @@ function onSection() {
       writeComment("Setting the coolant to: {c}".supplant({c: curTool.coolant}));
       writeBlock(mFmt.format(M[coolant]));
     } else {
-      writeComment("Unknown coolant therefore setting the coolant to: disabled");
+      writeComment("Unknown or unsupported coolant therefore setting the coolant to: disabled");
       writeBlock(mFmt.format(M["COOLANT_OFF"]));
     }
 
