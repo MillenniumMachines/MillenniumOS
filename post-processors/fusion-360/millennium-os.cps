@@ -298,7 +298,24 @@ var M = {
   SPINDLE_ON_CW: 3.9,
   SPINDLE_OFF: 5.9,
   CALL_MACRO: 98,
+  COOLANT_MIST: 7,
+  COOLANT_AIR: 7.1,
+  COOLANT_FLOOD: 8,
+  COOLANT_OFF: 9
 };
+
+// Enumerate the operation:tool_coolant options into clean names
+var COOLANT = {
+  disabled: "COOLANT_OFF",
+  flood: "COOLANT_FLOOD",
+  mist: "COOLANT_MIST",
+  air: "COOLANT_AIR",
+  tool: "COOLANT_TOOL",
+  "air through tool": "COOLANT_AIR_THROUGH_TOOL",
+  suction: "COOLANT_SUCTION",
+  "flood mist": "COOLANT_FLOOD_MIST",
+  "flood through tool": "COOLANT_FLOOD_THROUGH_TOOL"
+}
 
 var CYCLE = {
   // Great consistency on the cycle type names here
@@ -533,6 +550,7 @@ var curTool = {
   length: 0,
   diameter: 0,
   corner_radius: 0,
+  coolant: "disabled"
 }
 
 // Handle parameters.
@@ -569,6 +587,9 @@ function onParameter(param, value) {
     break;
     case 'operation:tool_diameter':
       curTool['diameter'] = value;
+    break;
+    case 'operation:tool_coolant':
+      curTool['coolant'] = value;
     break;
     case 'operation:tool_cornerRadius':
       curTool['corner_radius'] = value;
@@ -684,6 +705,7 @@ function onSection() {
   // operations may have different RPMs set on the
   // same tool.
   var s = sVar.format(curTool['rpm']);
+  var coolant = COOLANT[curTool.coolant];
   if(s && curTool['type'] !== TOOL_PROBE) {
     writeComment("Start spindle at requested RPM and wait for it to accelerate");
     // We must use mFmt directly rather than mCodes here
@@ -691,6 +713,17 @@ function onSection() {
     // decimals.
 
     writeBlock(mFmt.format(M.SPINDLE_ON_CW), s);
+    writeln("");
+
+    // Set to valid coolant option, otherwise set coolant to off.
+    if (M[coolant]) {
+      writeComment("Setting the coolant to: {c}".supplant({c: curTool.coolant}));
+      writeBlock(mFmt.format(M[coolant]));
+    } else {
+      writeComment("Unknown or unsupported coolant therefore setting the coolant to: disabled");
+      writeBlock(mFmt.format(M["COOLANT_OFF"]));
+    }
+
     writeln("");
   }
 
@@ -725,6 +758,10 @@ function onSectionEnd() {
     writeBlock(mCodes.format(M.VSSC_DISABLE));
     writeln("");
   }
+
+  writeComment("Ensure ALL coolants are off.");
+  writeBlock(mFmt.format(M["COOLANT_OFF"]));
+  writeln("");
 
   // Reset all variable outputs ready for the next section
   resetAll();

@@ -21,5 +21,8 @@ if { state.currentTool >= 0 && state.currentTool < limits.tools}
 ; spindle above.
 G53 G0 R1 X0 Y0
 
+; Restore the digital pin states.
+G9.1 R1
+
 ; Move down to the stored co-ordinates.
 G53 G0 R1 X0 Y0 Z0
