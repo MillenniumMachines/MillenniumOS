@@ -1,0 +1,7 @@
+; M9.g: ALL COOLANTS OFF
+;
+; description
+
+M42 P0 S0
+M42 P1 S0
+M42 P3 S0

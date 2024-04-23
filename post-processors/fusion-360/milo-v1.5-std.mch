@@ -303,7 +303,7 @@
                   "min_speed" : 8000
                },
                "tool_station" : {
-                  "coolants" : null,
+                  "coolants" : ["air", "mist", "flood"],
                   "max_tool_diameter" : 80,
                   "max_tool_length" : 160
                },
