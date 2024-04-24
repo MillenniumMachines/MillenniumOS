@@ -123,6 +123,7 @@ var wizSpindleDecelSec = { (exists(global.mosSDS) && global.mosSDS != null && !v
 var wizDatumToolRadius = { (exists(global.mosDTR) && global.mosDTR != null && !var.wizReset && !var.wizDatumToolReset) ? global.mosDTR : null }
 var wizToolSetterID = { (exists(global.mosTSID) && global.mosTSID != null && !var.wizReset && !var.wizToolSetterReset) ? global.mosTSID : null }
 var wizToolSetterPos = { (exists(global.mosTSP) && global.mosTSP != null && !var.wizReset && !var.wizToolSetterReset) ? global.mosTSP : null }
+var wizToolSetterRadius = { (exists(global.mosTSR) && global.mosTSR != null && !var.wizReset && !var.wizToolSetterReset) ? global.mosTSR : null }
 var wizTouchProbeID = { (exists(global.mosTPID) && global.mosTPID != null && !var.wizReset && !var.wizTouchProbeReset) ? global.mosTPID : null }
 var wizTouchProbeRadius = { (exists(global.mosTPR) && global.mosTPR != null && !var.wizReset && !var.wizTouchProbeReset) ? global.mosTPR : null }
 var wizTouchProbeDeflection = { (exists(global.mosTPD) && global.mosTPD != null && !var.wizReset && !var.wizTouchProbeReset) ? global.mosTPD : null }
@@ -298,6 +299,12 @@ if { var.wizFeatureToolSetter }
     var needsRefMeasure = { var.wizFeatureTouchProbe && (var.wizToolSetterPos == null || var.wizTouchProbeReferencePos == null) }
 
     var needsMeasuring = { var.needsToolSetterXYPos || var.needsToolSetterZPos || var.needsRefMeasure }
+
+    if { var.wizToolSetterRadius == null }
+        M291 P{"Please enter the <b>radius</b> of the flat surface of your toolsetter tip, in mm."} R"MillenniumOS: Configuration Wizard" S6 L0.1 H25 F3.0
+        set var.wizToolSetterRadius = { input }
+        ; Write toolsetter radius to the resume file
+        echo >>{var.wizTVF} {"set global.mosTSR = " ^ var.wizToolSetterRadius }
 
     if { var.needsMeasuring }
         if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
@@ -598,25 +605,28 @@ if { var.wizProtectedMoveBackOff != null }
 
 if { var.wizTouchProbeID != null }
     echo >>{var.wizUVF} "; Touch Probe ID"
-    echo >>{var.wizUVF} {"set global.mosTPID = " ^ var.wizTouchProbeID}
+    echo >>{var.wizUVF} { "set global.mosTPID = " ^ var.wizTouchProbeID }
 if { var.wizTouchProbeRadius != null }
     echo >>{var.wizUVF} "; Touch Probe Radius"
-    echo >>{var.wizUVF} {"set global.mosTPR = " ^ var.wizTouchProbeRadius }
+    echo >>{var.wizUVF} { "set global.mosTPR = " ^ var.wizTouchProbeRadius }
 if { var.wizTouchProbeReferencePos != null }
     echo >>{var.wizUVF} "; Touch Probe Reference Position"
-    echo >>{var.wizUVF} {"set global.mosTPRP = " ^ var.wizTouchProbeReferencePos }
+    echo >>{var.wizUVF} { "set global.mosTPRP = " ^ var.wizTouchProbeReferencePos }
 if { var.wizTouchProbeDeflection != null }
     echo >>{var.wizUVF} "; Touch Probe Deflection"
-    echo >>{var.wizUVF} {"set global.mosTPD = " ^ var.wizTouchProbeDeflection }
+    echo >>{var.wizUVF} { "set global.mosTPD = " ^ var.wizTouchProbeDeflection }
 
 echo >>{var.wizUVF} ""
 
 if { var.wizToolSetterID != null }
     echo >>{var.wizUVF} "; Toolsetter ID"
-    echo >>{var.wizUVF} {"set global.mosTSID = " ^ var.wizToolSetterID}
+    echo >>{var.wizUVF} { "set global.mosTSID = " ^ var.wizToolSetterID }
 if { var.wizToolSetterPos != null }
     echo >>{var.wizUVF} "; Toolsetter Position"
-    echo >>{var.wizUVF} {"set global.mosTSP = " ^ var.wizToolSetterPos }
+    echo >>{var.wizUVF} { "set global.mosTSP = " ^ var.wizToolSetterPos }
+if { var.wizToolSetterRadius != null }
+    echo >>{var.wizUVF} "; Toolsetter Radius"
+    echo >>{var.wizUVF} { "set global.mosTSR = " ^ var.wizToolSetterRadius }
 
 echo >>{var.wizUVF} ""
 
