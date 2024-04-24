@@ -19,8 +19,8 @@ G90
 G21
 G94
 
-; Turn all Coolants off
-M9
+; Turn all digital pins off and save their state.
+M9.1 R0
 
 ; Move spindle to top of Z travel
 G53 G0 Z{move.axes[2].max}

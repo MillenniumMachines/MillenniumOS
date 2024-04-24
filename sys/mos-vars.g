@@ -217,3 +217,6 @@ global mosDD10 = false
 global mosDD11 = false
 global mosDD12 = false
 global mosDD13 = false
+
+; Used to track the pin digital states between pause/resume
+global mosPS = { vector(limits.gpOutPorts, 0.0) }
