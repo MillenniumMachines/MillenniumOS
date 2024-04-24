@@ -11,7 +11,7 @@ if { param.R == 0 } ; Saving
         M42 P{iterations} S0
 else if { param.R == 1 } ; Restoring
     while { iterations < limits.gpOutPorts }
-        M42 P{iterations} S{state.gpOut[iterations].pwm}
+        M42 P{iterations} S{global.mosPS[iterations]}
         set global.mosPS[iterations] = 0.0
 else 
     abort { "Invalid recovery (R..) value. Use 0 for Saving or 1 for Restoring" }
