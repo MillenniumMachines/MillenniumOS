@@ -185,7 +185,7 @@ def rrf_safe_string(s):
 # can be nested into other output instances inside the 'vars'
 # argument.
 class Output:
-    def __init__(self, typ=None, fmt='{!s}', prefix=None, ctrl=Control.NONE, vars = None):
+    def __init__(self, typ=None, fmt='{!s}', prefix=None, ctrl=Control.NONE, modals=None, vars = None):
         # Take input settings and assign to instance vars
         # if set.
         if fmt is not None:
@@ -212,6 +212,20 @@ class Output:
         self.ctrl = ctrl
         self.lastVars = ()
         self.lastCode = None
+
+        self.modals = []
+        self.modalindex = {}
+        self.activemodals = []
+
+        if modals is not None:
+            for g in modals:
+                self.modals.append(set(g))
+                for c in g:
+                    i = len(self.modals)-1
+                    self.modalindex[self.format(c, ctrl=Control.NONE)] = i
+                    self.activemodals.insert(i, None)
+
+
 
     # Force output of matching prefixes on
     # next command.
@@ -276,15 +290,27 @@ class Output:
 
         self.lastVars = frozenvars
 
-
         # If code has changed or force is enabled, output
         # the code.
         outCode = None
+
         if code != self.lastCode or Control.FORCE in ctrl:
             outCode = self.format(code, ctrl=ctrl)
+
             if outCode is None:
                 return (None, None)
             self.lastCode = code
+
+        # Even with force, we want to check and make sure we
+        # dont output modal codes if they are already active.
+        if outCode in self.modalindex:
+            i = self.modalindex[outCode]
+            m = self.modals[i]
+
+            if outCode == self.activemodals[i]:
+                return (None, None)
+            else:
+                self.activemodals[i] = outCode
 
         # Parse args. We do this regardless of if the code
         # is output because arguments sent on new lines are
@@ -350,6 +376,9 @@ class PostProcessor:
         # Set default section
         self.oldSection = Section.RUN
         self.curSection = Section.RUN
+        self.additions  = []
+        # Set default action
+        self.prepend    = False
 
         # Switch to PRE section
         with self.Section(Section.PRE):
@@ -359,14 +388,23 @@ class PostProcessor:
             self.brk()
 
     @contextmanager
-    def Section(self, section):
+    def Section(self, section, prepend=False):
         self.oldSection = self.curSection
         self.curSection = section
+        self.additions = []
+        self.prepend = prepend
         try:
             yield
         finally:
+            if not self.prepend:
+                getattr(self, self.curSection).extend(self.additions)
+            else:
+                getattr(self, self.curSection)[:0] = self.additions
+
             self.curSection = self.oldSection
             self.oldSection = Section.RUN
+
+            self.prepend = False
 
     def parse(self, objects, skip_inactive=True):
         with self.Section(Section.RUN):
@@ -427,19 +465,16 @@ class PostProcessor:
 
     # Output a comment to the active section
     def comment(self, msg):
-        a = getattr(self, self.curSection)
-        a.append('({})'.format(msg))
+        self.cmd('({})'.format(msg))
 
     # Output a command to the active section
     def cmd(self, cmd):
         if cmd is not None:
-            a = getattr(self, self.curSection)
-            a.append(cmd)
+            self.additions.append(cmd)
 
     # Output a break to the active section
     def brk(self):
-        a = getattr(self, self.curSection)
-        a.append('')
+        self.additions.append('')
 
     # Concat and output the sections
     def output(self):
@@ -457,6 +492,8 @@ class MillenniumOSPostProcessor(PostProcessor):
     _SPINDLE_WAIT_SUFFIX   = .9
     _TOOL_CHANGES          = [6]
     _WCS_CHANGES           = [54, 55, 56, 57, 58, 59, 59.1, 59.2, 59.3]
+    _CANNED_CYCLES         = [73, 81, 83]
+    _UNSUPPORTED           = [98]
 
     # Define command output formatters
     _G   = Output(fmt=FORMATS.CMD, prefix='G', vars = [
@@ -492,7 +529,7 @@ class MillenniumOSPostProcessor(PostProcessor):
         post_name = "MillenniumOS {}".format(RELEASE.VERSION)
 
         super().__init__(post_name, vendor=RELEASE.VENDOR, args=args)
-        self._MOVES           = self._LINEAR_MOVES + self._ARC_MOVES
+        self._MOVES           = self._LINEAR_MOVES + self._ARC_MOVES + self._CANNED_CYCLES
         self._SPINDLE_ACTIONS = self._SPINDLE_ACTIONS_START + self._SPINDLE_ACTIONS_STOP
         self.active_wcs      = False
         self.used_wcs        = []
@@ -538,12 +575,16 @@ class MillenniumOSPostProcessor(PostProcessor):
         return self.cmd(' '.join(cmd))
 
     def G(self, code, **params):
+        # Do not output unsupported codes
+        if code in self._UNSUPPORTED:
+            return None
+
         # Parse and format the command into a list
         cmd, changed = self._G(code, **params)
         if not cmd:
             return None
 
-        # Reset tool RPM on park
+        # Reset tools, feed and spindle on park
         if code == GCODES.PARK:
             self._forceTool()
             self._forceFeed()
@@ -634,31 +675,20 @@ class MillenniumOSPostProcessor(PostProcessor):
             self.brk()
             return None
 
-        # Use M98 to call the M3.9 macro, as there is currently an RRF bug that
-        # prevents delays from running in macros called directly.
-        # More info here: https://forum.duet3d.com/topic/35300/odd-g4-behaviour-from-macro-called-from-sd-file/13?_=1711622479937
-        # NOTE: The P parameter conflicts between M98 and M3, so
-        # using this approach we _cannot_ target a specific spindle.
-        # We don't do that anyway, because we select a tool before
-        # setting the spindle speed, but it's worth noting - if there
-        # is no tool selected, then this command will return an error.
         if code in self._SPINDLE_ACTIONS:
-
             if ARGS.RPM in params and code in self._SPINDLE_ACTIONS_START:
                 self.comment("Start spindle at requested RPM and wait for it to accelerate")
                 self.spindle_started = True
             if code in self._SPINDLE_ACTIONS_STOP:
+                self.comment("Stop spindle and wait for it to decelerate")
                 self.spindle_started = False
 
-            macro = "M{}.g".format(code + self._SPINDLE_WAIT_SUFFIX)
+            code += self._SPINDLE_WAIT_SUFFIX
+
+            macro = "M{}.g".format(code)
             code = MCODES.CALL_MACRO
             params['P'] = macro
 
-        # Call our suffixed spindle control codes
-        # NOTE: This if and the one above it CANNOT be combined
-        # as the above block modifies the code.
-        if code in self._SPINDLE_ACTIONS:
-            code += self._SPINDLE_WAIT_SUFFIX
 
         cmd, args = self._M(code, **params)
         if not cmd:
@@ -739,11 +769,14 @@ class MillenniumOSPostProcessor(PostProcessor):
         elif tc.Tool.ShapeName == "ballnose":
             cr = radius
 
+        tl = float(tc.Tool.Length.getValueAs(UNITS.LENGTH))
+        fl = float(tc.Tool.CuttingEdgeHeight.getValueAs(UNITS.LENGTH)) if hasattr(tc.Tool, 'CuttingEdgeHeight') else tl
+
         tool_params = {
             "flutes": tc.Tool.Flutes,
             "radius": radius,
-            "tool_length": float(tc.Tool.Length.getValueAs(UNITS.LENGTH)),
-            "flute_length": float(tc.Tool.CuttingEdgeHeight.getValueAs(UNITS.LENGTH)),
+            "tool_length": tl,
+            "flute_length": fl,
             "corner_radius": cr
         }
         self.addtool(tc.ToolNumber, tc.Label.strip("TC: "), tool_params)
