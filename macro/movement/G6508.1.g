@@ -244,8 +244,11 @@ if { var.pMO == 0 }
     var aX = { atan2(var.pY[2] - var.pY[0], var.pX[2] - var.pX[0]) }
     var aY = { atan2(var.pY[3] - var.pY[1], var.pX[3] - var.pX[1]) }
 
-    ; This is the corner angle
-    set global.mosWPCnrDeg = { abs(degrees(var.aX - var.aY)) }
+    ; Angle difference. This will be different depending on which corner
+    ; is being probed. We add 360 and take the modulo of 180 to make sure
+    ; this stays a positive value less than 180 (ideally around 90).
+    var diff = { abs(degrees(var.aX - var.aY)) }
+    set global.mosWPCnrDeg = { mod(var.diff + 360, 180) }
 
 else
     ; Calculate corner position in quick mode.

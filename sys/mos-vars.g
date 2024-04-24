@@ -149,6 +149,7 @@ global mosSDS = null
 ; Toolsetter configuration
 global mosTSID = null
 global mosTSP = null
+global mosTSR = null
 global mosTSAP = null
 
 ; Touch probe configuration
