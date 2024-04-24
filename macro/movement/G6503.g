@@ -22,7 +22,8 @@ if { global.mosTM && !global.mosDD5 }
     M291 P"You will be asked to enter an approximate <b>width</b> and <b>length</b> of the block, and a <b>clearance distance</b>." R"MillenniumOS: Probe Rect. Block" T0 S2
     M291 P"These define how far the probe will move away from the center point before moving downwards and probing back towards the relevant surfaces." R"MillenniumOS: Probe Rect. Block" T0 S2
     M291 P"You will then jog the tool over the approximate center of the block.<br/><b>CAUTION</b>: Jogging in RRF does not watch the probe status, so you could cause damage if moving in the wrong direction!" R"MillenniumOS: Probe Rect. Block" T0 S2
-    M291 P"Finally, you will be asked for a <b>probe depth</b>. This is how far the probe will move downwards before probing towards the centerpoint." R"MillenniumOS: Probe Rect. Block" T0 S4 K{"Continue", "Cancel"} F0
+    M291 P"Finally, you will be asked for a <b>probe depth</b>. This is how far the probe will move downwards before probing towards the centerpoint." R"MillenniumOS: Probe Rect. Block" T0 S2
+    M291 P"If you are still unsure, you can <a target=""_blank"" href=""https://mos.diycnc.xyz/usage/rectangle-block"">View the Rectangle Block Documentation</a> for more details." R"MillenniumOS: Probe Rect. Block" T0 S4 K{"Continue", "Cancel"} F0
     if { input != 0 }
         abort { "Rectangle block probe aborted!" }
     set global.mosDD5 = true

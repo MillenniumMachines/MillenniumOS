@@ -69,9 +69,9 @@ var sZ   = { param.L }
 
 ; Calculate probing directions using approximate bore radius
 ; Angle is in degrees
-var angle = 120
+var angle = radians(120)
 
-var dirXY = { { var.sX + var.bR, var.sY}, { var.sX + var.bR * cos(radians(var.angle)), var.sY + var.bR * sin(radians(var.angle)) }, { var.sX + var.bR * cos(radians(2 * var.angle)), var.sY + var.bR * sin(radians(2 * var.angle)) } }
+var dirXY = { { var.sX + var.bR, var.sY}, { var.sX + var.bR * cos(var.angle), var.sY + var.bR * sin(var.angle) }, { var.sX + var.bR * cos(2 * var.angle), var.sY + var.bR * sin(2 * var.angle) } }
 
 ; Bore edge co-ordinates for 3 probed points
 var pXY  = { null, null, null }

@@ -20,7 +20,8 @@ if { global.mosTM && !global.mosDD3 }
     M291 P"This probe cycle finds the X and Y co-ordinates of the center of a circular boss (protruding feature) on a workpiece by probing towards the approximate center of the boss in 3 directions." R"MillenniumOS: Probe Boss" T0 S2
     M291 P"You will be asked to enter an approximate <b>boss diameter</b> and <b>clearance distance</b>.<br/>These define how far the probe will move away from the centerpoint before probing back inwards." R"MillenniumOS: Probe Boss" T0 S2
     M291 P"You will then jog the tool over the approximate center of the boss.<br/><b>CAUTION</b>: Jogging in RRF does not watch the probe status, so you could cause damage if moving in the wrong direction!" R"MillenniumOS: Probe Boss" T0 S2
-    M291 P"You will then be asked for a <b>probe depth</b>. This is how far the probe will move downwards before probing back towards the centerpoint." R"MillenniumOS: Probe Boss" T0 S4 K{"Continue", "Cancel"} F0
+    M291 P"You will then be asked for a <b>probe depth</b>. This is how far the probe will move downwards before probing back towards the centerpoint." R"MillenniumOS: Probe Boss" T0 S2
+    M291 P"If you are still unsure, you can <a target=""_blank"" href=""https://mos.diycnc.xyz/usage/circular-boss"">View the Circular Boss Documentation</a> for more details." R"MillenniumOS: Probe Boss" T0 S4 K{"Continue", "Cancel"} F0
     if { input != 0 }
         abort { "Boss probe aborted!" }
     set global.mosDD3 = true

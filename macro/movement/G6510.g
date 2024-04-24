@@ -34,7 +34,8 @@ if { global.mosTM && !global.mosDD4 }
     M291 P"<b>CAUTION</b>: Jogging in RRF does <b>NOT</b> watch the probe status. Be careful!" R"MillenniumOS: Probe Surface" T0 S2
     M291 P"<b>CAUTION</b>: For X or Y surfaces, the probe will move down <b>BEFORE</b> moving horizontally to detect a surface. Bear this in mind when selecting a starting position." R"MillenniumOS: Probe Surface" T0 S2
     M291 P"For X or Y surfaces, you will then be asked for a <b>probe depth</b>. This is how far your probe will move down from the starting position before moving in X or Y." R"MillenniumOS: Probe Surface" T0 S2
-    M291 P"Finally, you will be asked to set a <b>probe distance</b>. This is how far the probe will move towards a surface before returning an error if it did not trigger." R"MillenniumOS: Probe Surface" T0 S4 K{"Continue", "Cancel"} F0
+    M291 P"Finally, you will be asked to set a <b>probe distance</b>. This is how far the probe will move towards a surface before returning an error if it did not trigger." R"MillenniumOS: Probe Surface" T0 S2
+    M291 P"If you are still unsure, you can <a target=""_blank"" href=""https://mos.diycnc.xyz/usage/single-surface"">View the Single Surface Documentation</a> for more details." R"MillenniumOS: Probe Surface" T0 S4 K{"Continue", "Cancel"} F0
     if { input != 0 }
         abort { "Surface probe aborted!" }
 
