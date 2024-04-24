@@ -68,7 +68,6 @@ if { global.mosTM }
     M291 P"<b>NOTE</b>: No settings will be saved or overwritten until the configuration wizard has been completed." R"MillenniumOS: Configuration Wizard" S2 T0
     M291 P"<b>CAUTION</b>: You can cancel the configuration wizard to finish configuring RRF, but you <b>MUST</b> complete it before trying to use MillenniumOS itself!" R"MillenniumOS: Configuration Wizard" S3 T0
     ; Note we use the shortest HTML tags we can get away with because RRF commands are length limited.
-    M291 P{"<b>CAUTION</b>: You may need to use small, manual movements using this interface during the configuration process. Please make sure the jog button distances are set appropriately before starting!"} R"MillenniumOS: Configuration Wizard" S2 T0
     M291 P{"<b>CAUTION</b>: Follow <b>ALL</b> instructions to the letter, and if you are unsure about any step, please ask for help on our <a target=""_blank"" href=""https://discord.gg/ya4UUj7ax2"">Discord</a>."} R"MillenniumOS: Configuration Wizard" S2 T0
 
 if { var.wizTutorialMode == null }
@@ -186,7 +185,7 @@ if { var.wizSpindleAccelSec == null || var.wizSpindleDecelSec == null }
     if { result != 0 }
         abort { "MillenniumOS: Operator aborted configuration wizard!" }
 
-    M291 P"When ready, click <b>OK</b> to start the spindle.<br />When it is no longer accelerating, click <b>OK</b> on the next screen." R"MillenniumOS: Configuration Wizard" S2 T0
+    M291 P"When ready, click <b>OK</b> to start the spindle.<br />When it is no longer accelerating, click <b>OK</b> on the next screen." R"MillenniumOS: Configuration Wizard" S3 T0
 
     ; Store start time
     set var.wizSpindleAccelSec = { state.time }
@@ -228,7 +227,7 @@ echo >>{var.wizTVF} {"set global.mosSDS = " ^ var.wizSpindleDecelSec}
 if { var.wizDatumToolRadius == null }
     if { var.wizTutorialMode }
         M291 P{"We now need to choose a <b>Datum Tool</b>, which can be a metal dowel, a gauge pin or flat tipped endmill."} R"MillenniumOS: Configuration Wizard" S2 T0
-        M291 P{"You will be asked to install this tool in the spindle when necessary for manual probes."} R"MillenniumOS: Configuration Wizard" S2 T0:W
+        M291 P{"You will be asked to install this tool in the spindle when necessary for manual probes."} R"MillenniumOS: Configuration Wizard" S2 T0
         M291 P{"With the Touch Probe feature <b>disabled</b>, the <b>Datum Tool</b> can be used to probe workpieces and calculate tool offsets."} R"MillenniumOS: Configuration Wizard" S2 T0
         M291 P{"With the Touch Probe feature <b>enabled</b>, the <b>Datum Tool</b> will be used to take initial measurements that the touch probe requires to calculate offsets correctly."} R"MillenniumOS: Configuration Wizard" S2 T0
         M291 P{"<b>CAUTION</b>: Once the <b>Datum Tool</b> has been configured, you <b>MUST</b> use the same tool when probing workpieces manually or the results will not be accurate!"} R"MillenniumOS: Configuration Wizard" S2 T0
@@ -269,7 +268,7 @@ if { var.wizProtectedMoveBackOff != null }
 ; Toolsetter ID Detection
 if { var.wizFeatureToolSetter }
     if { var.wizToolSetterID == null }
-        M291 P"We now need to detect your toolsetter.<br/><b>CAUTION</b>: Make sure it is connected to the machine.<br/>When ready, press <b>OK</b>, and then manually activate your toolsetter until it is detected." R"MillenniumOS: Configuration Wizard" S2 T0
+        M291 P"We now need to detect your toolsetter.<br/><b>CAUTION</b>: Make sure it is connected to the machine.<br/>When ready, press <b>OK</b>, and then manually activate your toolsetter until it is detected." R"MillenniumOS: Configuration Wizard" S3 T0
 
         echo { "Waiting for toolsetter activation... "}
 
