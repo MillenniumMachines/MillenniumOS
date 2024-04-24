@@ -1,6 +1,6 @@
 ; M8.g: FLOOD COOLANT ON
 ;
-; description
+; Enables a pin meant to turn on a pump to flood the bit with coolant.
 
 if { !exists(state.gpOut[2]) }
     abort { "Flood coolant pump must be defined in your system config as P2." }

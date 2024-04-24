@@ -1,6 +1,7 @@
 ; M7.g: MIST COOLANT ON
 ;
-; description
+; Enables two pins meant to open solenoids to control pressurized air and liquid coolant
+; in a mist configuration. 
 
 ; Turn on Air if not already on
 M7.1

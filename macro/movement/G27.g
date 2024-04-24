@@ -19,14 +19,14 @@ G90
 G21
 G94
 
+; Turn all Coolants off
+M9
+
 ; Move spindle to top of Z travel
 G53 G0 Z{move.axes[2].max}
 
 ; Stop spindle and wait
 M98 P"M5.9.g"
-
-; Turn all Coolants off
-M9
 
 ; If park is called with Z parameter, then the table itself will not be
 ; moved.

@@ -1,6 +1,6 @@
 ; M9.g: ALL COOLANTS OFF
 ;
-; description
+; Disables all possible Coolant Outputs.
 
 if { exists(state.gpOut[0]) }
     M42 P0 S0
