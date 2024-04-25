@@ -6,11 +6,11 @@ if { !exists(param.R) }
     abort { "Must specify recovery (R..) to know if we are saving or restoring state" }
 
 if { param.R == 0 } ; Saving
-    while { iterations < limits.gpOutPorts }
+    while { iterations < #state.gpOut }
         set global.mosPS[iterations] = state.gpOut[iterations].pwm
         M42 P{iterations} S0
-else if { param.R == 1 } ; Restoring
-    while { iterations < limits.gpOutPorts }
+elif { param.R == 1 } ; Restoring
+    while { iterations < #state.gpOut }
         M42 P{iterations} S{global.mosPS[iterations]}
         set global.mosPS[iterations] = 0.0
 else 

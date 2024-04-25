@@ -2,6 +2,6 @@
 ;
 ; Disables all possible Coolant Outputs.
 
-while { iterations < limits.gpOutPorts }
+while { iterations < #state.gpOut }
     M42 P{iterations} S0
 
