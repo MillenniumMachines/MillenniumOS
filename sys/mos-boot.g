@@ -16,7 +16,7 @@ if { move.axes[2].max > 0 || move.axes[2].min >= 0 }
 ; it can be redefined.
 M4001 P{global.mosPTID}
 
-; If we have a touch probe, make sure the co-ordinates are set
+; If we have a touch probe, make sure the relevant variables are set
 if { global.mosFeatTouchProbe }
     ; If we have a touch probe, make sure we have the ID set
     if { !exists(global.mosTPID) || global.mosTPID == null }
@@ -43,7 +43,7 @@ else
     ; Add a datum tool at the last index in the tool table.
     M4000 S{"Datum Tool"} P{global.mosPTID} R{global.mosDTR}
 
-; If we have a toolsetter, make sure the co-ordinates are set
+; If we have a toolsetter, make sure the relevant variables are set
 if { global.mosFeatToolSetter }
     if { !exists(global.mosTSID) || global.mosTSID == null }
         set global.mosErr = { "<b>global.mosTSID</b> must contain the ID of the Toolsetter probe. Configure it using M558 K[probe-id]... in config.g, then run the configuration wizard (<b>G8000</b>)." }
@@ -51,8 +51,12 @@ if { global.mosFeatToolSetter }
     if { !exists(global.mosTSP) || global.mosTSP == null }
         set global.mosErr = { "<b>global.mosTSP</b> is not set." }
         M99
+    if { !exists(global.mosTSR) || global.mosTSR == null }
+        set global.mosErr = { "<b>global.mosTSR</b> is not set." }
+        M99
 
 
+; Make sure protected move back-off is set with touchprobe or toolsetter enabled
 if { (global.mosFeatToolSetter || global.mosFeatTouchProbe) && global.mosPMBO == null }
     set global.mosErr = { "<b>global.mosPMBO</b> is not set." }
     M99
