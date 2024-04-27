@@ -301,7 +301,7 @@ if { var.wizFeatureToolSetter }
     var needsMeasuring = { var.needsToolSetterXYPos || var.needsToolSetterZPos || var.needsRefMeasure }
 
     if { var.wizToolSetterRadius == null }
-        M291 P{"Please enter the <b>radius</b> of the flat surface of your toolsetter tip, in mm."} R"MillenniumOS: Configuration Wizard" S6 L0.1 H25 F3.0
+        M291 P{"Please enter the <b>radius</b> of the flat surface of your toolsetter surface, in mm."} R"MillenniumOS: Configuration Wizard" S6 L0.1 H25 F3.0
         set var.wizToolSetterRadius = { input }
         ; Write toolsetter radius to the resume file
         echo >>{var.wizTVF} {"set global.mosTSR = " ^ var.wizToolSetterRadius }
