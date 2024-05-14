@@ -493,7 +493,7 @@ class MillenniumOSPostProcessor(PostProcessor):
     _TOOL_CHANGES          = [6]
     _WCS_CHANGES           = [54, 55, 56, 57, 58, 59, 59.1, 59.2, 59.3]
     _CANNED_CYCLES         = [73, 81, 83]
-    _UNSUPPORTED           = [98]
+    _UNSUPPORTED           = [98, 99]
 
     # Define command output formatters
     _G   = Output(fmt=FORMATS.CMD, prefix='G', vars = [
