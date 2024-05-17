@@ -23,8 +23,9 @@ if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
 ; Allow the number of retries to be overridden
 var retries = { (exists(param.R) && param.R != null) ? param.R : sensors.probes[param.I].maxProbeCount }
 
-; Errors
-var errors = { !exists(param.E) || param.E == 1 }
+; Whether to throw an error if the probe is not activated
+; when it reaches the target position.
+var errors = { !exists(param.E) || param.E != 0 }
 
 ; Use absolute positions in mm and feeds in mm/min
 G90
