@@ -54,7 +54,8 @@ else
     ; time since the last adjustment.
     var adjustedSpindleRPM = { ceil(var.lowerLimit + global.mosVSV * ((sin(2 * pi * var.elapsedTime / global.mosVSP) + 1) / 2)) }
 
-    ; Set adjusted spindle RPM
-    if { global.mosDebug }
-        echo {"[VSSC] Adjusted spindle RPM: " ^ var.adjustedSpindleRPM }
-    M568 F{ var.adjustedSpindleRPM }
+    if { state.currentTool >= 0 }
+        ; Set adjusted spindle RPM
+        if { global.mosDebug }
+            echo {"[VSSC] Adjusted spindle RPM: " ^ var.adjustedSpindleRPM }
+        M568 F{ var.adjustedSpindleRPM }
