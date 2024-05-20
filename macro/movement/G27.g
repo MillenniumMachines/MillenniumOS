@@ -11,9 +11,6 @@
 if { !inputs[state.thisInput].active }
     M99
 
-; Make sure we're in the default motion system
-M598
-
 ; Use absolute positions in mm
 G90
 G21

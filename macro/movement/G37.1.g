@@ -21,9 +21,6 @@
 if { !inputs[state.thisInput].active }
     M99
 
-; Make sure we're in the default motion system
-M598
-
 var wPN = { move.workplaceNumber + 1 }
 
 if { global.mosTM && !global.mosDD12 }

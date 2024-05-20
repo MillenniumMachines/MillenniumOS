@@ -12,9 +12,6 @@
 if { !inputs[state.thisInput].active }
     M99
 
-; Make sure we're in the default motion system
-M598
-
 ; Friendly names to indicate the location of a surface to be probed, relative to the tool.
 ; Left means 'surface is to the left of the tool', i.e. we will move the table towards the
 ; _right_ to probe it.

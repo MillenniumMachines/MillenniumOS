@@ -60,9 +60,6 @@
 if { !inputs[state.thisInput].active }
     M99
 
-; Make sure we're in the default motion system
-M598
-
 if { exists(param.I) && param.I != null && (sensors.probes[param.I].type < 5 || sensors.probes[param.I].type > 8) }
     abort { "G6512: Invalid probe ID (I..), probe must be of type 5 or 8, or unset for manual probing." }
 

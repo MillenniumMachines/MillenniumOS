@@ -14,19 +14,19 @@ if { !inputs[state.thisInput].active }
 if { !exists(param.S) || !exists(param.R) }
     abort { "Must provide dialog title (R""..."") and message (S""..."")!" }
 
-var options = null
+; Do not render dialog during resume, pause or pausing
+if { state.status == "resuming" || state.status == "pausing" || state.status == "paused" }
+    M99
 
 ; Provide a pause option if the machine is running a job and not currently paused
-if { job.file.fileName != null && (state.status != "resuming" && state.status != "pausing" && state.status != "paused") }
-    set var.options = { "Continue", "Pause", "Cancel" }
+if { job.file.fileName != null }
+    M291 P{param.S} R{"MillenniumOS: " ^ param.R} S4 K{"Continue", "Pause", "Cancel"} F0
+    if { input > 1 }
+        abort { "Operator cancelled job." }
 else
-    set var.options = { "Continue", "Cancel" }
-
-M291 P{param.S} R{"MillenniumOS: " ^ param.R} S4 K{var.options} F0
-
-; If input is the last option in the list, then abort
-if { (input+1) == #var.options }
-    abort { "Operator cancelled job." }
+    M291 P{param.S} R{"MillenniumOS: " ^ param.R} S4 K{"Continue", "Cancel"} F0
+    if { input > 0 }
+        abort { "Operator cancelled job." }
 
 ; Otherwise if input is not the first option,
 ; then the operator clicked pause.

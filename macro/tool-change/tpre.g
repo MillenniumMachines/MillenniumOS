@@ -12,9 +12,6 @@
 if { !inputs[state.thisInput].active }
     M99
 
-; Make sure we're in the default motion system
-M598
-
 ; Abort if no tool selected
 if { state.nextTool < 0 }
     M99
@@ -70,6 +67,13 @@ else
     ; information :)
     if { global.mosTM && !global.mosDD13 }
         M291 P{"A tool change is required. You will be asked to insert the correct tool, and then the tool length will be probed."} R"MillenniumOS: Tool Change" S2 T0
+
+        if { global.mosFeatToolSetter && global.mosTT[state.nextTool][0] > global.mosTSR }
+            var dH = sensors.probes[global.mosTSID].diveHeights[0]
+            M291 P"The next tool is bigger than your toolsetter, so we need to perform offset radius probing. We will probe the center of the tool once, then probe around the radius to detect the lowest point." R"MillenniumOS: Tool Change" S2 T0
+            M291 P"Please ensure the center of the tool is no higher than " ^ var.dH ^ "mm from the lowest point, and adjust the <b>dive height</b> of your toolsetter (<b>M558 H...</b> in RRF) if so." R"MillenniumOS: Tool Change" S2 T0
+            M291 P"You can read more about how radius offset probing works <a target=""_blank"" href=""https://mos.diycnc.xyz/usage/radius-offset-probing"">here</a>." R"MillenniumOS: Tool Change" S2 T0
+
         M291 P"If you are unsure about this, you can <a target=""_blank"" href=""https://mos.diycnc.xyz/usage/tool-changes"">View the Tool Change Documentation</a> for more details." R"MillenniumOS: Tool Change" S2 T0
         set global.mosDD13 = true
 
