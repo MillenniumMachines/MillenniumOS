@@ -15,9 +15,6 @@
 if { !inputs[state.thisInput].active }
     M99
 
-; Make sure we're in the default motion system
-M598
-
 ; This is just for safety. It is good practice to park the machine and
 ; stop the spindle before calling any probing macro, and we should do
 ; this in any post-processor that targets the MillenniumOS Gcode Dialect,

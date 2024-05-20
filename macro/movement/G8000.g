@@ -9,9 +9,6 @@
 if { !inputs[state.thisInput].active }
     M99
 
-; Make sure we're in the default motion system
-M598
-
 var wizUVF = "mos-user-vars.g"
 var wizTVF = "mos-resume-vars.g"
 

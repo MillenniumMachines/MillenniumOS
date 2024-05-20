@@ -120,10 +120,11 @@ global mosWPCnrPos = { null, null }
 global mosWPCnrDeg = { null, null }
 
 ; This is the Co-ordinate along the chosen axis of the
-; most recent single surface probe
+; most recent single surface probe.
 global mosWPSfcPos = null
 
-; This is the axis along which the most recent single
+; This is the axis of the measurement of the most recent
+; single surface probe.
 global mosWPSfcAxis = null
 
 ; Canned Cycle settings

@@ -10,9 +10,6 @@
 if { !inputs[state.thisInput].active }
     M99
 
-; Make sure we're in the default motion system
-M598
-
 if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
     abort { "G6512: Must provide a valid target position in one or more axes (X.. Y.. Z..)!" }
 

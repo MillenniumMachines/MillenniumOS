@@ -8,9 +8,6 @@
 if { !inputs[state.thisInput].active }
     M99
 
-; Make sure we're in the default motion system
-M598
-
 ; Abort if no tool selected
 if { state.currentTool < 0 }
     M99

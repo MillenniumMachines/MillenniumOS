@@ -21,9 +21,6 @@
 if { !inputs[state.thisInput].active }
     M99
 
-; Make sure we're in the default motion system
-M598
-
 ; Display description of vise corner probe if not already displayed this session
 if { global.mosTM && !global.mosDD11 }
     M291 P"This probe cycle finds the X, Y and Z co-ordinates of the corner of a workpiece by probing the top surface and each of the edges that form the corner." R"MillenniumOS: Probe Vise Corner" T0 S2

@@ -33,9 +33,6 @@
 if { !inputs[state.thisInput].active }
     M99
 
-; Make sure we're in the default motion system
-M598
-
 ; Without a toolsetter, the operator will have to zero the tool themselves.
 if { ! global.mosFeatToolSetter }
     abort { "Tool length probing without a toolsetter is not currently supported!" }
