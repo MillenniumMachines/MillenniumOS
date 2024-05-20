@@ -12,9 +12,6 @@
 if { !inputs[state.thisInput].active }
     M99
 
-; Make sure we're in the default motion system
-M598
-
 ; Display description of bore probe if not already displayed this session
 if { global.mosTM && !global.mosDD2 }
     M291 P"This probe cycle finds the X and Y co-ordinates of the center of a circular bore (hole) in a workpiece by moving downwards into the bore and probing outwards in 3 directions." R"MillenniumOS: Probe Bore" T0 S2

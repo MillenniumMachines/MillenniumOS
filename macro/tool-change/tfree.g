@@ -7,9 +7,6 @@
 if { !inputs[state.thisInput].active }
     M99
 
-; Make sure we're in the default motion system
-M598
-
 ; Set tool change state to starting tfree
 set global.mosTCS = 0
 

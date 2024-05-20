@@ -8,9 +8,6 @@
 if { !inputs[state.thisInput].active }
     M99
 
-; Make sure we're in the default motion system
-M598
-
 if { exists(param.W) && param.W != null && (param.W < 1 || param.W > limits.workplaces) }
     abort { "WCS number (W..) must be between 1 and " ^ limits.workplaces ^ "!" }
 

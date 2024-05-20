@@ -7,9 +7,6 @@
 if { !inputs[state.thisInput].active }
     M99
 
-; Make sure we're in the default motion system
-M598
-
 if { exists(param.W) && param.W != null && (param.W < 1 || param.W > limits.workplaces) }
     abort { "WCS number (W..) must be between 1 and " ^ limits.workplaces ^ "!" }
 
@@ -249,6 +246,12 @@ if { var.pMO == 0 }
     ; this stays a positive value less than 180 (ideally around 90).
     var diff = { abs(degrees(var.aX - var.aY)) }
     set global.mosWPCnrDeg = { mod(var.diff + 360, 180) }
+
+    ; If running in full mode, operator provided approximate width and
+    ; height values of the workpiece. Assign these to the global
+    ; variables for the workpiece width and height.
+    ; This assumes that the workpiece is rectangular.
+    set global.mosWPDims = { var.fX, var.fY }
 
 else
     ; Calculate corner position in quick mode.
