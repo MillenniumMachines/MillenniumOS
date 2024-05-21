@@ -175,7 +175,7 @@ var mag = { sqrt(pow(var.tPX - var.sX, 2) + pow(var.tPY - var.sY, 2)) }
 if { var.mag != 0 }
     ; Adjust the final position along the direction of movement in X and Y
     ; by the tool radius, subtracting the deflection on each axis.
-    set global.mosPCX = { global.mosPCX + (global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool[1][0]) * ((var.tPX - var.sX) / var.mag) }
+    set global.mosPCX = { global.mosPCX + (global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][0]) * ((var.tPX - var.sX) / var.mag) }
     set global.mosPCY = { global.mosPCY + (global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][1]) * ((var.tPY - var.sY) / var.mag) }
 
 ; We do not adjust by the tool radius in Z.
