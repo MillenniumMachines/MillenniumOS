@@ -34,6 +34,8 @@ if { (!exists(param.Q) || param.Q == 0) && !exists(param.H) || !exists(param.I) 
 if { !exists(param.N) || param.N < 0 || param.N >= (#global.mosCnr) }
     abort { "Must provide a valid corner index using the N parameter!" }
 
+var wpNum = { exists(param.W) && param.W != null ? param.W : limits.workplaces }
+
 var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
 ; Make sure probe tool is selected
@@ -62,22 +64,14 @@ var sZ   = { param.L }
 
 ; Probe the top surface of the workpiece from the current Z position
 G6510.1 R0 W{exists(param.W)? param.W : null} H4 I{param.T} O{param.O} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{var.safeZ}
-if { global.mosWPSfcPos == null || global.mosWPSfcAxis != "Z" }
+if { global.mosWPSfcPos[var.wpNum] == global.mosDfltWPSfcPos || global.mosWPSfcAxis[var.wpNum] != "Z" }
     abort { "G6520: Failed to probe the top surface of the workpiece!" }
 
 ; Probe the corner surface
 G6508.1 R0 W{exists(param.W)? param.W : null} Q{param.Q} H{param.H} I{param.I} N{param.N} T{param.T} O{param.O} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{ global.mosWPSfcPos - param.P}
-if { global.mosWPCnrNum == null }
+if { global.mosWPCnrNum[var.wpNum] == null }
     abort { "G6520: Failed to probe the corner surface of the workpiece!" }
 
-if { !global.mosEM }
-    var cpX = { global.mosWPCnrPos[0] }
-    var cpY = { global.mosWPCnrPos[1] }
-    var cpZ = { global.mosWPSfcPos }
-    echo { "Vise Corner " ^ global.mosCnr[param.N] ^ " is X=" ^ var.cpX ^ " Y=" ^ var.cpY ^ ", Z=" ^ var.cpZ ^ " with a corner angle of " ^ global.mosWPCnrDeg ^ " degrees" }
-else
-    echo { "global.mosWPCnrNum=" ^ global.mosWPCnrNum }
-    echo { "global.mosWPCnrPos=" ^ global.mosWPCnrPos }
-    echo { "global.mosWPSfcPos=" ^ global.mosWPSfcPos }
-    echo { "global.mosWPSfcAxis=" ^ global.mosWPSfcAxis }
-    echo { "global.mosWPCnrDeg=" ^ global.mosWPCnrDeg }
+; Report probe results if requested
+if { !exists(param.R) || param.R != 0 }
+    M7601 W{var.wpNum}

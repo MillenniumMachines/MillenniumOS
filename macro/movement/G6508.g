@@ -21,7 +21,7 @@ if { !inputs[state.thisInput].active }
     M99
 
 ; Display description of rectangle block probe if not already displayed this session
-if { global.mosTM && !global.mosDD10 }
+if { global.mosTM && !global.mosDD[10] }
     M291 P"This probe cycle finds the X and Y co-ordinates of the corner of a rectangular workpiece by probing along the 2 edges that form the corner." R"MillenniumOS: Probe Outside Corner " T0 S2
     M291 P"In <b>Full</b> mode, this cycle will take 2 probe points on each edge, allowing us to calculate the position and angle of the corner and the rotation of the workpiece." R"MillenniumOS: Probe Outside Corner" T0 S2
     M291 P"You will be asked to enter an approximate <b>surface length</b> for the surfaces forming the corner, to calculate the 4 probe locations." R"MillenniumOS: Probe Outside Corner" T0 S2
@@ -33,7 +33,7 @@ if { global.mosTM && !global.mosDD10 }
     M291 P"If you are still unsure, you can <a target=""_blank"" href=""https://mos.diycnc.xyz/usage/outside-corner"">View the Outside Corner Documentation</a> for more details." R"MillenniumOS: Probe Outside Corner" T0 S4 K{"Continue", "Cancel"} F0
     if { input != 0 }
         abort { "Outside corner probe aborted!" }
-    set global.mosDD10 = true
+    set global.mosDD[10] = true
 
 ; Make sure probe tool is selected
 if { global.mosPTID != state.currentTool }

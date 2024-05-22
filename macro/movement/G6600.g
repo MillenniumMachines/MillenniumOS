@@ -36,7 +36,7 @@ var workOffsetCodes={"None","G54","G55","G56","G57","G58","G59","G59.1","G59.2",
 ; Define probe cycle names
 var probeCycleNames = { "Vise Corner (X,Y,Z)", "Circular Bore (X,Y)", "Circular Boss (X,Y)", "Rectangle Pocket (X,Y)", "Rectangle Block (X,Y)", "Outside Corner (X,Y)", "Single Surface (X/Y/Z)" }
 
-if { global.mosTM && !global.mosDD0 }
+if { global.mosTM && !global.mosDD[0] }
     M291 P{"Before executing cutting operations, it is necessary to identify where the workpiece for a part is. We will do this by probing and setting a work co-ordinate system (WCS) origin point."} R"MillenniumOS: Probe Workpiece" T0 S2
     M291 P{"The origin of a WCS is the reference point for subsequent cutting operations, and must match the chosen reference point in your CAM software."} R"MillenniumOS: Probe Workpiece" T0 S2
     M291 P{"You will need to select an appropriate probe cycle type (or types!) based on the shape of your workpiece."} R"MillenniumOS: Probe Workpiece" T0 S2
@@ -58,7 +58,7 @@ if { global.mosTM && !global.mosDD0 }
 
     M291 P{"<b>NOTE</b>: Surfaces are named assuming that you (the operator) are standing in front of the machine, with the Z column at the <b>BACK</b>."} R"MillenniumOS: Probe Workpiece" T0 S2
 
-    set global.mosDD0 = true
+    set global.mosDD[0] = true
 
 ; Ask user for work offset to set.
 if { !exists(param.W) }
@@ -75,9 +75,9 @@ else
     set var.workOffset = { param.W }
 
 ; Warn about null work offset
-if { var.workOffset == null && global.mosTM && !global.mosDD1 }
+if { var.workOffset == null && global.mosTM && !global.mosDD[1] }
     M291 P{"Probing can still run without a WCS origin being set. The output of the probing cycle will be available in the global variables specific to the probe cycle."} R"MillenniumOS: Probe Workpiece" T0 S2
-    set global.mosDD1=true
+    set global.mosDD[1]=true
 
 ; Show operator existing WCS origin co-ordinates.
 if { var.workOffset != null }
