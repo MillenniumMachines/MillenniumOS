@@ -30,7 +30,7 @@ global mosCnr = {"Front Left", "Front Right", "Back Right", "Back Left"}
 
 ; Store additional tool information.
 ; Values are: [radius, {deflection-x, deflection-y}]
-global mosET = { 0.0, null }
+global mosET = { 0.0, {0.0, 0.0} }
 global mosTT = { vector(limits.tools, global.mosET) }
 
 ; State of current tool change operation.
