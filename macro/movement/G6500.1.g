@@ -26,17 +26,20 @@ if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
 if { !exists(param.H) }
     abort { "Must provide an approximate bore diameter using the H parameter!" }
 
+var wpNum = { exists(param.W) && param.W != null ? param.W : limits.workplaces }
+
 var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
 ; TODO: Validate minimum bore diameter we can probe based on
 ; dive height and back-off distance.
 
-set global.mosWPRad = null
-set global.mosWPCtrPos = { null, null }
-
 ; Make sure probe tool is selected
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
+
+; Reset stored values that we're going to overwrite
+; Reset center position and radius
+M4010 W{var.wpNum} R3
 
 ; Apply tool radius to overtravel. We want to allow
 ; less movement past the expected point of contact
@@ -118,9 +121,9 @@ var r3 = { sqrt(pow((var.pXY[2][0] - var.cX), 2) + pow((var.pXY[2][1] - var.cY),
 ; Calculate the average radius
 var avgR = { (var.r1 + var.r2 + var.r3) / 3 }
 
-; Update global vars
-set global.mosWPCtrPos   = { var.cX, var.cY }
-set global.mosWPRad      = { var.avgR }
+; Update global vars for correct workplace
+set global.mosWPCtrPos[var.wpNum]   = { var.cX, var.cY }
+set global.mosWPRad[var.wpNum]      = { var.avgR }
 
 ; Move to the calculated center of the bore
 G6550 I{var.probeId} X{var.cX} Y{var.cY}
@@ -128,14 +131,11 @@ G6550 I{var.probeId} X{var.cX} Y{var.cY}
 ; Move back to safe Z height
 G6550 I{var.probeId} Z{var.safeZ}
 
+; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
-    if { !global.mosEM }
-        echo { "Bore - Center X=" ^ global.mosWPCtrPos[0] ^ " Y=" ^ global.mosWPCtrPos[1] ^ ", R=" ^ global.mosWPRad }
-    else
-        echo { "global.mosWPCtrPos=" ^ global.mosWPCtrPos }
-        echo { "global.mosWPRad=" ^ global.mosWPRad }
+    M7601 W{var.wpNum}
 
 ; Set WCS origin to the probed corner, if requested
-if { exists(param.W) && param.W != null }
+if { var.wpNum != limits.workplaces }
     echo { "MillenniumOS: Setting WCS " ^ param.W ^ " X,Y origin to center of bore." }
     G10 L2 P{param.W} X{var.cX} Y{var.cY}

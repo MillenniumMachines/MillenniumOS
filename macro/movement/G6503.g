@@ -14,7 +14,7 @@ if { !inputs[state.thisInput].active }
     M99
 
 ; Display description of rectangle block probe if not already displayed this session
-if { global.mosTM && !global.mosDD5 }
+if { global.mosTM && !global.mosDD[5] }
     M291 P"This probe cycle finds the X and Y co-ordinates of the center of a rectangular block (protruding feature) on a workpiece by probing towards the block surfaces from all 4 directions." R"MillenniumOS: Probe Rect. Block " T0 S2
     M291 P"You will be asked to enter an approximate <b>width</b> and <b>length</b> of the block, and a <b>clearance distance</b>." R"MillenniumOS: Probe Rect. Block" T0 S2
     M291 P"These define how far the probe will move away from the center point before moving downwards and probing back towards the relevant surfaces." R"MillenniumOS: Probe Rect. Block" T0 S2
@@ -23,7 +23,7 @@ if { global.mosTM && !global.mosDD5 }
     M291 P"If you are still unsure, you can <a target=""_blank"" href=""https://mos.diycnc.xyz/usage/rectangle-block"">View the Rectangle Block Documentation</a> for more details." R"MillenniumOS: Probe Rect. Block" T0 S4 K{"Continue", "Cancel"} F0
     if { input != 0 }
         abort { "Rectangle block probe aborted!" }
-    set global.mosDD5 = true
+    set global.mosDD[5] = true
 
 ; Make sure probe tool is selected
 if { global.mosPTID != state.currentTool }

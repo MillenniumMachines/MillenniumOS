@@ -13,7 +13,7 @@ if { !inputs[state.thisInput].active }
     M99
 
 ; Display description of bore probe if not already displayed this session
-if { global.mosTM && !global.mosDD2 }
+if { global.mosTM && !global.mosDD[2] }
     M291 P"This probe cycle finds the X and Y co-ordinates of the center of a circular bore (hole) in a workpiece by moving downwards into the bore and probing outwards in 3 directions." R"MillenniumOS: Probe Bore" T0 S2
     M291 P"You will be asked to enter an approximate <b>bore diameter</b> and <b>overtravel distance</b>.<br/>These define how far the probe will move from the centerpoint, without being triggered, before erroring." R"MillenniumOS: Probe Bore" T0 S2
     M291 P"You will then jog the tool over the approximate center of the bore.<br/><b>CAUTION</b>: Jogging in RRF does not watch the probe status, so you could cause damage if moving in the wrong direction!" R"MillenniumOS: Probe Bore" T0 S2
@@ -21,7 +21,7 @@ if { global.mosTM && !global.mosDD2 }
     M291 P"If you are still unsure, you can <a target=""_blank"" href=""https://mos.diycnc.xyz/usage/circular-bore"">View the Circular Bore Documentation</a> for more details." R"MillenniumOS: Probe Bore" T0 S4 K{"Continue", "Cancel"} F0
     if { input != 0 }
         abort { "Bore probe aborted!" }
-    set global.mosDD2 = true
+    set global.mosDD[2] = true
 
 ; Make sure probe tool is selected
 if { global.mosPTID != state.currentTool }

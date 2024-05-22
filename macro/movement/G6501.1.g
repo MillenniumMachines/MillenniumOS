@@ -25,14 +25,17 @@ if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
 if { !exists(param.H) }
     abort { "Must provide an approximate boss diameter using the H parameter!" }
 
-var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
+var wpNum = { exists(param.W) && param.W != null ? param.W : limits.workplaces }
 
-set global.mosWPRad = null
-set global.mosWPCtrPos = { null, null }
+var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
 ; Make sure probe tool is selected
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
+
+; Reset stored values that we're going to overwrite -
+; center and radius
+M4010 W{var.wpNum} R3
 
 ; Tool Radius is the first entry for each value in
 ; our extended tool table.
@@ -144,9 +147,9 @@ var r3 = { sqrt(pow((var.pXY[2][0] - var.cX), 2) + pow((var.pXY[2][1] - var.cY),
 ; Calculate the average radius
 var avgR = { (var.r1 + var.r2 + var.r3) / 3 }
 
-; Update global vars
-set global.mosWPCtrPos = { var.cX, var.cY }
-set global.mosWPRad = { var.avgR }
+; Update global vars for correct workplace
+set global.mosWPCtrPos[var.wpNum]   = { var.cX, var.cY }
+set global.mosWPRad[var.wpNum]      = { var.avgR }
 
 ; Confirm we are at the safe Z height
 G6550 I{var.probeId} Z{var.safeZ}
@@ -154,12 +157,9 @@ G6550 I{var.probeId} Z{var.safeZ}
 ; Move to the calculated center of the boss
 G6550 I{var.probeId} X{var.cX} Y{var.cY}
 
+; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
-    if { !global.mosEM }
-        echo { "Boss - Center X=" ^ global.mosWPCtrPos[0] ^ " Y=" ^ global.mosWPCtrPos[1] ^ " R=" ^ global.mosWPRad }
-    else
-        echo { "global.mosWPCtrPos=" ^ global.mosWPCtrPos }
-        echo { "global.mosWPRad=" ^ global.mosWPRad }
+    M7601 W{var.wpNum}
 
 ; Set WCS origin to the probed boss center, if requested
 if { exists(param.W) && param.W != null }
