@@ -663,7 +663,7 @@ function onSection() {
   // operations may have different RPMs set on the
   // same tool.
   var s = sVar.format(curTool['rpm']);
-  if(s && curTool['type'] !== TOOL_PROBE) {
+  if(s && curTool['type'] !== TOOL_PROBE && tool.spindleRPM > 1) {
     writeComment("Start spindle at requested RPM and wait for it to accelerate");
     // We must use mFmt directly rather than mCodes here
     // because modal groups do not correctly handle
