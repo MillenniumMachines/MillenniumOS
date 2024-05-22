@@ -14,6 +14,9 @@ if { global.mosCCD == null }
         abort { "Must specify Z position (Z...)" }
 
 
+if { spindles[global.mosSID].active <= 0 }
+    abort { "Cannot run canned cycle with spindle off!" }
+
 ; Default the Z position to the previously stored mosCCD value
 var tZ = { exists(param.Z) ? param.Z : global.mosCCD[0] }
 
