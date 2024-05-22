@@ -138,7 +138,7 @@ G6550 I{ exists(param.I) ? param.I : null } Z{ var.sZ }
 if { var.manualProbe }
     G6512.2 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 else
-    G6512.1 I{ param.I } X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } R{ exists(param.R) ? param.R : null } E{ exists(param.E) ? param.E : null }
+    G6512.1 I{ param.I } X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } R{ exists(param.R) ? param.R : null } E{ exists(param.E) ? param.E : 1 }
 
 ; Move to safe height
 ; If probing move is called with D parameter,
