@@ -136,6 +136,14 @@ properties = {
     type: "boolean",
     value: true
   },
+  versionCheck: {
+    title: "Check MillenniumOS version",
+    description: "Check that the MillenniumOS version installed in RRF matches the post-processor version. Undefined behaviour may occur if this check is disabled and the firmware is not compatible with this post-processor.",
+    group: "formats",
+    scope: "post",
+    type: "boolean",
+    value: true
+  },
   warpSpeedMode: {
     title: "Restore rapid moves at and above the selected height",
     description: "The operation height above which G0 moves will be restored. Only vertical OR lateral moves are considered. None disables warp mode. Retract and Clearance restore rapid moves at and above the relevant height set on the operation. Zero restores all rapid moves at or above Z=0 in the active WCS. BEWARE: Be absolutely certain when using Zero mode that your tool offsets are calculated accurately, as rapid moves back down to Z=0 will not allow any leeway for tool length errors! Additionally, only use Zero if you can guarantee there is nothing above Z=0 that could interfere with rapid moves.",
@@ -283,6 +291,7 @@ var G = {
 // Define M code constants for non-standard codes.
 var M = {
   ADD_TOOL: 4000,
+  VERSION_CHECK: 4005,
   VSSC_ENABLE: 7000,
   VSSC_DISABLE: 7001,
   SPINDLE_ON_CW: 3.9,
@@ -352,6 +361,7 @@ var mCodes = createModalGroup(
   [
     [0, 2],                           // Program codes
     [M.ADD_TOOL],                     // Tool data codes
+    [M.VERSION_CHECK],                // Version check
     [M.VSSC_ENABLE, M.VSSC_DISABLE]   // VSSC codes
   ],
   mFmt);
@@ -429,6 +439,12 @@ function onOpen() {
   writeln("");
   writeComment("Begin preamble");
   writeln("");
+
+  if(properties.versionCheck) {
+    writeComment("Check MillenniumOS version matches post-processor version");
+    writeBlock(mCodes.format(M.VERSION_CHECK), 'V"{version}"'.supplant({version: version}));
+    writeln("");
+  }
 
   // Output tool details if enabled and tools are configured
   var tools  = getToolTable();
