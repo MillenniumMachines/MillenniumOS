@@ -35,16 +35,10 @@ set global.mosTT[param.P][0] = { param.R }
 ; when used for probing. This does not need to be set for
 ; non-probe tools.
 if { exists(param.X) }
-    if { global.mosTT[param.P][1] == null }
-        set global.mosTT[param.P][1] = { param.X, 0.0 }
-    else
-        set global.mosTT[param.P][1][0] = { param.X }
+    set global.mosTT[param.P][1][0] = { param.X }
 
 if { exists(param.Y) }
-    if { global.mosTT[param.P][1] == null }
-        set global.mosTT[param.P][1] = { 0.0, param.Y }
-    else
-        set global.mosTT[param.P][1][1] = { param.Y }
+    set global.mosTT[param.P][1][1] = { param.Y }
 
 ; Commented due to memory limitations
 ; M7500 S{"Stored tool #" ^ param.P ^ " R=" ^ param.R ^ " S=" ^ param.S}
