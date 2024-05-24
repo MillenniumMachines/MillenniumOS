@@ -1,7 +1,7 @@
 /**
- * MillenniumOS v1.0 Postprocessor for Fusion360.
+ * MillenniumOS %%MOS_VERSION%% Postprocessor for Fusion360.
  *
- * This postprocessor assumes that most complex functionality like
+ * This post-processor assumes that most complex functionality like
  * tool changes and work coordinate setting is handled in the machine firmware.
  *
  * Calls in to these systems should be a single macro call, preferably using a custom
@@ -419,13 +419,7 @@ function onOpen() {
   // Output header and preamble
   writeComment("Exported by Fusion360");
 
-  var version = "Unknown";
-  if ((typeof getHeaderVersion) == "function" && getHeaderVersion()) {
-    version = getHeaderVersion();
-  }
-  if ((typeof getHeaderDate) == "function" && getHeaderDate()) {
-    version += " " + getHeaderDate();
-  }
+  var version = "%%MOS_VERSION%%";
 
   // Write post-processor and generation details.
   writeComment("Post Processor: {desc} by {vendor}, version: {version}".supplant({desc: description, vendor: vendor, version: version }));

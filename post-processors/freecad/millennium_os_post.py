@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-# Millenium Machines Milo v1.5 Postprocessor for FreeCAD.
+# MillenniumOS %%MOS_VERSION%% Postprocessor for FreeCAD.
 #
-# Copyright (C)2022-2023 Millenium Machines
+# Copyright (C)2022-2024 Millennium Machines
 #
-# This postprocessor assumes that most complex functionality like
+# This post-processor assumes that most complex functionality like
 # tool changes and work coordinate setting is handled in the machine firmware.
 #
 # Calls in to these systems should be a single macro call, preferably using a custom
