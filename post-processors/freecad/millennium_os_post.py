@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-# Millenium Machines Milo v1.5 Postprocessor for FreeCAD.
+# MillenniumOS %%MOS_VERSION%% Postprocessor for FreeCAD.
 #
-# Copyright (C)2022-2023 Millenium Machines
+# Copyright (C)2022-2024 Millennium Machines
 #
-# This postprocessor assumes that most complex functionality like
+# This post-processor assumes that most complex functionality like
 # tool changes and work coordinate setting is handled in the machine firmware.
 #
 # Calls in to these systems should be a single macro call, preferably using a custom
@@ -66,11 +66,12 @@ class GCODES:
     PROBE_VISE_CORNER       = 6520.1
 
 class MCODES:
-    CALL_MACRO   = 98
-    ADD_TOOL     = 4000
-    VSSC_ENABLE  = 7000
-    VSSC_DISABLE = 7001
-    SHOW_DIALOG  = 3000
+    CALL_MACRO    = 98
+    ADD_TOOL      = 4000
+    VERSION_CHECK = 4005
+    VSSC_ENABLE   = 7000
+    VSSC_DISABLE  = 7001
+    SHOW_DIALOG   = 3000
 
 # Define format strings for variable and command types
 class FORMATS:
@@ -147,6 +148,12 @@ parser.add_argument('--allow-zero-rpm', action=argparse.BooleanOptionalAction, d
     be left disabled for normal milling operations.
     """)
 
+parser.add_argument('--version-check', action=argparse.BooleanOptionalAction, default=True,
+    help="""
+    When enabled, the post-processor will output a version check command
+    to make sure the post-processor version and MillenniumOS version installed
+    in RRF match.
+    """)
 probe_mode = parser.add_mutually_exclusive_group(required=False)
 probe_mode.add_argument('--probe-at-start', dest='probe_mode', action='store_const', const=PROBE.AT_START,
     help="When enabled, MillenniumOS will probe a work-piece in each used WCS prior to executing any operations.")
@@ -520,7 +527,8 @@ class MillenniumOSPostProcessor(PostProcessor):
             Output(prefix='S', typ=str, fmt=FORMATS.STR, ctrl=Control.FORCE),
             # This acts as default output for S if it does not match the
             # type specified above.
-            Output(prefix='S', fmt=FORMATS.RPM, ctrl=Control.FORCE)
+            Output(prefix='S', fmt=FORMATS.RPM, ctrl=Control.FORCE),
+            Output(prefix='V', typ=str, fmt=FORMATS.STR, ctrl=Control.FORCE),
         ], ctrl=Control.FORCE)
 
     _T   = Output(fmt=FORMATS.CMD, prefix='T', ctrl=Control.FORCE)
@@ -834,6 +842,10 @@ class MillenniumOSPostProcessor(PostProcessor):
     def output(self):
         with self.Section(Section.PRE):
             self.comment("Begin preamble")
+
+            self.brk()
+            self.comment("Check MillenniumOS version matches post-processor version")
+            self.M(MCODES.VERSION_CHECK, V=RELEASE.VERSION, ctrl=Control.FORCE)
 
             # Parsing must be completed to enumerate all tools.
             tools = self.toolinfo()
