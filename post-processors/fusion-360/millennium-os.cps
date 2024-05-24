@@ -1,7 +1,7 @@
 /**
- * MillenniumOS v1.0 Postprocessor for Fusion360.
+ * MillenniumOS %%MOS_VERSION%% Postprocessor for Fusion360.
  *
- * This postprocessor assumes that most complex functionality like
+ * This post-processor assumes that most complex functionality like
  * tool changes and work coordinate setting is handled in the machine firmware.
  *
  * Calls in to these systems should be a single macro call, preferably using a custom
@@ -131,6 +131,14 @@ properties = {
   outputTools: {
     title: "Output tools",
     description: "Output tool details. If disabled, the firmware will not be pre-configured with tool details - you must configure them manually with the correct tool numbers before running the job.",
+    group: "formats",
+    scope: "post",
+    type: "boolean",
+    value: true
+  },
+  versionCheck: {
+    title: "Check MillenniumOS version",
+    description: "Check that the MillenniumOS version installed in RRF matches the post-processor version. Undefined behaviour may occur if this check is disabled and the firmware is not compatible with this post-processor.",
     group: "formats",
     scope: "post",
     type: "boolean",
@@ -283,6 +291,7 @@ var G = {
 // Define M code constants for non-standard codes.
 var M = {
   ADD_TOOL: 4000,
+  VERSION_CHECK: 4005,
   VSSC_ENABLE: 7000,
   VSSC_DISABLE: 7001,
   SPINDLE_ON_CW: 3.9,
@@ -352,6 +361,7 @@ var mCodes = createModalGroup(
   [
     [0, 2],                           // Program codes
     [M.ADD_TOOL],                     // Tool data codes
+    [M.VERSION_CHECK],                // Version check
     [M.VSSC_ENABLE, M.VSSC_DISABLE]   // VSSC codes
   ],
   mFmt);
@@ -409,13 +419,7 @@ function onOpen() {
   // Output header and preamble
   writeComment("Exported by Fusion360");
 
-  var version = "Unknown";
-  if ((typeof getHeaderVersion) == "function" && getHeaderVersion()) {
-    version = getHeaderVersion();
-  }
-  if ((typeof getHeaderDate) == "function" && getHeaderDate()) {
-    version += " " + getHeaderDate();
-  }
+  var version = "%%MOS_VERSION%%";
 
   // Write post-processor and generation details.
   writeComment("Post Processor: {desc} by {vendor}, version: {version}".supplant({desc: description, vendor: vendor, version: version }));
@@ -429,6 +433,12 @@ function onOpen() {
   writeln("");
   writeComment("Begin preamble");
   writeln("");
+
+  if(properties.versionCheck) {
+    writeComment("Check MillenniumOS version matches post-processor version");
+    writeBlock(mCodes.format(M.VERSION_CHECK), 'V"{version}"'.supplant({version: version}));
+    writeln("");
+  }
 
   // Output tool details if enabled and tools are configured
   var tools  = getToolTable();
