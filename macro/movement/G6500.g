@@ -27,6 +27,8 @@ if { global.mosTM && !global.mosDD[2] }
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
 
+var wpNum = { exists(param.W) && param.W != null ? param.W : limits.workplaces }
+
 ; Note: These if's below are nested for a reason.
 ; During a print file, sometimes the lines after an M291 are executed
 ; before the M291 has been acknowledged by the operator. This is bad.
@@ -34,7 +36,7 @@ if { global.mosPTID != state.currentTool }
 ; after the M291 has been acknowledged.
 
 ; Prompt for bore diameter
-M291 P"Please enter approximate bore diameter in mm." R"MillenniumOS: Probe Bore" J1 T0 S6 F{(global.mosWPRad != null) ? global.mosWPRad*2 : 0}
+M291 P"Please enter approximate bore diameter in mm." R"MillenniumOS: Probe Bore" J1 T0 S6 F{(global.mosWPRad[var.wpNum] != null) ? global.mosWPRad[var.wpNum]*2 : 0}
 if { result != 0 }
     abort { "Bore probe aborted!" }
 
