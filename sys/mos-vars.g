@@ -110,8 +110,8 @@ global mosWPDeg = { vector(limits.workplaces+1, global.mosDfltWPDeg) }
 ; This is the corner number that was picked by the
 ; operator for the most recent outside or inside
 ; corner probe.
-global mosDfltWPCnr = null
-global mosWPCnrNum = { vector(limits.workplaces+1, global.mosDfltWPCnr) }
+global mosDfltWPCnrNum = null
+global mosWPCnrNum = { vector(limits.workplaces+1, global.mosDfltWPCnrNum) }
 
 ; These are the X and Y coordinates of the most recent
 ; corner probe.

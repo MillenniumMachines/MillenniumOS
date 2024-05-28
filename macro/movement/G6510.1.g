@@ -24,9 +24,6 @@ var wpNum = { exists(param.W) && param.W != null ? param.W : limits.workplaces }
 
 var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
-set global.mosWPSfcPos = null
-set global.mosWPSfcAxis = null
-
 ; Make sure probe tool is selected
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}

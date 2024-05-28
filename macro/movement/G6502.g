@@ -29,7 +29,9 @@ if { global.mosTM && !global.mosDD[6] }
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
 
-var bW = { (global.mosWPDims[0] != null) ? global.mosWPDims[0] : 100 }
+var wpNum = { exists(param.W) && param.W != null ? param.W : limits.workplaces }
+
+var bW = { (global.mosWPDims[var.wpNum][0] != null) ? global.mosWPDims[var.wpNum][0] : 100 }
 
 M291 P{"Please enter approximate <b>pocket width</b> in mm.<br/><b>NOTE</b>: <b>Width</b> is measured along the <b>X</b> axis."} R"MillenniumOS: Probe Rect. Pocket" J1 T0 S6 F{var.bW}
 if { result != 0 }
@@ -40,7 +42,7 @@ var pocketWidth = { input }
 if { var.pocketWidth < 1 }
     abort { "Pocket width too low!" }
 
-var bL = { (global.mosWPDims[1] != null) ? global.mosWPDims[1] : 100 }
+var bL = { (global.mosWPDims[var.wpNum][1] != null) ? global.mosWPDims[var.wpNum][1] : 100 }
 
 M291 P{"Please enter approximate <b>pocket length</b> in mm.<br/><b>NOTE</b>: <b>Length</b> is measured along the <b>Y</b> axis."} R"MillenniumOS: Probe Rect. Pocket" J1 T0 S6 F{var.bL}
 if { result != 0 }

@@ -8,37 +8,49 @@ var wpNum = { param.W }
 ; Center, Corner, Circular, Surface, Dimensions, Rotation
 ; 1 2 4 8 16 32
 
-var reset = { exists(param.R) ? param.R : 0 }
+; By default, reset everything
+var reset = { exists(param.R) ? param.R : 63 }
 
 if { !global.mosEM }
-    echo { "Resetting WCS " ^ var.wpNum ^ " probed details"}
+    echo { "Resetting WCS " ^ var.wpNum }
 
-; Reset Center if bit 1 is set
-if { mod(var.reset, 2) == 1 }
+; If first bit is set, reset center position
+; If second bit is set, reset corner position
+; If third bit is set, reset circular position
+; If fourth bit is set, reset surface position
+; If fifth bit is set, reset dimensions
+; If sixth bit is set, reset rotation
+
+if { mod(floor(var.reset/pow(2,0)),2) == 1 }
     ; Reset Center
+    echo { "Resetting WCS " ^ var.wpNum ^ " probed center"}
     set global.mosWPCtrPos[var.wpNum] = global.mosDfltWPCtrPos
 
-if { (mod(var.reset, 4) / 2) == 1 }
+if { mod(floor(var.reset/pow(2,1)),2) == 1 }
     ; Reset Corner
+    echo { "Resetting WCS " ^ var.wpNum ^ " probed corner"}
     set global.mosWPCnrPos[var.wpNum] = global.mosDfltWPCnrPos
     set global.mosWPCnrDeg[var.wpNum] = global.mosDfltWPCnrDeg
     set global.mosWPCnrNum[var.wpNum] = global.mosDfltWPCnrNum
 
-if { (mod(var.reset, 8) / 4) == 1 }
+if { mod(floor(var.reset/pow(2,2)),2) == 1}
     ; Reset Circular
+    echo { "Resetting WCS " ^ var.wpNum ^ " probed circular"}
     set global.mosWPRad[var.wpNum] = global.mosDfltWPRad
 
-if { (mod(var.reset, 16) / 8) == 1 }
+if { mod(floor(var.reset/pow(2,3)),2) == 1 }
     ; Reset Surface
+    echo { "Resetting WCS " ^ var.wpNum ^ " probed surface"}
     set global.mosWPSfcAxis[var.wpNum] = global.mosDfltWPSfcAxis
     set global.mosWPSfcPos[var.wpNum] = global.mosDfltWPSfcPos
 
-if { (mod(var.reset, 32) / 16) == 1 }
+if { mod(floor(var.reset/pow(2,4)),2) == 1 }
     ; Reset Dimensions
+    echo { "Resetting WCS " ^ var.wpNum ^ " probed dimensions"}
     set global.mosWPDims[var.wpNum] = global.mosDfltWPDims
-    set global.mosWPDimsError[var.wpNum] = global.mosDfltWPDimsError
+    set global.mosWPDimsErr[var.wpNum] = global.mosDfltWPDimsErr
 
-if { (var.reset / 32) == 1 }
+if { mod(floor(var.reset/pow(2,5)),2) == 1 }
     ; Reset Rotation
+    echo { "Resetting WCS " ^ var.wpNum ^ " probed rotation"}
     set global.mosWPDeg[var.wpNum] = global.mosDfltWPDeg
-
