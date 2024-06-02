@@ -17,7 +17,7 @@ if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
 if { !exists(param.H) || !exists(param.I) }
     abort { "Must provide an approximate width and length using H and I parameters!" }
 
-var wpNum = { exists(param.W) && param.W != null ? param.W : limits.workplaces }
+var wpNum = { exists(param.W) && param.W != null ? param.W : move.workplaceNumber }
 
 var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 

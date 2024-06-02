@@ -80,58 +80,56 @@ global mosOT=2.0
 global mosAngleTol=0.2
 
 ; Stores the calculated center position in X and Y against the workplace
-; index that was zeroed. If no workplace was chosen (this is an 'orphan probe')
-; then the workplace index will be set to limits.workplaces+1.
+; index that was zeroed.
 global mosDfltWPCtrPos = { null, null }
-global mosWPCtrPos = { vector(limits.workplaces+1, global.mosDfltWPCtrPos) }
+global mosWPCtrPos = { vector(limits.workplaces, global.mosDfltWPCtrPos) }
 
 ; Stores the calculated radius of the circular workpiece probed against the workplace
-; index that was zeroed. If no workplace was chosen (this is an 'orphan probe')
-; then the workplace index will be set to limits.workplaces+1.
+; index that was zeroed.
 global mosDfltWPRad = null
-global mosWPRad = { vector(limits.workplaces+1, global.mosDfltWPRad) }
+global mosWPRad = { vector(limits.workplaces, global.mosDfltWPRad) }
 
 ; Stores the calculated dimensions of the last rectangular workpiece probed.
 global mosDfltWPDims = { null, null }
-global mosWPDims = { vector(limits.workplaces+1, global.mosDfltWPDims) }
+global mosWPDims = { vector(limits.workplaces, global.mosDfltWPDims) }
 
 ; Stores the calculated dimensional error of the last dimensions versus
 ; what the operator inputted.
 ; This can be used to set a touch probe deflection value.
 global mosDfltWPDimsErr = { null, null }
-global mosWPDimsErr = { vector(limits.workplaces+1, global.mosDfltWPDimsErr) }
+global mosWPDimsErr = { vector(limits.workplaces, global.mosDfltWPDimsErr) }
 
 ; Stores the calculated rotation of the workpiece in relation to the
 ; X axis. This value can be applied as a G68 rotation value to align
 ; the workpiece with the machine axes.
 global mosDfltWPDeg = null
-global mosWPDeg = { vector(limits.workplaces+1, global.mosDfltWPDeg) }
+global mosWPDeg = { vector(limits.workplaces, global.mosDfltWPDeg) }
 
 ; This is the corner number that was picked by the
 ; operator for the most recent outside or inside
 ; corner probe.
 global mosDfltWPCnrNum = null
-global mosWPCnrNum = { vector(limits.workplaces+1, global.mosDfltWPCnrNum) }
+global mosWPCnrNum = { vector(limits.workplaces, global.mosDfltWPCnrNum) }
 
 ; These are the X and Y coordinates of the most recent
 ; corner probe.
 global mosDfltWPCnrPos = { null, null }
-global mosWPCnrPos = { vector(limits.workplaces+1, global.mosDfltWPCnrPos) }
+global mosWPCnrPos = { vector(limits.workplaces, global.mosDfltWPCnrPos) }
 
 ; This is the angle of the corner of the most recent
 ; outside corner probe.
 global mosDfltWPCnrDeg = null
-global mosWPCnrDeg = { vector(limits.workplaces+1, global.mosDfltWPCnrDeg) }
+global mosWPCnrDeg = { vector(limits.workplaces, global.mosDfltWPCnrDeg) }
 
 ; This is the Co-ordinate along the chosen axis of the
 ; most recent single surface probe.
 global mosDfltWPSfcPos = null
-global mosWPSfcPos = { vector(limits.workplaces+1, global.mosDfltWPSfcPos) }
+global mosWPSfcPos = { vector(limits.workplaces, global.mosDfltWPSfcPos) }
 
 ; This is the axis of the measurement of the most recent
 ; single surface probe.
 global mosDfltWPSfcAxis = null
-global mosWPSfcAxis = { vector(limits.workplaces+1, global.mosDfltWPSfcAxis) }
+global mosWPSfcAxis = { vector(limits.workplaces, global.mosDfltWPSfcAxis) }
 
 ; Canned Cycle settings
 global mosCCD = null ; Canned Cycle Drilling status

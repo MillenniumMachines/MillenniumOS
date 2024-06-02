@@ -100,14 +100,18 @@ if { var.workOffset != null }
     ; If work offset origin is already set
     if { var.pdX != 0 && var.pdY != 0 && var.pdZ != 0 }
         ; Allow operator to continue without resetting the origin and abort the probe
-        M291 P{"WCS " ^ var.workOffset ^ " (" ^ var.workOffsetName ^ ") already has a valid origin.<br/>Click <b>Continue</b> to use the existing origin, or <b>Reset</b> to probe it again."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue","Reset"} F0
+        M291 P{"WCS " ^ var.workOffset ^ " (" ^ var.workOffsetName ^ ") already has a valid origin.<br/>Click <b>Continue</b> to use the existing origin, or <b>Reset</b> to probe it again."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue","Reset All", "Reset X/Y", "Reset Z"} F0
         if { input == 0 }
             echo {"MillenniumOS: WCS " ^ var.workOffset ^ " (" ^ var.workOffsetName ^ ") origin retained, skipping probe cycle."}
             M99
 
-        ; Force reset the origin as a safety measure.
-        G10 L2 P{var.workOffset} X0 Y0 Z0
-        echo {"MillenniumOS: WCS " ^ var.workOffset ^ " (" ^ var.workOffsetName ^ ") origin reset."}
+        if { input == 1 or input == 2 }
+            G10 L2 P{var.workOffset} X0 Y0
+            echo {"MillenniumOS: WCS " ^ var.workOffset ^ " (" ^ var.workOffsetName ^ ") X/Y origin reset."}
+
+        if { input == 1 or input == 3 }
+            G10 L2 P{var.workOffset} Z0
+            echo {"MillenniumOS: WCS " ^ var.workOffset ^ " (" ^ var.workOffsetName ^ ") Z origin reset."}
 
 ; Switch to touchprobe if not already connected
 if { global.mosPTID != state.currentTool }
@@ -155,5 +159,11 @@ if { input != null }
         if { var.paZ != "" }
             M291 P{"Probe cycle complete, but axes<b>" ^ var.paZ ^ "</b> in <b>WCS " ^ var.workOffset ^ "</b> have not been probed yet. Run another probe cycle?"} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Yes", "No"}
             if { input == 0 }
+                ; This is a recursive call. Let the user break it :)
+                G6600 W{var.workOffset}
+
+        elif { global.mosTM }
+            M291 P{"WCS " ^ var.workOffset ^ " (" ^ var.workOffsetCodes[var.workOffset] ^ ") origin is valid.<br/>Click <b>Continue</b> to proceed or <b>Re-Probe</b> to try again."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue", "Re-Probe"}
+            if { input == 1 }
                 ; This is a recursive call. Let the user break it :)
                 G6600 W{var.workOffset}
