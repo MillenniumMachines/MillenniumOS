@@ -26,7 +26,7 @@ if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
 if { !exists(param.H) }
     abort { "Must provide an approximate bore diameter using the H parameter!" }
 
-var wpNum = { exists(param.W) && param.W != null ? param.W : limits.workplaces }
+var wpNum = { exists(param.W) && param.W != null ? param.W : move.workplaceNumber }
 
 var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 

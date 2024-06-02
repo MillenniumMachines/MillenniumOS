@@ -27,8 +27,10 @@ if { global.mosTM && !global.mosDD[3] }
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
 
+var wpNum = { exists(param.W) && param.W != null ? param.W : move.workplaceNumber }
+
 ; Prompt for boss diameter
-M291 P"Please enter approximate boss diameter in mm." R"MillenniumOS: Probe Boss" J1 T0 S6 F{(global.mosWPRad != null) ? global.mosWPRad*2 : 0}
+M291 P"Please enter approximate boss diameter in mm." R"MillenniumOS: Probe Boss" J1 T0 S6 F{(global.mosWPRad[var.wpNum] != global.mosDfltWPRad) ? global.mosWPRad[var.wpNum]*2 : 0}
 if { result != 0 }
     abort { "Boss probe aborted!" }
 

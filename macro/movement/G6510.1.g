@@ -20,7 +20,7 @@ if { !exists(param.H) }
 if { !exists(param.I) }
     abort { "Must provide a distance to probe towards the target surface (I...)" }
 
-var wpNum = { exists(param.W) && param.W != null ? param.W : limits.workplaces }
+var wpNum = { exists(param.W) && param.W != null ? param.W : move.workplaceNumber }
 
 var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
