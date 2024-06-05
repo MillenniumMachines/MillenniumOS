@@ -35,7 +35,7 @@ if { global.mosPTID != state.currentTool }
 
 ; Reset stored values that we're going to overwrite -
 ; center, dimensions and rotation
-M4010 W{var.wpNum} R49
+M4010 W{var.workOffset} R49
 
 ; Store our own safe Z position as the current position. We return to
 ; this position where necessary to make moves across the workpiece to
@@ -200,7 +200,7 @@ if { var.xAngleDiff > global.mosAngleTol }
 ; Our midpoint for each line is the average of the 2 points, so
 ; we can just add all of the points together and divide by 4.
 set var.sX = { (var.pX[0] + var.pX[1] + var.pX[2] + var.pX[3]) / 4 }
-set global.mosWPCtrPos[var.wpNum][0] = { var.sX }
+set global.mosWPCtrPos[var.workOffset][0] = { var.sX }
 
 ; Use the recalculated center of the block to probe Y surfaces.
 
@@ -279,7 +279,7 @@ if { var.yAngleDiff > global.mosAngleTol }
 var cornerAngleError = { degrees(var.aX1 - var.aY1) }
 
 ; We report the corner angle around 90 degrees
-set global.mosWPCnrDeg[var.wpNum] = { 90 + var.cornerAngleError }
+set global.mosWPCnrDeg[var.workOffset] = { 90 + var.cornerAngleError }
 
 
 ; Commented due to memory limitations
@@ -291,17 +291,17 @@ if { (var.cornerAngleError > global.mosAngleTol) }
 
 ; Calculate Y centerpoint as before.
 set var.sY = { (var.pY[0] + var.pY[1] + var.pY[2] + var.pY[3]) / 4 }
-set global.mosWPCtrPos[var.wpNum][1] = { var.sY }
+set global.mosWPCtrPos[var.workOffset][1] = { var.sY }
 
 ; We can now calculate the actual dimensions of the block.
 ; The dimensions are the difference between the average of each
 ; pair of points of each line.
-set global.mosWPDims[var.wpNum][0] = { ((var.pX[2] + var.pX[3]) / 2) - ((var.pX[0] + var.pX[1]) / 2) }
-set global.mosWPDims[var.wpNum][1] = { ((var.pY[2] + var.pY[3]) / 2) - ((var.pY[0] + var.pY[1]) / 2) }
+set global.mosWPDims[var.workOffset][0] = { ((var.pX[2] + var.pX[3]) / 2) - ((var.pX[0] + var.pX[1]) / 2) }
+set global.mosWPDims[var.workOffset][1] = { ((var.pY[2] + var.pY[3]) / 2) - ((var.pY[0] + var.pY[1]) / 2) }
 
 ; Set the global error in dimensions
 ; This can be used by other macros to configure the touch probe deflection.
-set global.mosWPDimsErr[var.wpNum] = { abs(var.fW - global.mosWPDims[var.wpNum][0]), abs(var.fL - global.mosWPDims[var.wpNum][1]) }
+set global.mosWPDimsErr[var.workOffset] = { abs(var.fW - global.mosWPDims[var.workOffset][0]), abs(var.fL - global.mosWPDims[var.workOffset][1]) }
 
 ; Make sure we're at the safeZ height
 G6550 I{var.probeId} I{var.probeId} Z{var.safeZ}
@@ -317,15 +317,15 @@ G6550 I{var.probeId} X{var.sX} Y{var.sY}
 ; as the angle of the first X line.
 
 ; Calculate the slope and angle of the first X line.
-set global.mosWPDeg[var.wpNum] = { degrees(var.aX1) }
+set global.mosWPDeg[var.workOffset] = { degrees(var.aX1) }
 
 ; Commented due to memory limitations
 ; M7500 S{"Rectangle Block Rotation from X axis: " ^ global.mosWPDeg ^ " degrees" }
 
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
-    M7601 W{var.wpNum}
+    M7601 W{var.workOffset}
 
-; Set WCS origin to the probed center, if requested
+; Set WCS origin to the probed center
 echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to the center of the rectangle block." }
 G10 L2 P{var.wcsNumber} X{var.sX} Y{var.sY}

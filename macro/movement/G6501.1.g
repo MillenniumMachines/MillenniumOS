@@ -169,6 +169,6 @@ G6550 I{var.probeId} X{var.cX} Y{var.cY}
 if { !exists(param.R) || param.R != 0 }
     M7601 W{var.workOffset}
 
-; Set WCS origin to the probed corner
+; Set WCS origin to the probed center
 echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to the center of the boss." }
 G10 L2 P{var.wcsNumber} X{var.cX} Y{var.cY}

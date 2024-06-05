@@ -104,12 +104,12 @@ if { var.workOffset != null }
             echo {"MillenniumOS: WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") origin retained, skipping probe cycle."}
             M99
 
-        if { input == 1 or input == 2 }
-            G10 L2 P{var.workOffset} X0 Y0
+        if { input == 1 || input == 2 }
+            G10 L2 P{var.wcsNumber} X0 Y0
             echo {"MillenniumOS: WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") X/Y origin reset."}
 
-        if { input == 1 or input == 3 }
-            G10 L2 P{var.workOffset} Z0
+        if { input == 1 || input == 3 }
+            G10 L2 P{var.wcsNumber} Z0
             echo {"MillenniumOS: WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") Z origin reset."}
 
 ; Switch to touchprobe if not already connected
@@ -124,47 +124,45 @@ if { result != 0 }
 ; Run the selected probing operation.
 ; We cannot lookup G command numbers to run dynamically so these must be
 ; hardcoded in a set of if statements.
-if { input != null }
-    ; It is not possible to check the return status
-    ; of a meta macro, so we must assume that these macros are
-    ; going to abort themselves if there is a problem.
-    if { input == 0 } ; Vise Corner
-        G6520 W{var.workOffset}
-    elif { input == 1 } ; Circular Bore
-        G6500 W{var.workOffset}
-    elif { input == 2 } ; Circular Boss
-        G6501 W{var.workOffset}
-    elif { input == 3 } ; Rectangle Pocket
-        G6502 W{var.workOffset}
-    elif { input == 4 } ; Rectangle Block
-        G6503 W{var.workOffset}
-    elif { input == 5 } ; Outside Corner
-        G6508 W{var.workOffset}
-    elif { input == 6 } ; Single Surface
-        G6510 W{var.workOffset}
-    else
-        abort { "Invalid probe operation " ^ input ^ " selected!" }
 
-    if { var.workOffset != null }
-        var paZ = { (move.axes[0].workplaceOffsets[var.workOffset] == 0)? " X" : "" }
-        set var.paZ = { var.paZ ^ ((move.axes[1].workplaceOffsets[var.workOffset] == 0)? " Y" : "") }
-
-        ; Only warn about Z if toolsetter is enabled.
-        ; Without a toolsetter, the first tool change
-        ; will prompt to zero the Z height again.
-        if { global.mosFeatToolSetter }
-            set var.paZ = { var.paZ ^ ((move.axes[2].workplaceOffsets[var.workOffset] == 0)? " Z" : "") }
-
-        if { var.paZ != "" }
-            M291 P{"Probe cycle complete, but axes<b>" ^ var.paZ ^ "</b> in <b>WCS " ^ var.wcsNumber ^ "</b> have not been probed yet. Run another probe cycle?"} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Yes", "No"}
-            if { input == 0 }
-                ; This is a recursive call. Let the user break it :)
-                G6600 W{var.wcsNumber}
-
-        elif { global.mosTM }
-            M291 P{"WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetCodes[var.workOffset] ^ ") origin is valid.<br/>Click <b>Continue</b> to proceed or <b>Re-Probe</b> to try again."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue", "Re-Probe"}
-            if { input == 1 }
-                ; This is a recursive call. Let the user break it :)
-                G6600 W{var.wcsNumber}
+; It is not possible to check the return status
+; of a meta macro, so we must assume that these macros are
+; going to abort themselves if there is a problem.
+if { input == 0 } ; Vise Corner
+    G6520 W{var.workOffset}
+elif { input == 1 } ; Circular Bore
+    G6500 W{var.workOffset}
+elif { input == 2 } ; Circular Boss
+    G6501 W{var.workOffset}
+elif { input == 3 } ; Rectangle Pocket
+    G6502 W{var.workOffset}
+elif { input == 4 } ; Rectangle Block
+    G6503 W{var.workOffset}
+elif { input == 5 } ; Outside Corner
+    G6508 W{var.workOffset}
+elif { input == 6 } ; Single Surface
+    G6510 W{var.workOffset}
 else
-    abort { "No probe operation selected!" }
+    abort { "Invalid probe operation " ^ input ^ " selected!" }
+
+if { var.workOffset != null }
+    var paZ = { (move.axes[0].workplaceOffsets[var.workOffset] == 0)? " X" : "" }
+    set var.paZ = { var.paZ ^ ((move.axes[1].workplaceOffsets[var.workOffset] == 0)? " Y" : "") }
+
+    ; Only warn about Z if toolsetter is enabled.
+    ; Without a toolsetter, the first tool change
+    ; will prompt to zero the Z height again.
+    if { global.mosFeatToolSetter }
+        set var.paZ = { var.paZ ^ ((move.axes[2].workplaceOffsets[var.workOffset] == 0)? " Z" : "") }
+
+    if { var.paZ != "" }
+        M291 P{"Probe cycle complete, but axes<b>" ^ var.paZ ^ "</b> in <b>WCS " ^ var.wcsNumber ^ "</b> have not been probed yet. Run another probe cycle?"} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Yes", "No"}
+        if { input == 0 }
+            ; This is a recursive call. Let the user break it :)
+            G6600 W{var.workOffset}
+
+    elif { global.mosTM }
+        M291 P{"WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetCodes[var.workOffset] ^ ") origin is valid.<br/>Click <b>Continue</b> to proceed or <b>Re-Probe</b> to try again."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue", "Re-Probe"}
+        if { input == 1 }
+            ; This is a recursive call. Let the user break it :)
+            G6600 W{var.workOffset}

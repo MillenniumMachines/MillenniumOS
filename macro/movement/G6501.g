@@ -38,7 +38,7 @@ var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workpla
 var wcsNumber = { var.workOffset + 1 }
 
 ; Prompt for boss diameter
-M291 P"Please enter approximate boss diameter in mm." R"MillenniumOS: Probe Boss" J1 T0 S6 F{(global.mosWPRad[var.wpNum] != global.mosDfltWPRad) ? global.mosWPRad[var.wpNum]*2 : 0}
+M291 P"Please enter approximate boss diameter in mm." R"MillenniumOS: Probe Boss" J1 T0 S6 F{(global.mosWPRad[var.workOffset] != global.mosDfltWPRad) ? global.mosWPRad[var.workOffset]*2 : 0}
 if { result != 0 }
     abort { "Boss probe aborted!" }
 
