@@ -16,8 +16,8 @@
 if { !inputs[state.thisInput].active }
     M99
 
-if { exists(param.W) && param.W != null && (param.W < 1 || param.W > limits.workplaces) }
-    abort { "WCS number (W..) must be between 1 and " ^ limits.workplaces ^ "!" }
+if { exists(param.W) && param.W != null && (param.W < 0 || param.W >= limits.workplaces) }
+    abort { "Work Offset (W..) must be between 0 and " ^ limits.workplaces-1 ^ "!" }
 
 if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
     abort { "Must provide a start position to probe from using J, K and L parameters!" }
@@ -34,7 +34,14 @@ if { (!exists(param.Q) || param.Q == 0) && !exists(param.H) || !exists(param.I) 
 if { !exists(param.N) || param.N < 0 || param.N >= (#global.mosCnr) }
     abort { "Must provide a valid corner index using the N parameter!" }
 
-var wpNum = { exists(param.W) && param.W != null ? param.W : limits.workplaces }
+; Default workOffset to the current workplace number if not specified
+; with the W parameter.
+var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
+
+; WCS Numbers and Offsets are confusing. Work Offset indicates the offset
+; from the first work co-ordinate system, so is 0-indexed. WCS number indicates
+; the number of the work co-ordinate system, so is 1-indexed.
+var wcsNumber = { var.workOffset + 1 }
 
 var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 

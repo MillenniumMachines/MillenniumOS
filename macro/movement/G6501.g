@@ -27,7 +27,15 @@ if { global.mosTM && !global.mosDD[3] }
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
 
-var wpNum = { exists(param.W) && param.W != null ? param.W : move.workplaceNumber }
+; Default workOffset to the current workplace number if not specified
+; with the W parameter.
+var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
+
+
+; WCS Numbers and Offsets are confusing. Work Offset indicates the offset
+; from the first work co-ordinate system, so is 0-indexed. WCS number indicates
+; the number of the work co-ordinate system, so is 1-indexed.
+var wcsNumber = { var.workOffset + 1 }
 
 ; Prompt for boss diameter
 M291 P"Please enter approximate boss diameter in mm." R"MillenniumOS: Probe Boss" J1 T0 S6 F{(global.mosWPRad[var.wpNum] != global.mosDfltWPRad) ? global.mosWPRad[var.wpNum]*2 : 0}

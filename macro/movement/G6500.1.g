@@ -17,8 +17,8 @@
 if { !inputs[state.thisInput].active }
     M99
 
-if { exists(param.W) && param.W != null && (param.W < 1 || param.W > limits.workplaces) }
-    abort { "WCS number (W..) must be between 1 and " ^ limits.workplaces ^ "!" }
+if { exists(param.W) && param.W != null && (param.W < 0 || param.W >= limits.workplaces) }
+    abort { "Work Offset (W..) must be between 0 and " ^ limits.workplaces-1 ^ "!" }
 
 if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
     abort { "Must provide a start position to probe from using J, K and L parameters!" }
@@ -26,7 +26,15 @@ if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
 if { !exists(param.H) }
     abort { "Must provide an approximate bore diameter using the H parameter!" }
 
-var wpNum = { exists(param.W) && param.W != null ? param.W : move.workplaceNumber }
+; Default workOffset to the current workplace number if not specified
+; with the W parameter.
+var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
+
+
+; WCS Numbers and Offsets are confusing. Work Offset indicates the offset
+; from the first work co-ordinate system, so is 0-indexed. WCS number indicates
+; the number of the work co-ordinate system, so is 1-indexed.
+var wcsNumber = { var.workOffset + 1 }
 
 var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
@@ -39,7 +47,7 @@ if { global.mosPTID != state.currentTool }
 
 ; Reset stored values that we're going to overwrite
 ; Reset center position and radius
-M4010 W{var.wpNum} R3
+M4010 W{var.workOffset} R3
 
 ; Apply tool radius to overtravel. We want to allow
 ; less movement past the expected point of contact
@@ -122,8 +130,8 @@ var r3 = { sqrt(pow((var.pXY[2][0] - var.cX), 2) + pow((var.pXY[2][1] - var.cY),
 var avgR = { (var.r1 + var.r2 + var.r3) / 3 }
 
 ; Update global vars for correct workplace
-set global.mosWPCtrPos[var.wpNum]   = { var.cX, var.cY }
-set global.mosWPRad[var.wpNum]      = { var.avgR }
+set global.mosWPCtrPos[var.workOffset]   = { var.cX, var.cY }
+set global.mosWPRad[var.workOffset]      = { var.avgR }
 
 ; Move to the calculated center of the bore
 G6550 I{var.probeId} X{var.cX} Y{var.cY}
@@ -133,9 +141,8 @@ G6550 I{var.probeId} Z{var.safeZ}
 
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
-    M7601 W{var.wpNum}
+    M7601 W{var.workOffset}
 
-; Set WCS origin to the probed corner, if requested
-if { var.wpNum != limits.workplaces }
-    echo { "MillenniumOS: Setting WCS " ^ param.W ^ " X,Y origin to center of bore." }
-    G10 L2 P{param.W} X{var.cX} Y{var.cY}
+; Set WCS origin to the probed corner
+echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to center of bore." }
+G10 L2 P{var.wcsNumber} X{var.cX} Y{var.cY}
