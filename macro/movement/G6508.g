@@ -62,7 +62,7 @@ var ySL  = null
 
 ; 0 = Full mode, 1 = Quick mode
 if { var.mode == 0 }
-    var sW = { (global.mosWPDims[var.wpNum][0] != null) ? global.mosWPDims[var.wpNum][0] : 100 }
+    var sW = { (global.mosWPDims[var.workOffset][0] != null) ? global.mosWPDims[var.workOffset][0] : 100 }
     M291 P{"Please enter approximate <b>surface length</b> along the X axis in mm.<br/><b>NOTE</b>: Along the X axis means the surface facing towards or directly away from the operator."} R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{var.sW}
     if { result != 0 }
         abort { "Outside corner probe aborted!" }
@@ -72,7 +72,7 @@ if { var.mode == 0 }
     if { var.xSL < var.tR }
         abort { "X surface length too low. Cannot probe distances smaller than the tool radius (" ^ var.tR ^ ")!"}
 
-    var sL = { (global.mosWPDims[var.wpNum][1] != null) ? global.mosWPDims[var.wpNum][1] : 100 }
+    var sL = { (global.mosWPDims[var.workOffset][1] != null) ? global.mosWPDims[var.workOffset][1] : 100 }
     M291 P{"Please enter approximate <b>surface length</b> along the Y axis in mm.<br/><b>NOTE</b>: Along the Y axis means the surface to the left or the right of the operator."} R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{var.sL}
     if { result != 0 }
         abort { "Outside corner probe aborted!" }

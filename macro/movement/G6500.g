@@ -44,7 +44,7 @@ var wcsNumber = { var.workOffset + 1 }
 ; after the M291 has been acknowledged.
 
 ; Prompt for bore diameter
-M291 P"Please enter approximate bore diameter in mm." R"MillenniumOS: Probe Bore" J1 T0 S6 F{(global.mosWPRad[var.wpNum] != global.mosDfltWPRad) ? global.mosWPRad[var.wpNum]*2 : 0}
+M291 P"Please enter approximate bore diameter in mm." R"MillenniumOS: Probe Bore" J1 T0 S6 F{(global.mosWPRad[var.workOffset] != global.mosDfltWPRad) ? global.mosWPRad[var.workOffset]*2 : 0}
 if { result != 0 }
     abort { "Bore probe aborted!" }
 

@@ -39,7 +39,7 @@ var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workpla
 ; the number of the work co-ordinate system, so is 1-indexed.
 var wcsNumber = { var.workOffset + 1 }
 
-var bW = { (global.mosWPDims[var.wpNum][0] != global.mosDfltWPDims[0]) ? global.mosWPDims[var.wpNum][0] : 100 }
+var bW = { (global.mosWPDims[var.workOffset][0] != global.mosDfltWPDims[0]) ? global.mosWPDims[var.workOffset][0] : 100 }
 
 M291 P{"Please enter approximate <b>pocket width</b> in mm.<br/><b>NOTE</b>: <b>Width</b> is measured along the <b>X</b> axis."} R"MillenniumOS: Probe Rect. Pocket" J1 T0 S6 F{var.bW}
 if { result != 0 }
@@ -50,7 +50,7 @@ var pocketWidth = { input }
 if { var.pocketWidth < 1 }
     abort { "Pocket width too low!" }
 
-var bL = { (global.mosWPDims[var.wpNum][1] != global.mosDfltWPDims[1]) ? global.mosWPDims[var.wpNum][1] : 100 }
+var bL = { (global.mosWPDims[var.workOffset][1] != global.mosDfltWPDims[1]) ? global.mosWPDims[var.workOffset][1] : 100 }
 
 M291 P{"Please enter approximate <b>pocket length</b> in mm.<br/><b>NOTE</b>: <b>Length</b> is measured along the <b>Y</b> axis."} R"MillenniumOS: Probe Rect. Pocket" J1 T0 S6 F{var.bL}
 if { result != 0 }
