@@ -25,13 +25,20 @@ G27 Z1
 if { !exists(global.mosLdd) || !global.mosLdd }
     abort {"MillenniumOS is not loaded! Please restart your mainboard and check for any startup errors!"}
 
-; Default to null work offset, which will not set origin
-; on a work offset.
-var workOffset = null
+; Default workOffset to the current workplace number if not specified
+; with the W parameter.
+var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
+
+
+; WCS Numbers and Offsets are confusing. Work Offset indicates the offset
+; from the first work co-ordinate system, so is 0-indexed. WCS number indicates
+; the number of the work co-ordinate system, so is 1-indexed.
+var wcsNumber = { var.workOffset + 1 }
 
 ; Define names for work offsets. The work offset ID is the index into these arrays.
 ; None means do not set origins on a work offset.
-var workOffsetCodes={"None","G54","G55","G56","G57","G58","G59","G59.1","G59.2","G59.3"}
+var workOffsetCodes={"G54","G55","G56","G57","G58","G59","G59.1","G59.2","G59.3"}
+
 
 ; Define probe cycle names
 var probeCycleNames = { "Vise Corner (X,Y,Z)", "Circular Bore (X,Y)", "Circular Boss (X,Y)", "Rectangle Pocket (X,Y)", "Rectangle Block (X,Y)", "Outside Corner (X,Y)", "Single Surface (X/Y/Z)" }
@@ -47,8 +54,8 @@ if { global.mosTM && !global.mosDD[0] }
         M291 P{"Your machine does not have a <b>Touch Probe</b> configured, so probing will involve manually jogging the machine until an installed tool or metal dowel touches the workpiece."} R"MillenniumOS: Probe Workpiece" T0 S2
 
     if { global.mosFeatToolSetter }
-        M291 P{"For a square or rectangular workpiece, you should start with the <b>Vise Corner</b> probing cycle to identify your origin corner in X and Y, and Z height."} R"MillenniumOS: Probe Workpiece" T0 S2
-        M291 P{"For a round workpiece, you should start with the <b>Circular Boss</b> and <b>Single Surface (Z)</b> cycle to identify the center of the circle as your origin in X and Y, and Z height."} R"MillenniumOS: Probe Workpiece" T0 S2
+        M291 P{"For a square or rectangular workpiece whose top surface is above any work holding, you can start with the <b>Vise Corner</b> cycle to identify your origin corner in X and Y, and Z height."} R"MillenniumOS: Probe Workpiece" T0 S2
+        M291 P{"For a round workpiece, you can start with the <b>Circular Boss</b> and <b>Single Surface (Z)</b> cycle to identify the center of the item as your origin in X and Y, and Z height."} R"MillenniumOS: Probe Workpiece" T0 S2
     else
         ; If the user does not have a toolsetter, then they need to
         ; reset the Z origin on every toolchange anyway.
@@ -60,58 +67,50 @@ if { global.mosTM && !global.mosDD[0] }
 
     set global.mosDD[0] = true
 
-; Ask user for work offset to set.
-if { !exists(param.W) }
-    M291 P{"Select WCS number to set origin on or press ""None"" to probe without setting WCS origin"} R"MillenniumOS: Probe Workpiece" T0 S4 K{var.workOffsetCodes}
+; Ask user for work offset to set if no workplace is set or
+; a W parameter was not passed.
+
+if { var.workOffset == null }
+    M291 P{"Select WCS to probe"} R"MillenniumOS: Probe Workpiece" T0 S4 K{var.workOffsetCodes}
     if { result != 0 }
         abort {"Operator cancelled probe cycle, please set WCS origin manually or restart probing with <b>G6600</b>"}
         M99
 
     set var.workOffset = { input }
 
-    if { var.workOffset == 0 }
-        set var.workOffset = null
-else
-    set var.workOffset = { param.W }
-
-; Warn about null work offset
-if { var.workOffset == null && global.mosTM && !global.mosDD[1] }
-    M291 P{"Probing can still run without a WCS origin being set. The output of the probing cycle will be available in the global variables specific to the probe cycle."} R"MillenniumOS: Probe Workpiece" T0 S2
-    set global.mosDD[1]=true
-
 ; Show operator existing WCS origin co-ordinates.
 if { var.workOffset != null }
     ; Get work offset name (G54, G55, etc) and origin co-ordinates
     var workOffsetName = { var.workOffsetCodes[var.workOffset] }
-    var pdX = { move.axes[0].workplaceOffsets[var.workOffset-1] }
-    var pdY = { move.axes[1].workplaceOffsets[var.workOffset-1] }
-    var pdZ = { move.axes[2].workplaceOffsets[var.workOffset-1] }
+    var pdX = { move.axes[0].workplaceOffsets[var.workOffset] }
+    var pdY = { move.axes[1].workplaceOffsets[var.workOffset] }
+    var pdZ = { move.axes[2].workplaceOffsets[var.workOffset] }
 
     ; If tutorial mode, show operator the WCS origin if any axes are set.
     if { global.mosTM && (var.pdX != 0 || var.pdY != 0 || var.pdZ != 0) }
-        M291 P{"WCS " ^ var.workOffset ^ " (" ^ var.workOffsetName ^ ") has origin:<br/>X=" ^ var.pdX ^ " Y=" ^ var.pdY ^ " Z=" ^ var.pdZ} R"MillenniumOS: Probe Workpiece" T0 S2
+        M291 P{"WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") has origin:<br/>X=" ^ var.pdX ^ " Y=" ^ var.pdY ^ " Z=" ^ var.pdZ} R"MillenniumOS: Probe Workpiece" T0 S2
 
     ; Otherwise, tell the operator which WCS origin will be set.
     elif { global.mosTM }
-        M291 P{"Probing will set the origin of WCS " ^ var.workOffset ^ " (" ^ var.workOffsetCodes[var.workOffset] ^ ") to the probed location."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue","Cancel"}
+        M291 P{"Probing will set the origin of WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetCodes[var.workOffset] ^ ") to the probed location."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue","Cancel"}
         if { input != 0 }
             abort {"Operator cancelled probe cycle, please set WCS origin manually or restart probing with <b>G6600</b>"}
 
     ; If work offset origin is already set
     if { var.pdX != 0 && var.pdY != 0 && var.pdZ != 0 }
         ; Allow operator to continue without resetting the origin and abort the probe
-        M291 P{"WCS " ^ var.workOffset ^ " (" ^ var.workOffsetName ^ ") already has a valid origin.<br/>Click <b>Continue</b> to use the existing origin, or <b>Reset</b> to probe it again."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue","Reset All", "Reset X/Y", "Reset Z"} F0
+        M291 P{"WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") already has a valid origin.<br/>Click <b>Continue</b> to use the existing origin."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue","Reset All", "Reset X/Y", "Reset Z"} F0
         if { input == 0 }
-            echo {"MillenniumOS: WCS " ^ var.workOffset ^ " (" ^ var.workOffsetName ^ ") origin retained, skipping probe cycle."}
+            echo {"MillenniumOS: WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") origin retained, skipping probe cycle."}
             M99
 
         if { input == 1 or input == 2 }
             G10 L2 P{var.workOffset} X0 Y0
-            echo {"MillenniumOS: WCS " ^ var.workOffset ^ " (" ^ var.workOffsetName ^ ") X/Y origin reset."}
+            echo {"MillenniumOS: WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") X/Y origin reset."}
 
         if { input == 1 or input == 3 }
             G10 L2 P{var.workOffset} Z0
-            echo {"MillenniumOS: WCS " ^ var.workOffset ^ " (" ^ var.workOffsetName ^ ") Z origin reset."}
+            echo {"MillenniumOS: WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") Z origin reset."}
 
 ; Switch to touchprobe if not already connected
 if { global.mosPTID != state.currentTool }
@@ -147,23 +146,25 @@ if { input != null }
         abort { "Invalid probe operation " ^ input ^ " selected!" }
 
     if { var.workOffset != null }
-        var paZ = { (move.axes[0].workplaceOffsets[var.workOffset-1] == 0)? " X" : "" }
-        set var.paZ = { var.paZ ^ ((move.axes[1].workplaceOffsets[var.workOffset-1] == 0)? " Y" : "") }
+        var paZ = { (move.axes[0].workplaceOffsets[var.workOffset] == 0)? " X" : "" }
+        set var.paZ = { var.paZ ^ ((move.axes[1].workplaceOffsets[var.workOffset] == 0)? " Y" : "") }
 
         ; Only warn about Z if toolsetter is enabled.
         ; Without a toolsetter, the first tool change
         ; will prompt to zero the Z height again.
         if { global.mosFeatToolSetter }
-            set var.paZ = { var.paZ ^ ((move.axes[2].workplaceOffsets[var.workOffset-1] == 0)? " Z" : "") }
+            set var.paZ = { var.paZ ^ ((move.axes[2].workplaceOffsets[var.workOffset] == 0)? " Z" : "") }
 
         if { var.paZ != "" }
-            M291 P{"Probe cycle complete, but axes<b>" ^ var.paZ ^ "</b> in <b>WCS " ^ var.workOffset ^ "</b> have not been probed yet. Run another probe cycle?"} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Yes", "No"}
+            M291 P{"Probe cycle complete, but axes<b>" ^ var.paZ ^ "</b> in <b>WCS " ^ var.wcsNumber ^ "</b> have not been probed yet. Run another probe cycle?"} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Yes", "No"}
             if { input == 0 }
                 ; This is a recursive call. Let the user break it :)
-                G6600 W{var.workOffset}
+                G6600 W{var.wcsNumber}
 
         elif { global.mosTM }
-            M291 P{"WCS " ^ var.workOffset ^ " (" ^ var.workOffsetCodes[var.workOffset] ^ ") origin is valid.<br/>Click <b>Continue</b> to proceed or <b>Re-Probe</b> to try again."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue", "Re-Probe"}
+            M291 P{"WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetCodes[var.workOffset] ^ ") origin is valid.<br/>Click <b>Continue</b> to proceed or <b>Re-Probe</b> to try again."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue", "Re-Probe"}
             if { input == 1 }
                 ; This is a recursive call. Let the user break it :)
-                G6600 W{var.workOffset}
+                G6600 W{var.wcsNumber}
+else
+    abort { "No probe operation selected!" }

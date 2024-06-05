@@ -27,7 +27,15 @@ if { global.mosTM && !global.mosDD[2] }
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
 
-var wpNum = { exists(param.W) && param.W != null ? param.W : move.workplaceNumber }
+; Default workOffset to the current workplace number if not specified
+; with the W parameter.
+var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
+
+
+; WCS Numbers and Offsets are confusing. Work Offset indicates the offset
+; from the first work co-ordinate system, so is 0-indexed. WCS number indicates
+; the number of the work co-ordinate system, so is 1-indexed.
+var wcsNumber = { var.workOffset + 1 }
 
 ; Note: These if's below are nested for a reason.
 ; During a print file, sometimes the lines after an M291 are executed

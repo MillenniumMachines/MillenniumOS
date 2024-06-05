@@ -8,8 +8,8 @@
 if { !inputs[state.thisInput].active }
     M99
 
-if { exists(param.W) && param.W != null && (param.W < 1 || param.W > limits.workplaces) }
-    abort { "WCS number (W..) must be between 1 and " ^ limits.workplaces ^ "!" }
+if { exists(param.W) && param.W != null && (param.W < 0 || param.W >= limits.workplaces) }
+    abort { "Work Offset (W..) must be between 0 and " ^ limits.workplaces-1 ^ "!" }
 
 if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
     abort { "Must provide a start position to probe from using J, K and L parameters!" }
@@ -20,7 +20,15 @@ if { !exists(param.H) }
 if { !exists(param.I) }
     abort { "Must provide a distance to probe towards the target surface (I...)" }
 
-var wpNum = { exists(param.W) && param.W != null ? param.W : move.workplaceNumber }
+; Default workOffset to the current workplace number if not specified
+; with the W parameter.
+var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
+
+
+; WCS Numbers and Offsets are confusing. Work Offset indicates the offset
+; from the first work co-ordinate system, so is 0-indexed. WCS number indicates
+; the number of the work co-ordinate system, so is 1-indexed.
+var wcsNumber = { var.workOffset + 1 }
 
 var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
@@ -30,7 +38,7 @@ if { global.mosPTID != state.currentTool }
 
 ; Reset stored values that we're going to overwrite -
 ; surface
-M4010 W{var.wpNum} R8
+M4010 W{var.workOffset} R8
 
 var safeZ = { move.axes[2].machinePosition }
 
@@ -71,21 +79,20 @@ G6512 I{var.probeId} J{param.J} K{param.K} L{param.L} X{var.tPX} Y{var.tPY} Z{va
 var sAxis = { (var.probeAxis <= 1)? "X" : (var.probeAxis <= 3)? "Y" : "Z" }
 
 ; Set the axis that we probed on
-set global.mosWPSfcAxis[var.wpNum] = { var.sAxis }
+set global.mosWPSfcAxis[var.workOffset] = { var.sAxis }
 
 ; Set surface position on relevant axis
-set global.mosWPSfcPos[var.wpNum] = { (var.probeAxis <= 1)? global.mosPCX : (var.probeAxis <= 3)? global.mosPCY : global.mosPCZ }
+set global.mosWPSfcPos[var.workOffset] = { (var.probeAxis <= 1)? global.mosPCX : (var.probeAxis <= 3)? global.mosPCY : global.mosPCZ }
 
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
-    M7601 W{var.wpNum}
+    M7601 W{var.workOffset}
 
 ; Set WCS if required
-if { exists(param.W) && param.W != null }
-    echo { "MillenniumOS: Setting WCS " ^ param.W ^ " " ^ var.sAxis ^ " origin to probed co-ordinate." }
+    echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " " ^ var.sAxis ^ " origin to probed co-ordinate." }
     if { var.probeAxis <= 1 }
-        G10 L2 P{param.W} X{global.mosWPSfcPos[var.wpNum]}
+        G10 L2 P{var.wcsNumber} X{global.mosWPSfcPos[var.workOffset]}
     elif { var.probeAxis <= 3 }
-        G10 L2 P{param.W} Y{global.mosWPSfcPos[var.wpNum]}
+        G10 L2 P{var.wcsNumber} Y{global.mosWPSfcPos[var.workOffset]}
     else
-        G10 L2 P{param.W} Z{global.mosWPSfcPos[var.wpNum]}
+        G10 L2 P{var.wcsNumber} Z{global.mosWPSfcPos[var.workOffset]}

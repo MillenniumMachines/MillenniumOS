@@ -41,7 +41,15 @@ if { global.mosPTID != state.currentTool }
 
 var tR = { global.mosTT[state.currentTool][0]}
 
-var wpNum = { exists(param.W) && param.W != null ? param.W : limits.workplaces }
+; Default workOffset to the current workplace number if not specified
+; with the W parameter.
+var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
+
+
+; WCS Numbers and Offsets are confusing. Work Offset indicates the offset
+; from the first work co-ordinate system, so is 0-indexed. WCS number indicates
+; the number of the work co-ordinate system, so is 1-indexed.
+var wcsNumber = { var.workOffset + 1 }
 
 M291 P{"Please select the probing mode to use.<br/><b>Full</b> will probe 2 points on each horizontal surface, while <b>Quick</b> will probe only 1 point."} R"MillenniumOS: Probe Outside Corner" T0 S4 K{"Full","Quick"} F0
 if { result != 0 }
