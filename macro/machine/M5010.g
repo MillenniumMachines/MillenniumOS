@@ -1,4 +1,4 @@
-; M4010.g: RESET WCS PROBE DETAILS
+; M5010.g: RESET WCS PROBE DETAILS
 
 if { exists(param.W) && param.W != null && (param.W < 0 || param.W >= limits.workplaces) }
     abort { "Work Offset (W..) must be between 0 and " ^ limits.workplaces-1 ^ "!" }

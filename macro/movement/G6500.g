@@ -82,4 +82,4 @@ if { global.mosTM }
     if { input != 0 }
         abort { "Bore probe aborted!" }
 
-G6500.1 W{exists(param.W)? param.W : null} H{var.boreDiameter} O{var.overTravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
+G6500.1 W{var.workOffset} H{var.boreDiameter} O{var.overTravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}

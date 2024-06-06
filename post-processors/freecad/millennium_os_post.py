@@ -66,13 +66,13 @@ class GCODES:
     PROBE_VISE_CORNER       = 6520.1
 
 class MCODES:
-    CALL_MACRO    = 98
-    ADD_TOOL      = 4000
-    VERSION_CHECK = 4005
-    ENA_ROT_COMP  = 4011
-    VSSC_ENABLE   = 7000
-    VSSC_DISABLE  = 7001
-    SHOW_DIALOG   = 3000
+    CALL_MACRO                   = 98
+    ADD_TOOL                     = 4000
+    VERSION_CHECK                = 4005
+    ENABLE_ROTATION_COMPENSATION = 5011
+    VSSC_ENABLE                  = 7000
+    VSSC_DISABLE                 = 7001
+    SHOW_DIALOG                  = 3000
 
 # Define format strings for variable and command types
 class FORMATS:
@@ -688,8 +688,8 @@ class MillenniumOSPostProcessor(PostProcessor):
             self.spindle_started = False
 
 
-        self.comment("Activate rotation compensation if necessary")
-        self.M(MCODES.ENA_ROT_COMP)
+        self.comment("Enable rotation compensation if necessary")
+        self.M(MCODES.ENABLE_ROTATION_COMPENSATION)
 
         return None
 

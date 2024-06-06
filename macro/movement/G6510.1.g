@@ -38,7 +38,7 @@ if { global.mosPTID != state.currentTool }
 
 ; Reset stored values that we're going to overwrite -
 ; surface
-M4010 W{var.workOffset} R8
+M5010 W{var.workOffset} R8
 
 var safeZ = { move.axes[2].machinePosition }
 

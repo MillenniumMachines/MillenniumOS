@@ -126,4 +126,4 @@ if { global.mosTM }
     if { input != 0 }
         abort { "Outside corner probe aborted!" }
 
-G6508.1 W{exists(param.W)? param.W : null} Q{var.mode} H{var.xSL} I{var.ySL} N{var.corner} T{var.clearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
+G6508.1 W{var.workOffset} Q{var.mode} H{var.xSL} I{var.ySL} N{var.corner} T{var.clearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}

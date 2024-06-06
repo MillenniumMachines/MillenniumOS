@@ -42,7 +42,7 @@ if { global.mosPTID != state.currentTool }
 
 ; Reset stored values that we're going to overwrite
 ; Reset corner, dimensions and rotation
-M4010 W{var.workOffset} R50
+M5010 W{var.workOffset} R50
 
 ; Store our own safe Z position as the current position. We return to
 ; this position where necessary to make moves across the workpiece to
@@ -115,10 +115,10 @@ var dirX = { (param.N == 0 || param.N == 3) ? -1 : 1 }
 var dirY = { (param.N == 0 || param.N == 1) ? 1 : -1 }
 
 var startX = { var.sX + var.dirX * var.clearance }
-var targetX = { var.sX + var.dirX * var.overtravel }
+var targetX = { var.sX - var.dirX * var.overtravel }
 
 var startY = { var.sY + var.dirY * var.clearance }
-var targetY = { var.sY + var.dirY * var.overtravel }
+var targetY = { var.sY - var.dirY * var.overtravel }
 
 ; Set dirXY for X probes
 set var.dirXY[0][0] = { var.startX, var.startY }
@@ -134,10 +134,10 @@ set var.dirX = { -var.dirX }
 set var.dirY = { -var.dirY }
 
 set var.startX = { var.sX + var.dirX * var.clearance }
-set var.targetX = { var.sX + var.dirX * var.overtravel }
+set var.targetX = { var.sX - var.dirX * var.overtravel }
 
 set var.startY = { var.sY + var.dirY * var.clearance }
-set var.targetY = { var.sY + var.dirY * var.overtravel }
+set var.targetY = { var.sY - var.dirY * var.overtravel }
 
 set var.dirXY[1][0] = { var.startX, var.startY }
 set var.dirXY[1][1] = { var.startX, var.targetY }
@@ -256,6 +256,10 @@ if { var.pMO == 0 }
     ; this stays a positive value less than 180 (ideally around 90).
     var diff = { abs(degrees(var.aX - var.aY)) }
     set global.mosWPCnrDeg[var.workOffset] = { mod(var.diff + 360, 180) }
+
+
+    ; The angle of the X line is our workpiece rotation.
+    set global.mosWPDeg[var.workOffset] = { 90 - degrees(var.aX) }
 
     ; If running in full mode, operator provided approximate width and
     ; height values of the workpiece. Assign these to the global

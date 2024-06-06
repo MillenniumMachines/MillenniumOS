@@ -43,7 +43,7 @@ if { global.mosPTID != state.currentTool }
 
 ; Reset stored values that we're going to overwrite -
 ; center and radius
-M4010 W{var.workOffset} R3
+M5010 W{var.workOffset} R3
 
 ; Tool Radius is the first entry for each value in
 ; our extended tool table.

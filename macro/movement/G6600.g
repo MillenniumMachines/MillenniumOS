@@ -27,17 +27,14 @@ if { !exists(global.mosLdd) || !global.mosLdd }
 
 ; Default workOffset to the current workplace number if not specified
 ; with the W parameter.
-var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
-
-
-; WCS Numbers and Offsets are confusing. Work Offset indicates the offset
-; from the first work co-ordinate system, so is 0-indexed. WCS number indicates
-; the number of the work co-ordinate system, so is 1-indexed.
-var wcsNumber = { var.workOffset + 1 }
+; This specifically _allows_ W to be null - this is used by the public
+; 'Probe Workpiece' macro, to allow the user to select the WCS
+; they want to probe.
+var workOffset = { (exists(param.W)) ? param.W : move.workplaceNumber }
 
 ; Define names for work offsets. The work offset ID is the index into these arrays.
 ; None means do not set origins on a work offset.
-var workOffsetCodes={"G54","G55","G56","G57","G58","G59","G59.1","G59.2","G59.3"}
+var workOffsetCodes={"G54","G55","G56","G57","G58","G59","G59.1","G59.2","G59.3", "Cancel"}
 
 
 ; Define probe cycle names
@@ -71,46 +68,41 @@ if { global.mosTM && !global.mosDD[0] }
 ; a W parameter was not passed.
 
 if { var.workOffset == null }
-    M291 P{"Select WCS to probe"} R"MillenniumOS: Probe Workpiece" T0 S4 K{var.workOffsetCodes}
-    if { result != 0 }
+    M291 P{"Select WCS to probe"} R"MillenniumOS: Probe Workpiece" T0 S4 K{var.workOffsetCodes} F{move.workplaceNumber}
+    if { result != 0 || input == #var.workOffsetCodes-1 }
         abort {"Operator cancelled probe cycle, please set WCS origin manually or restart probing with <b>G6600</b>"}
         M99
 
     set var.workOffset = { input }
 
-; Show operator existing WCS origin co-ordinates.
-if { var.workOffset != null }
-    ; Get work offset name (G54, G55, etc) and origin co-ordinates
-    var workOffsetName = { var.workOffsetCodes[var.workOffset] }
-    var pdX = { move.axes[0].workplaceOffsets[var.workOffset] }
-    var pdY = { move.axes[1].workplaceOffsets[var.workOffset] }
-    var pdZ = { move.axes[2].workplaceOffsets[var.workOffset] }
+; WCS Numbers and Offsets are confusing. Work Offset indicates the offset
+; from the first work co-ordinate system, so is 0-indexed. WCS number indicates
+; the number of the work co-ordinate system, so is 1-indexed.
+var wcsNumber = { var.workOffset + 1 }
 
-    ; If tutorial mode, show operator the WCS origin if any axes are set.
-    if { global.mosTM && (var.pdX != 0 || var.pdY != 0 || var.pdZ != 0) }
+; Get work offset name (G54, G55, etc) and origin co-ordinates
+var workOffsetName = { var.workOffsetCodes[var.workOffset] }
+var pdX = { move.axes[0].workplaceOffsets[var.workOffset] }
+var pdY = { move.axes[1].workplaceOffsets[var.workOffset] }
+var pdZ = { move.axes[2].workplaceOffsets[var.workOffset] }
+
+; If tutorial mode, show operator the WCS origin if any axes are set.
+if { global.mosTM }
+    if { (var.pdX != 0 || var.pdY != 0 || var.pdZ != 0) }
         M291 P{"WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") has origin:<br/>X=" ^ var.pdX ^ " Y=" ^ var.pdY ^ " Z=" ^ var.pdZ} R"MillenniumOS: Probe Workpiece" T0 S2
-
-    ; Otherwise, tell the operator which WCS origin will be set.
-    elif { global.mosTM }
+    else
+        ; Otherwise, tell the operator which WCS origin will be set.
         M291 P{"Probing will set the origin of WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetCodes[var.workOffset] ^ ") to the probed location."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue","Cancel"}
         if { input != 0 }
             abort {"Operator cancelled probe cycle, please set WCS origin manually or restart probing with <b>G6600</b>"}
 
-    ; If work offset origin is already set
-    if { var.pdX != 0 && var.pdY != 0 && var.pdZ != 0 }
-        ; Allow operator to continue without resetting the origin and abort the probe
-        M291 P{"WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") already has a valid origin.<br/>Click <b>Continue</b> to use the existing origin."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue","Reset All", "Reset X/Y", "Reset Z"} F0
-        if { input == 0 }
-            echo {"MillenniumOS: WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") origin retained, skipping probe cycle."}
-            M99
-
-        if { input == 1 || input == 2 }
-            G10 L2 P{var.wcsNumber} X0 Y0
-            echo {"MillenniumOS: WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") X/Y origin reset."}
-
-        if { input == 1 || input == 3 }
-            G10 L2 P{var.wcsNumber} Z0
-            echo {"MillenniumOS: WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") Z origin reset."}
+; If work offset origin is already set
+if { var.pdX != 0 && var.pdY != 0 && var.pdZ != 0 }
+    ; Allow operator to continue without resetting the origin and abort the probe
+    M291 P{"WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") already has a valid origin.<br/>Click <b>Continue</b> to use the existing origin or <b>Re-Probe</b> to modify it."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue","Re-Probe"} F0
+    if { input == 0 }
+        echo {"MillenniumOS: WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") origin retained, skipping probe cycle."}
+        M99
 
 ; Switch to touchprobe if not already connected
 if { global.mosPTID != state.currentTool }
