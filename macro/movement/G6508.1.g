@@ -289,4 +289,4 @@ if { !exists(param.R) || param.R != 0 }
 
 ; Set WCS origin to the probed corner
 echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to " ^ global.mosCnr[param.N] ^ " corner." }
-G10 L2 P{param.W} X{var.cX} Y{var.cY}
+G10 L2 P{var.wcsNumber} X{var.cX} Y{var.cY}
