@@ -13,7 +13,7 @@ var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workpla
 ; the number of the work co-ordinate system, so is 1-indexed.
 var wcsNumber = { var.workOffset + 1 }
 
-; Center, Corner, Circular, Surface, Dimensions, Rotation
+; Center, Corner, Radius, Surface, Dimensions, Rotation
 ; 1 2 4 8 16 32
 
 ; By default, reset everything
@@ -21,7 +21,7 @@ var reset = { exists(param.R) ? param.R : 63 }
 
 ; If first bit is set, reset center position
 ; If second bit is set, reset corner position
-; If third bit is set, reset circular position
+; If third bit is set, reset radius
 ; If fourth bit is set, reset surface position
 ; If fifth bit is set, reset dimensions
 ; If sixth bit is set, reset rotation
@@ -41,9 +41,9 @@ if { mod(floor(var.reset/pow(2,1)),2) == 1 }
     set global.mosWPCnrNum[var.workOffset] = global.mosDfltWPCnrNum
 
 if { mod(floor(var.reset/pow(2,2)),2) == 1}
-    ; Reset Circular
+    ; Reset Radius
     if { !global.mosEM }
-        echo { "Resetting WCS " ^ var.wcsNumber ^ " probed circular"}
+        echo { "Resetting WCS " ^ var.wcsNumber ^ " probed radius"}
     set global.mosWPRad[var.workOffset] = global.mosDfltWPRad
 
 if { mod(floor(var.reset/pow(2,3)),2) == 1 }

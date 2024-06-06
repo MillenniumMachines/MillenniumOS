@@ -47,7 +47,7 @@ if { global.mosPTID != state.currentTool }
 
 ; Reset stored values that we're going to overwrite
 ; Reset center position and radius
-M5010 W{var.workOffset} R3
+M5010 W{var.workOffset} R5
 
 ; Apply tool radius to overtravel. We want to allow
 ; less movement past the expected point of contact
