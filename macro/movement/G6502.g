@@ -98,4 +98,4 @@ if { global.mosTM }
     if { input != 0 }
         abort { "Rectangle pocket probe aborted!" }
 
-G6502.1 W{exists(param.W)? param.W : null} H{var.pocketWidth} I{var.pocketLength} T{var.clearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
+G6502.1 W{var.workOffset} H{var.pocketWidth} I{var.pocketLength} T{var.clearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}

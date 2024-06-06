@@ -35,7 +35,7 @@ if { global.mosPTID != state.currentTool }
 
 ; Reset stored values that we're going to overwrite -
 ; center, dimensions and rotation
-M4010 W{var.workOffset} R49
+M5010 W{var.workOffset} R49
 
 ; Store our own safe Z position as the current position. We return to
 ; this position where necessary to make moves across the workpiece to
