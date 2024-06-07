@@ -1,7 +1,7 @@
 ; Toggle Toolsetter.g
 
 if { global.mosFeatToolSetter }
-    M291 R"MillenniumOS: Toggle Toolsetter" P"Disable Toolsetter? You will have to compensate for tool length manually." S3
+    M291 R"MillenniumOS: Toggle Toolsetter" P"Disable Toolsetter? You will be asked to reset the origin in Z after each tool change!" S3
     if { result == -1 }
         M99
 

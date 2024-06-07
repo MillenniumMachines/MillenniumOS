@@ -12,20 +12,27 @@
 if { !inputs[state.thisInput].active }
     M99
 
+; Validate Spindle ID parameter
 if { exists(param.P) && param.P < 0 }
     abort { "Spindle ID must be a positive value!" }
 
-; Allocate spindle ID
+; Allocate Spindle ID
 var sID = { (exists(param.P) ? param.P : global.mosSID) }
 
+; Validate Spindle Speed parameter
 if { exists(param.S) }
     if { param.S < 0 }
-        abort { "Spindle speed must be a positive value!" }
+        abort { "Spindle speed for spindle #" ^ var.sID ^ " must be a positive value!" }
+
     if { param.S > spindles[var.sID].max }
         abort { "Spindle speed " ^ param.S ^ " exceeds maximum configured speed " ^ spindles[var.sID].max ^ " on spindle #" ^ var.sID ^ "!" }
 
+; Validate Dwell Time override parameter
 if { exists(param.D) && param.D < 0 }
     abort { "Dwell time must be a positive value!" }
+
+; True if spindle is stopping
+var sStopping = { spindles[var.sID].current > 0 && param.S == 0 }
 
 ; Warning Message for Operator
 var wM = {"<b>CAUTION</b>: Spindle <b>#" ^ var.sID ^ "</b> will now start!<br/>Check that workpiece and tool are secure, and all safety precautions have been taken before pressing <b>Continue</b>."}
@@ -53,29 +60,32 @@ if { spindles[var.sID].current == 0 }
         if { input == 1 }
             abort { "Operator aborted spindle startup!" }
 
-; Must calculate dwell time before spindle speed is changed.
 
 ; Dwell time defaults to the previously timed spindle acceleration time.
-; This assumes the spindle is accelerating from a stop.
-var dT = { global.mosSAS }
+; If using spindle feedback, this will likely be a null value and is
+; unused anyway.
 
+; This assumes the spindle is accelerating from a stop.
+var dwellTime = { global.mosSAS }
+
+; Must calculate dwell time before spindle speed is changed.
 ; D parameter always overrides the dwell time
 if { exists(param.D) }
-    set var.dT = { param.D }
+    set var.dwellTime = { param.D }
 else
     ; If we're changing spindle speed
     if { exists(param.S) }
 
-        ; If this is a deceleration, adjust dT
+        ; If this is a deceleration, adjust dT to use the deceleration timer
         if { spindles[var.sID].current > param.S }
-            set var.dT = { global.mosSDS }
+            set var.dwellTime = { global.mosSDS }
 
         ; Now calculate the change in velocity as a percentage
         ; of the maximum spindle speed, and multiply the dwell time
         ; by that percentage with 5% extra leeway.
         ; Ceil this so we always wait a round second, no point waiting
         ; less than 1 anyway.
-        set var.dT = { ceil(var.dT * (abs(spindles[var.sID].current - param.S) / spindles[var.sID].max) * 1.05) }
+        set var.dwellTime = { ceil(var.dwellTime * (abs(spindles[var.sID].current - param.S) / spindles[var.sID].max) * 1.05) }
 
 ; All safety checks have now been passed, so we can
 ; start the spindle using M3 here.
@@ -95,10 +105,31 @@ else
 if { result != 0 }
     abort { "Failed to control Spindle ID " ^ var.sID ^ "!" }
 
-; Wait for the spindle to change speed, if necessary,
-; and display a message indicating why we're waiting
-; if expert mode is turned off.
-if { var.dT > 0 }
-    if { !global.mosEM }
-        echo { "Waiting " ^ var.dT ^ " seconds for spindle #" ^ var.sID ^ " to change speed" }
-    G4 S{var.dT}
+; If spindle feedback is enabled, then wait using the correct pin if it
+; is defined, for speed changes or stopping.
+var alreadyWaited = false
+
+if { global.mosFeatSpindleFeedback }
+    if { var.sStopping && global.mosSFSID != null }
+        if { !global.mosEM }
+            echo { "MillenniumOS: Waiting for spindle #" ^ var.sID ^ " to stop" }
+
+        ; Wait for Spindle Feedback input to change state.
+        ; Wait a maximum of 30 seconds, or abort.
+        M8004 K{global.mosSFSID} D100 W30
+        set var.alreadyWaited = true
+
+    elif { global.mosSFCID != null }
+        if { !global.mosEM }
+            echo { "MillenniumOS: Waiting for spindle #" ^ var.sID ^ " to reach the target speed" }
+
+        ; Wait for Spindle Feedback input to change state.
+        ; Wait a maximum of 30 seconds, or abort.
+        M8004 K{global.mosSFCID} D100 W30
+        set var.alreadyWaited = true
+
+if { !var.alreadyWaited }
+    if { var.dwellTime > 0 }
+        if { !global.mosEM }
+            echo { "MillenniumOS: Waiting " ^ var.dwellTime ^ " seconds for spindle #" ^ var.sID ^ " to reach the target speed" }
+        G4 S{var.dwellTime}

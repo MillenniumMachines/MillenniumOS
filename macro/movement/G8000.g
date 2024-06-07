@@ -68,11 +68,11 @@ if { global.mosTM }
     M291 P{"<b>CAUTION</b>: Follow <b>ALL</b> instructions to the letter, and if you are unsure about any step, please ask for help on our <a target=""_blank"" href=""https://discord.gg/ya4UUj7ax2"">Discord</a>."} R"MillenniumOS: Configuration Wizard" S2 T0
 
 if { var.wizTutorialMode == null }
-    M291 P"Would you like to enable <b>Tutorial Mode</b>?<br/><b>Tutorial Mode</b> describes configuration and probing actions in detail before any action is taken." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F0
+    M291 P"Would you like to enable <b>Tutorial Mode</b>?<br/><b>Tutorial Mode</b> describes configuration and probing actions in detail before any action is taken." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F{ global.mosTM ? 0 : 1 }
     set var.wizTutorialMode = { (input == 0) ? true : false }
 
 if { var.wizExpertMode == null }
-    M291 P"Would you like to enable <b>Expert Mode</b>?<br/><b>Expert Mode</b> disables some confirmation checks before and after operations to reduce operator interaction." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F1
+    M291 P"Would you like to enable <b>Expert Mode</b>?<br/><b>Expert Mode</b> disables some confirmation checks before and after operations to reduce operator interaction." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F{ global.mosEM ? 0 : 1 }
     set var.wizExpertMode = { (input == 0) ? true : false }
 
 ; Last chance to abort out of the wizard and configure RRF
@@ -117,6 +117,8 @@ if { !var.wizReset && global.mosLdd && !var.wizResumed }
 var wizSpindleID = { (exists(global.mosSID) && global.mosSID != null && !var.wizReset && !var.wizSpindleReset) ? global.mosSID : null }
 var wizSpindleAccelSec = { (exists(global.mosSAS) && global.mosSAS != null && !var.wizReset && !var.wizSpindleReset) ? global.mosSAS : null }
 var wizSpindleDecelSec = { (exists(global.mosSDS) && global.mosSDS != null && !var.wizReset && !var.wizSpindleReset) ? global.mosSDS : null }
+var wizSpindleChangePinID = { (exists(global.mosSFCID) && global.mosSFCID != null && !var.wizReset && !var.wizSpindleReset) ? global.mosSFCID : null }
+var wizSpindleStopPinID = { (exists(global.mosSFSID) && global.mosSFSID != null && !var.wizReset && !var.wizSpindleReset) ? global.mosSFSID : null }
 var wizDatumToolRadius = { (exists(global.mosDTR) && global.mosDTR != null && !var.wizReset && !var.wizDatumToolReset) ? global.mosDTR : null }
 var wizToolSetterID = { (exists(global.mosTSID) && global.mosTSID != null && !var.wizReset && !var.wizToolSetterReset) ? global.mosTSID : null }
 var wizToolSetterPos = { (exists(global.mosTSP) && global.mosTSP != null && !var.wizReset && !var.wizToolSetterReset) ? global.mosTSP : null }
@@ -164,26 +166,32 @@ if { var.wizSpindleID == null }
 echo >>{var.wizTVF} { "set global.mosSID = " ^ var.wizSpindleID }
 
 ; Spindle Feedback Feature Enable / Disable
-; if { var.wizFeatureSpindleFeedback == null }
-;     M291 P"Would you like to enable the <b>Spindle Feedback</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F1
-;     set var.wizFeatureSpindleFeedback = { (input == 0) ? true : false }
-;
-;     ; Do not display this if the setting was not changed
-;     if { var.wizFeatureSpindleFeedback }
-;         M291 P"Spindle Feedback feature not yet implemented, falling back to manual timing of spindle acceleration and deceleration." R"MillenniumOS: Configuration Wizard" S2 T0
-;         set var.wizFeatureSpindleFeedback = false
-set var.wizFeatureSpindleFeedback = false
+if { var.wizFeatureSpindleFeedback == null }
+    M291 P"Would you like to enable the <b>Spindle Feedback</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F{ global.mosFeatSpindleFeedback ? 0 : 1}
+    set var.wizFeatureSpindleFeedback = { (input == 0) ? true : false }
+
+    ; Do not display this if the setting was not changed
+    if { var.wizFeatureSpindleFeedback && var.wizTutorialMode }
+        M291 P"The Spindle Feedback feature can be used to detect when a spindle has reached a target speed, has stopped, or both. How you use this will depend on your VFD configuration." R"MillenniumOS: Configuration Wizard" S2 T0
+        M291 P"We will start the spindle so we can measure the time it takes to accelerate and decelerate - these values will be used if you disable the Spindle Feedback feature later." R"MillenniumOS: Configuration Wizard" S2 T0
+        M291 P"While doing this, we will monitor the state of any configured general purpose inputs and ask you to confirm if these should be used for spindle feedback." R"MillenniumOS: Configuration Wizard" S2 T0
 
 ; Write spindle feedback feature to the resume file
 echo >>{var.wizTVF} {"set global.mosFeatSpindleFeedback = " ^ var.wizFeatureSpindleFeedback}
 
-; TODO: Do not display this when spindle speed feedback enabled and configured
 if { var.wizSpindleAccelSec == null || var.wizSpindleDecelSec == null }
-    M291 P"We need to start the spindle and accelerate to its maximum RPM, to measure how long it takes.<br/><b>CAUTION</b>: Remove any tool and make sure your spindle nut is tightened before proceeding!" R"MillenniumOS: Configuration Wizard" S3 T0
+    M291 P"We need to start the spindle and accelerate to its maximum RPM.<br/><b>CAUTION</b>: Remove any tool and make sure your spindle nut is tightened before proceeding!" R"MillenniumOS: Configuration Wizard" S3 T0
     if { result != 0 }
         abort { "MillenniumOS: Operator aborted configuration wizard!" }
 
     M291 P"When ready, click <b>OK</b> to start the spindle.<br />When it is no longer accelerating, click <b>OK</b> on the next screen." R"MillenniumOS: Configuration Wizard" S3 T0
+
+    var accelPins = { null }
+    var decelPins = { null }
+
+    ; If spindle feedback is enabled, use M8003 to check which pins change state during acceleration.
+    if { var.wizFeatureSpindleFeedback }
+        M8003
 
     ; Store start time
     set var.wizSpindleAccelSec = { state.time }
@@ -197,6 +205,10 @@ if { var.wizSpindleAccelSec == null || var.wizSpindleDecelSec == null }
     ; Calculate the time it took to accelerate
     set var.wizSpindleAccelSec = { state.time - var.wizSpindleAccelSec }
 
+    if { var.wizFeatureSpindleFeedback }
+        M8003
+        set var.accelPins = { global.mosGPD }
+
     ; Prompt to do the same for deceleration
     M291 P"Now we need to measure deceleration. When ready, click <b>OK</b> to stop the spindle.<br />When it has stopped, click <b>OK</b> on the next screen." R"MillenniumOS: Configuration Wizard" S2 T0
 
@@ -206,11 +218,18 @@ if { var.wizSpindleAccelSec == null || var.wizSpindleDecelSec == null }
     ; Stop spindle
     M5 P{var.wizSpindleID}
 
+    if { var.wizFeatureSpindleFeedback }
+        M8003
+
     ; Prompt user to click OK when the spindle has stopped decelerating
     M291 P"Click <b>OK</b> when the spindle has stopped!" R"MillenniumOS: Configuration Wizard" S2 T0
 
-    ; Calculate the time it took to accelerate
+    ; Calculate the time it took to decelerate
     set var.wizSpindleDecelSec = { state.time - var.wizSpindleDecelSec }
+
+    if { var.wizFeatureSpindleFeedback }
+        M8003
+        set var.decelPins = { global.mosGPD }
 
     ; Just in case the user forgets to click, or some other issue occurs (clock rollover? lol)
     ; throw an error.
@@ -218,9 +237,28 @@ if { var.wizSpindleAccelSec == null || var.wizSpindleDecelSec == null }
     if { var.wizSpindleAccelSec > 120 || var.wizSpindleDecelSec > 120 }
         abort { "MillenniumOS: Calculated spindle acceleration or deceleration time is too long!" }
 
+    if { var.wizFeatureSpindleFeedback }
+        while { iterations < #var.accelPins }
+            if { var.accelPins[iterations] }
+                M291 P{"GPIO <b>#" ^ iterations ^ "</b> changed state during spindle acceleration. Use this pin for spindle acceleration feedback?"} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F0
+                if { input == 0 }
+                    set var.wizSpindleChangePinID = { iterations }
+                    break
+
+        while { iterations < #var.decelPins }
+            if { var.decelPins[iterations] }
+                M291 P{"GPIO <b>#" ^ iterations ^ "</b> changed state during spindle deceleration. Use this pin for spindle deceleration feedback?"} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F0
+                if { input == 0 }
+                    set var.wizSpindleStopPinID = { iterations }
+                    break
+
 ; Write spindle acceleration and deceleration times to the resume file
 echo >>{var.wizTVF} {"set global.mosSAS = " ^ var.wizSpindleAccelSec}
 echo >>{var.wizTVF} {"set global.mosSDS = " ^ var.wizSpindleDecelSec}
+
+; Write spindle feedback pins to the resume file
+echo >>{var.wizTVF} {"set global.mosSFCID = " ^ var.wizSpindleChangePinID}
+echo >>{var.wizTVF} {"set global.mosSFSID = " ^ var.wizSpindleStopPinID}
 
 if { var.wizDatumToolRadius == null }
     if { var.wizTutorialMode }
@@ -237,12 +275,12 @@ echo >>{var.wizTVF} {"set global.mosDTR = " ^ var.wizDatumToolRadius }
 
 ; Toolsetter Feature Enable / Disable
 if { var.wizFeatureToolSetter == null }
-    M291 P"Would you like to enable the <b>Toolsetter</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F0
+    M291 P"Would you like to enable the <b>Toolsetter</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F{ global.mosFeatToolSetter ? 0 : 1 }
     set var.wizFeatureToolSetter = { (input == 0) ? true : false }
 
 ; Touch Probe Feature Enable / Disable
 if { var.wizFeatureTouchProbe == null }
-    M291 P"Would you like to enable the <b>Touch Probe</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F1
+    M291 P"Would you like to enable the <b>Touch Probe</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F{ global.mosFeatTouchProbe ? 0 : 1 }
     set var.wizFeatureTouchProbe = { (input == 0) ? true : false }
 
 ; Write feature settings to the resume file
@@ -589,6 +627,10 @@ echo >>{var.wizUVF} "; Spindle Acceleration Sec"
 echo >>{var.wizUVF} {"set global.mosSAS = " ^ var.wizSpindleAccelSec}
 echo >>{var.wizUVF} "; Spindle Deceleration Sec"
 echo >>{var.wizUVF} {"set global.mosSDS = " ^ var.wizSpindleDecelSec}
+
+echo >>{var.wizUVF} "; Spindle Feedback Pins"
+echo >>{var.wizUVF} {"set global.mosSFCID = " ^ var.wizSpindleChangePinID}
+echo >>{var.wizUVF} {"set global.mosSFSID = " ^ var.wizSpindleStopPinID}
 echo >>{var.wizUVF} ""
 
 echo >>{var.wizUVF} "; Datum Tool Radius"
