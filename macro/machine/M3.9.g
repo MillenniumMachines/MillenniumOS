@@ -112,26 +112,24 @@ var alreadyWaited = false
 if { global.mosFeatSpindleFeedback }
     if { var.sStopping && global.mosSFSID != null }
         if { !global.mosEM }
-            echo { "Waiting for spindle #" ^ var.sID ^ " to stop based on feedback pin " ^ global.mosSFSID }
+            echo { "MillenniumOS: Waiting for spindle #" ^ var.sID ^ " to stop" }
 
         ; Wait for Spindle Feedback input to change state.
         ; Wait a maximum of 30 seconds, or abort.
         M8004 K{global.mosSFSID} D100 W30
         set var.alreadyWaited = true
-        echo {"Spindle #" ^ var.sID ^ " has stopped based on feedback pin " ^ global.mosSFSID }
 
     elif { global.mosSFCID != null }
         if { !global.mosEM }
-            echo { "Waiting for spindle #" ^ var.sID ^ " to reach target speed based on feedback pin " ^ global.mosSFCID }
+            echo { "MillenniumOS: Waiting for spindle #" ^ var.sID ^ " to reach the target speed" }
 
         ; Wait for Spindle Feedback input to change state.
         ; Wait a maximum of 30 seconds, or abort.
         M8004 K{global.mosSFCID} D100 W30
         set var.alreadyWaited = true
-        echo { "Spindle #" ^ var.sID ^ " has reached target speed based on feedback pin " ^ global.mosSFCID }
 
 if { !var.alreadyWaited }
     if { var.dwellTime > 0 }
         if { !global.mosEM }
-            echo { "Waiting " ^ var.dwellTime ^ " seconds for spindle #" ^ var.sID ^ " to change speed" }
+            echo { "MillenniumOS: Waiting " ^ var.dwellTime ^ " seconds for spindle #" ^ var.sID ^ " to reach the target speed" }
         G4 S{var.dwellTime}

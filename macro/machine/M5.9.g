@@ -26,7 +26,7 @@ if { exists(param.D) && param.D < 0 }
 var sID = { global.mosSID }
 var doWait = false
 
-while { (iterations < #spindles) && !var.dW }
+while { (iterations < #spindles) && !var.doWait }
     set var.doWait = { spindles[iterations].current != 0 }
     ; In case M5.9 should stop a spindle that _isnt_ the one
     ; configured in MOS. We'll calculate the delay time based
@@ -50,7 +50,7 @@ elif { var.doWait }
     ; by that percentage with 5% extra leeway.
     ; Ceil this so we always wait a round second, no point waiting
     ; less than 1 anyway.
-    set var.dwellTime = { ceil(var.dT * (abs(spindles[var.sID].current) / spindles[var.sID].max) * 1.05) }
+    set var.dwellTime = { ceil(var.dwellTime * (abs(spindles[var.sID].current) / spindles[var.sID].max) * 1.05) }
 
 ; We run M5 unconditionally for safety purposes. If
 ; the object model is not up to date for whatever
@@ -65,14 +65,13 @@ if { !var.doWait }
 
 if { global.mosFeatSpindleFeedback && global.mosSFSID != null }
     if { !global.mosEM }
-        echo { "Waiting for spindle #" ^ var.sID ^ " to stop based on feedback pin " ^ global.mosSFSID }
+        echo { "MillenniumOS: Waiting for spindle #" ^ var.sID ^ " to stop" }
     ; Wait for Spindle Feedback input to change state.
     ; Wait a maximum of 30 seconds, or abort.
     M8004 K{global.mosSFSID} D100 W30
-    echo { "Spindle #" ^ var.sID ^ " has stopped based on feedback pin " ^ global.mosSFSID }
 
-; Otherwise wait for spindle to stop manually
 elif { var.dwellTime > 0 }
+    ; Otherwise wait for spindle to stop manually
     if { !global.mosEM }
-        echo { "Waiting " ^ var.dwellTime ^ " seconds for spindle #" ^ var.sID ^ " to stop" }
+        echo { "MillenniumOS: Waiting " ^ var.dwellTime ^ " seconds for spindle #" ^ var.sID ^ " to stop" }
     G4 S{var.dwellTime}

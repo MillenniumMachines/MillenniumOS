@@ -245,12 +245,12 @@ if { var.wizSpindleAccelSec == null || var.wizSpindleDecelSec == null }
                     set var.wizSpindleChangePinID = { iterations }
                     break
 
-    while { iterations < #var.decelPins }
-        if { var.decelPins[iterations] }
-            M291 P{"GPIO <b>#" ^ iterations ^ "</b> changed state during spindle deceleration. Use this pin for spindle deceleration feedback?"} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F0
-            if { input == 0 }
-                set var.wizSpindleStopPinID = { iterations }
-                break
+        while { iterations < #var.decelPins }
+            if { var.decelPins[iterations] }
+                M291 P{"GPIO <b>#" ^ iterations ^ "</b> changed state during spindle deceleration. Use this pin for spindle deceleration feedback?"} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F0
+                if { input == 0 }
+                    set var.wizSpindleStopPinID = { iterations }
+                    break
 
 ; Write spindle acceleration and deceleration times to the resume file
 echo >>{var.wizTVF} {"set global.mosSAS = " ^ var.wizSpindleAccelSec}
