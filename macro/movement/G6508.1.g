@@ -65,6 +65,10 @@ var sZ   = { param.L }
 var fX   = { param.H }
 var fY   = { param.I }
 
+; Middle point of the surfaces
+var hX   = { var.fX / 2 }
+var hY   = { var.fY / 2 }
+
 ; Tool Radius is the first entry for each value in
 ; our extended tool table.
 
@@ -227,9 +231,9 @@ if { var.pMO == 0 }
     var mX = { (var.pY[1] - var.pY[0]) / (var.pX[1] - var.pX[0]) }
     var mY = { (var.pY[3] - var.pY[2]) / (var.pX[3] - var.pX[2]) }
 
-    ; Extend both lines by the clearance distance
-    var eX = { var.pX[0] - (var.clearance * cos(atan2(var.pY[2] - var.pY[0], var.pX[2] - var.pX[0]))) }
-    var eY = { var.pY[1] - (var.clearance * sin(atan2(var.pY[3] - var.pY[1], var.pX[3] - var.pX[1]))) }
+    ; Extend both lines by the 2*clearance distance
+    var eX = { var.pX[0] - (2*var.clearance * cos(atan2(var.pY[2] - var.pY[0], var.pX[2] - var.pX[0]))) }
+    var eY = { var.pY[1] - (2*var.clearance * sin(atan2(var.pY[3] - var.pY[1], var.pX[3] - var.pX[1]))) }
 
     ; Calculate the intersection of the extended lines
     ; If the gradient of either line is 0, then the
@@ -257,9 +261,26 @@ if { var.pMO == 0 }
     var diff = { abs(degrees(var.aX - var.aY)) }
     set global.mosWPCnrDeg[var.workOffset] = { mod(var.diff + 360, 180) }
 
-
     ; The angle of the X line is our workpiece rotation.
-    set global.mosWPDeg[var.workOffset] = { 90 - degrees(var.aX) }
+    ; We have to do the same compensation as above to make sure
+    ; we receive a value around 90 degrees regardless of the corner chosen.
+
+    ; Calculate rotation based on the longer surface, as this should
+    ; give us the most accurate result.
+    ; Calculate the angles based on both surfaces
+    ; We want the angle to sit within 90 degrees between -45 and 45.
+    var aR = { ((90 - (degrees(var.aX))) + -(degrees(var.aY))) /2 }
+
+    if { var.aR < -45 }
+        set var.aR = { var.aR + 90 }
+    elif { var.aR > 45 }
+        set var.aR = { var.aR - 90 }
+
+    set global.mosWPDeg[var.workOffset] = { var.aR }
+
+    ; Calculate the center of the workpiece based on the corner position,
+    ; the width and height of the workpiece and the rotation.
+    set global.mosWPCtrPos = { var.cX + (var.hX * cos(radians(var.aR)) - var.hY * sin(radians(var.aR))), var.cY + (var.hX * sin(radians(var.aR)) + var.hY * cos(radians(var.aR))) }
 
     ; If running in full mode, operator provided approximate width and
     ; height values of the workpiece. Assign these to the global
