@@ -61,14 +61,13 @@ if { (global.mosFeatToolSetter || global.mosFeatTouchProbe) && global.mosPMBO ==
     set global.mosErr = { "<b>global.mosPMBO</b> is not set." }
     M99
 
-if { !global.mosFeatSpindleFeedback }
-    if { !exists(global.mosSAS) || global.mosSAS == null }
-        set global.mosErr = { "<b>global.mosSAS</b> is not set." }
-        M99
+if { !exists(global.mosSAS) || global.mosSAS == null }
+    set global.mosErr = { "<b>global.mosSAS</b> is not set." }
+    M99
 
-    if { !exists(global.mosSDS) || global.mosSDS == null }
-        set global.mosErr = { "<b>global.mosSDS</b> is not set." }
-        M99
+if { !exists(global.mosSDS) || global.mosSDS == null }
+    set global.mosErr = { "<b>global.mosSDS</b> is not set." }
+    M99
 
 ; Allow MOS macros to run.
 set global.mosLdd = true
