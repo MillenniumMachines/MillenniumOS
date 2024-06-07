@@ -128,45 +128,46 @@ global mosWPSfcPos = null
 global mosWPSfcAxis = null
 
 ; Canned Cycle settings
-global mosCCD = null ; Canned Cycle Drilling
+global mosCCD = null ; Canned Cycle Drilling status
 
 ; Daemon settings
 ; Required for regular task updates (e.g. VSSC)
-global mosDAE = true
+global mosDAE = true  ; Daemon Enable
 
-global mosDAEUR = 500  ; Re-trigger background tasks every 500ms
-                                  ; don't reduce this below 500!
+global mosDAEUR = 500 ; Daemon Update Rate (ms) - do not reduce below 500
 
 ; Do not change these variables directly, use the VSSC control M-codes instead
-global mosVSEnabled = false
-global mosVSOE = true
-global mosVSP = 0
-global mosVSV = 0.0
-global mosVSPT = 0
-global mosVSPS = 0.0
+global mosVSEnabled = false ; VSSC enabled
+global mosVSOE = true       ; VSSC Override enabled
+global mosVSP = 0           ; VSSC Period
+global mosVSV = 0.0         ; VSSC Variance
+global mosVSPT = 0          ; VSSC Previous Adjustment Time
+global mosVSPS = 0.0        ; VSSC Previous Adjustment Speed
 
 ; Spindle configuration
-global mosSID = null
-global mosSAS = null
-global mosSDS = null
+global mosSID = null  ; Spindle ID
+global mosSFCID = null ; Spindle Feedback Change ID
+global mosSFSID = null ; Spindle Feedback Stop ID
+global mosSAS = null  ; Spindle Acceleration (s) - feedback disabled
+global mosSDS = null  ; Spindle Deceleration (s) - feedback disabled
 
 ; Toolsetter configuration
-global mosTSID = null
-global mosTSP = null
-global mosTSR = null
-global mosTSAP = null
+global mosTSID = null ; Toolsetter ID
+global mosTSP = null  ; Toolsetter Position
+global mosTSR = null  ; Toolsetter Radius
+global mosTSAP = null ; Toolsetter Activation Point
 
 ; Touch probe configuration
-global mosTPID = null
-global mosTPR = null
-global mosTPD = null
-global mosTPRP = null
+global mosTPID = null ; Touch Probe ID
+global mosTPR = null  ; Touch Probe Radius
+global mosTPD = null  ; Touch Probe Deflection
+global mosTPRP = null ; Touch Probe Reference Point
 
 ; Datum tool configuration
-global mosDTR = null
+global mosDTR = null ; Datum Tool Radius
 
 ; Protected move configuration
-global mosPMBO = null
+global mosPMBO = null ; Protected Move Back Off
 
 ; Manual probing feed rates - travel, rough, fine
 global mosMPS = { 1200, 300, 60 }
@@ -198,6 +199,11 @@ global mosDPID = null
 ; Used during runtime to indicate a
 ; specific probe ID has been detected.
 global mosPD = null
+
+; Used during runtime to detect GPIO
+; pins which have changed state.
+global mosGPV = null
+global mosGPD = null
 
 ; Tracks whether description messages have been
 ; displayed during this session. The first 2 indexes
