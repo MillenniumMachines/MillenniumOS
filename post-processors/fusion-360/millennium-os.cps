@@ -71,7 +71,7 @@ allowSpiralMoves      = false;             // Linearize spirals (circular moves 
 allowedCircularPlanes = undefined;         // Allow arcs on all planes
 
 // Base WCS number, offset is added to this
-var wcsBase = 54;
+var wcsBase = 53;
 
 // Define WCS probing modes
 var wcsProbeMode = {
@@ -363,7 +363,7 @@ var mCodes = createModalGroup(
     [0, 2],                           // Program codes
     [M.ADD_TOOL],                     // Tool data codes
     [M.VERSION_CHECK],                // Version check
-    [M.VSSC_ENABLE, M.VSSC_DISABLE]   // VSSC codes
+    [M.VSSC_ENABLE, M.VSSC_DISABLE],  // VSSC codes
     [M.ENABLE_ROTATION_COMPENSATION]  // Rotation compensation
   ],
   mFmt);
@@ -638,7 +638,7 @@ function onSection() {
   var wcsCode = wcsBase + curWorkOffset;
 
   // If WCS is changing,
-  if (wcsChanging) {
+  if(wcsChanging) {
     writeComment("Park ready for WCS change");
     writeBlock(gCodesF.format(G.PARK));
     writeln("");
@@ -655,6 +655,7 @@ function onSection() {
 
   writeComment("Enable rotation compensation if necessary");
   writeBlock(mCodes.format(M.ENABLE_ROTATION_COMPENSATION));
+  writeln("");
 
   // If tool requires changing or wcs was probed
   // We must force a tool change if probe was required
@@ -1102,12 +1103,6 @@ function onClose() {
   writeComment("Park");
   writeBlock(gCodesF.format(G.PARK));
   writeln("");
-
-  if(getProperty("vsscEnabled")) {
-    writeComment("Disable Variable Spindle Speed Control");
-    writeBlock(mCodes.format(M.VSSC_DISABLE));
-    writeln("");
-  }
 
   writeComment("Double-check spindle is stopped!");
   // Use M98 to call the M3.9 macro, as there is currently an RRF bug that
