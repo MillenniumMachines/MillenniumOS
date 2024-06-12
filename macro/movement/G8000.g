@@ -19,6 +19,7 @@ var wizResumed = false
 var wizFeatureTouchProbe = null
 var wizFeatureToolSetter = null
 var wizFeatureSpindleFeedback = null
+var wizFeatureCoolantControl = null
 
 ; Do not load mode settings either.
 var wizExpertMode = null
@@ -30,6 +31,7 @@ var wizSpindleReset = false
 var wizToolSetterReset = false
 var wizTouchProbeReset = false
 var wizDatumToolReset = false
+var wizCoolantReset = false
 
 M291 P"Welcome to MillenniumOS! This wizard will walk you through the configuration process.<br/>You can run this wizard again using <b>G8000</b> or clicking the <b>""Run Configuration Wizard""</b> macro." R"MillenniumOS: Configuration Wizard" S3 T0
 if { result == -1 }
@@ -42,11 +44,13 @@ if { fileexists("0:/sys/" ^ var.wizTVF) }
         M98 P{ var.wizTVF }
         ; Load settings that we ask for on every run in the wizard
         ; _except_ when resuming.
-        set var.wizExpertMode        = global.mosEM
-        set var.wizTutorialMode      = global.mosTM
-        set var.wizFeatureToolSetter = global.mosFeatToolSetter
-        set var.wizFeatureTouchProbe = global.mosFeatTouchProbe
-        set var.wizResumed           = true
+        set var.wizExpertMode             = global.mosEM
+        set var.wizTutorialMode           = global.mosTM
+        set var.wizFeatureToolSetter      = global.mosFeatToolSetter
+        set var.wizFeatureTouchProbe      = global.mosFeatTouchProbe
+        set var.wizFeatureSpindleFeedback = global.mosFeatSpindleFeedback
+        set var.wizFeatureCoolantControl  = global.mosFeatCoolantControl
+        set var.wizResumed                = true
     else
         set var.wizReset = true
 else
@@ -54,7 +58,7 @@ else
     ; Otherwise, they can choose to reconfigure individual features
     ; below.
     if { global.mosLdd }
-        M291 P"MillenniumOS is already configured. Click <b>Continue</b> to re-configure, change persistent modes or features, or <b>Reset</b> to reset all settings and start again." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Continue","Reset"}
+        M291 P"MillenniumOS is already configured. Click <b>Continue</b> to re-configure and change persistent modes or features, or <b>Reset</b> to reset all settings and start again." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Continue","Reset"}
     elif { (exists(global.mosErr) && global.mosErr != null) || state.startupError != null }
         M291 P"MillenniumOS could not be loaded due to a startup error.<br/>Click <b>Update</b> to configure any missing settings or <b>Reset</b> to reset all settings and start again." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Update","Reset"}
 
@@ -100,6 +104,10 @@ if { !var.wizReset && global.mosLdd && !var.wizResumed }
     M291 P{"Would you like to change the <b>Spindle</b> configuration?"} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F1
     set var.wizSpindleReset = { (input == 0) }
 
+if { !var.wizReset && global.mosLdd && !var.wizResumed }
+    M291 P{"Would you like to change the <b>Coolant Control</b> configuration?"} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F1
+    set var.wizCoolantReset = { (input == 0) }
+
 ; If MOS already loaded, ask if user wants to reconfigure datum tool
 if { !var.wizReset && global.mosLdd && !var.wizResumed }
     M291 P{"Would you like to change the <b>Datum Tool</b> configuration?"} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F1
@@ -119,6 +127,9 @@ var wizSpindleAccelSec = { (exists(global.mosSAS) && global.mosSAS != null && !v
 var wizSpindleDecelSec = { (exists(global.mosSDS) && global.mosSDS != null && !var.wizReset && !var.wizSpindleReset) ? global.mosSDS : null }
 var wizSpindleChangePinID = { (exists(global.mosSFCID) && global.mosSFCID != null && !var.wizReset && !var.wizSpindleReset) ? global.mosSFCID : null }
 var wizSpindleStopPinID = { (exists(global.mosSFSID) && global.mosSFSID != null && !var.wizReset && !var.wizSpindleReset) ? global.mosSFSID : null }
+var wizCoolantAirPinID = { (exists(global.mosCAID) && global.mosCAID != null && !var.wizReset && !var.wizCoolantReset) ? global.mosCAID : null }
+var wizCoolantMistPinID = { (exists(global.mosCMID) && global.mosCMID != null && !var.wizReset && !var.wizCoolantReset) ? global.mosCMID : null }
+var wizCoolantFloodPinID = { (exists(global.mosCFID) && global.mosCFID != null && !var.wizReset && !var.wizCoolantReset) ? global.mosCFID : null }
 var wizDatumToolRadius = { (exists(global.mosDTR) && global.mosDTR != null && !var.wizReset && !var.wizDatumToolReset) ? global.mosDTR : null }
 var wizToolSetterID = { (exists(global.mosTSID) && global.mosTSID != null && !var.wizReset && !var.wizToolSetterReset) ? global.mosTSID : null }
 var wizToolSetterPos = { (exists(global.mosTSP) && global.mosTSP != null && !var.wizReset && !var.wizToolSetterReset) ? global.mosTSP : null }
@@ -259,6 +270,79 @@ echo >>{var.wizTVF} {"set global.mosSDS = " ^ var.wizSpindleDecelSec}
 ; Write spindle feedback pins to the resume file
 echo >>{var.wizTVF} {"set global.mosSFCID = " ^ var.wizSpindleChangePinID}
 echo >>{var.wizTVF} {"set global.mosSFSID = " ^ var.wizSpindleStopPinID}
+
+; Coolant Control Feature Enable / Disable
+if { var.wizFeatureCoolantControl == null }
+    M291 P"Would you like to enable the <b>Coolant Control</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F{ global.mosFeatToolSetter ? 0 : 1 }
+    set var.wizFeatureCoolantControl = { (input == 0) ? true : false }
+
+; Write feature setting to the resume file
+echo >>{var.wizTVF} {"set global.mosFeatCoolantControl = " ^ var.wizFeatureCoolantControl}
+
+if { var.wizFeatureCoolantControl }
+    if { var.wizTutorialMode && (var.wizCoolantAirPinID == null || var.wizCoolantMistPinID == null || var.wizCoolantFloodPinID == null) }
+        M291 P"We need to select the control pins that will be used to activate air, mist or flood coolant on your machine." R"MillenniumOS: Configuration Wizard" S2 T0
+        M291 P"Please select the control pin from the configured list for each coolant type, or select <b>None</b> if your machine does not support that type of coolant." R"MillenniumOS: Configuration Wizard" S2 T0
+        M291 P"After selecting the pin, we will activate the coolant output temporarily to make sure the correct pin was selected." R"MillenniumOS: Configuration Wizard" S2 T0
+
+    ; Count the number of non-null output pins
+    var gpOutCount = 0
+    while { iterations < #state.gpOut }
+        if { state.gpOut[iterations] != null }
+            set var.gpOutCount = { var.gpOutCount + 1 }
+
+    ; Initialise the output pin vector to the right size
+    var gpOutPins = { vector(var.gpOutCount+1, null) }
+
+    ; Iterate over the gpOut vector again and store the index of each
+    ; non-null pin.
+    while { iterations < #state.gpOut }
+        if { state.gpOut[iterations] != null }
+            set var.gpOutPins[var.gpOutCount] = { "Pin " ^ iterations }
+            set var.gpOutCount = { var.gpOutCount - 1 }
+
+    set var.gpOutPins[#var.gpOutPins] = { "None" }
+
+    while { var.wizCoolantAirPinID == null }
+        M291 P"Please select your <b>Air</b> output pin. Clicking the pin will activate the selected output." R"MillenniumOS: Configuration Wizard" S4 T0 K{var.gpOutPins} F1
+        var wizCoolantAirPinID = { input }
+        if { var.wizCoolantAirPinID == #var.gpOutPins }
+            set var.wizCoolantAirPinID = -1
+        else
+            M42 P{var.wizCoolantAirPinID} S1
+            M291 P"Is your <b>Air</b> output activated?<br/>Click <b>Yes</b> to continue, or <b>No<b> to select a different output." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F0
+            M42 P{var.wizCoolantAirPinID} S0
+            if { input == 1 }
+                set var.wizCoolantAirPinID = null
+
+    while { var.wizCoolantMistPinID == null }
+        M291 P"Please select your <b>Mist</b> output pin. Clicking the pin will activate the selected output." R"MillenniumOS: Configuration Wizard" S4 T0 K{var.gpOutPins} F{ #var.gpOutPins - 1 }
+        var wizCoolantMistPinID = { input }
+        if { var.wizCoolantMistPinID == #var.gpOutPins }
+            set var.wizCoolantMistPinID = -1
+        else
+            M42 P{var.wizCoolantMistPinID} S1
+            M291 P"Is your <b>Mist</b> output activated?<br/>Click <b>Yes</b> to continue, or <b>No<b> to select a different output." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F0
+            M42 P{var.wizCoolantMistPinID} S0
+            if { input == 1 }
+                set var.wizCoolantMistPinID = null
+
+    while { var.wizCoolantFloodPinID == null }
+        M291 P"Please select your <b>Flood</b> output pin. Clicking the pin will activate the selected output." R"MillenniumOS: Configuration Wizard" S4 T0 K{var.gpOutPins} F{ #var.gpOutPins - 1 }
+        var wizCoolantFloodPinID = { input }
+        if { var.wizCoolantFloodPinID == #var.gpOutPins }
+            set var.wizCoolantFloodPinID = -1
+        else
+            M42 P{var.wizCoolantFloodPinID} S1
+            M291 P"Is your <b>Flood</b> output activated?<br/>Click <b>Yes</b> to continue, or <b>No<b> to select a different output." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F0
+            M42 P{var.wizCoolantFloodPinID} S0
+            if { input == 1 }
+                set var.wizCoolantFloodPinID = null
+
+; Write coolant settings to resume file
+echo >>{var.wizTVF} {"set global.mosCAID = " ^ var.wizCoolantAirPinID}
+echo >>{var.wizTVF} {"set global.mosCMID = " ^ var.wizCoolantMistPinID}
+echo >>{var.wizTVF} {"set global.mosCFID = " ^ var.wizCoolantFloodPinID}
 
 if { var.wizDatumToolRadius == null }
     if { var.wizTutorialMode }
@@ -631,6 +715,12 @@ echo >>{var.wizUVF} {"set global.mosSDS = " ^ var.wizSpindleDecelSec}
 echo >>{var.wizUVF} "; Spindle Feedback Pins"
 echo >>{var.wizUVF} {"set global.mosSFCID = " ^ var.wizSpindleChangePinID}
 echo >>{var.wizUVF} {"set global.mosSFSID = " ^ var.wizSpindleStopPinID}
+echo >>{var.wizUVF} ""
+
+echo >>{var.wizUVF} "; Coolant Pins"
+echo >>{var.wizUVF} {"set global.mosCAID = " ^ var.wizCoolantAirPinID}
+echo >>{var.wizUVF} {"set global.mosCMID = " ^ var.wizCoolantMistPinID}
+echo >>{var.wizUVF} {"set global.mosCFID = " ^ var.wizCoolantFloodPinID}
 echo >>{var.wizUVF} ""
 
 echo >>{var.wizUVF} "; Datum Tool Radius"
