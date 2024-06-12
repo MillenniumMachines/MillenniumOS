@@ -27,10 +27,18 @@ if { global.mosTM && !global.mosDD[3] }
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
 
-var wpNum = { exists(param.W) && param.W != null ? param.W : move.workplaceNumber }
+; Default workOffset to the current workplace number if not specified
+; with the W parameter.
+var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
+
+
+; WCS Numbers and Offsets are confusing. Work Offset indicates the offset
+; from the first work co-ordinate system, so is 0-indexed. WCS number indicates
+; the number of the work co-ordinate system, so is 1-indexed.
+var wcsNumber = { var.workOffset + 1 }
 
 ; Prompt for boss diameter
-M291 P"Please enter approximate boss diameter in mm." R"MillenniumOS: Probe Boss" J1 T0 S6 F{(global.mosWPRad[var.wpNum] != global.mosDfltWPRad) ? global.mosWPRad[var.wpNum]*2 : 0}
+M291 P"Please enter approximate boss diameter in mm." R"MillenniumOS: Probe Boss" J1 T0 S6 F{(global.mosWPRad[var.workOffset] != global.mosDfltWPRad) ? global.mosWPRad[var.workOffset]*2 : 0}
 if { result != 0 }
     abort { "Boss probe aborted!" }
 
@@ -76,4 +84,4 @@ if { global.mosTM }
     if { input != 0 }
         abort { "Boss probe aborted!" }
 
-G6501.1 W{exists(param.W)? param.W : null} H{var.bossDiameter} T{var.clearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
+G6501.1 W{var.workOffset} H{var.bossDiameter} T{var.clearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}

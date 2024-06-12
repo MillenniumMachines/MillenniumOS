@@ -16,8 +16,8 @@
 if { !inputs[state.thisInput].active }
     M99
 
-if { exists(param.W) && param.W != null && (param.W < 1 || param.W > limits.workplaces) }
-    abort { "WCS number (W..) must be between 1 and " ^ limits.workplaces ^ "!" }
+if { exists(param.W) && param.W != null && (param.W < 0 || param.W >= limits.workplaces) }
+    abort { "Work Offset (W..) must be between 0 and " ^ limits.workplaces-1 ^ "!" }
 
 if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
     abort { "Must provide a start position to probe from using J, K and L parameters!" }
@@ -34,7 +34,14 @@ if { (!exists(param.Q) || param.Q == 0) && !exists(param.H) || !exists(param.I) 
 if { !exists(param.N) || param.N < 0 || param.N >= (#global.mosCnr) }
     abort { "Must provide a valid corner index using the N parameter!" }
 
-var wpNum = { exists(param.W) && param.W != null ? param.W : limits.workplaces }
+; Default workOffset to the current workplace number if not specified
+; with the W parameter.
+var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
+
+; WCS Numbers and Offsets are confusing. Work Offset indicates the offset
+; from the first work co-ordinate system, so is 0-indexed. WCS number indicates
+; the number of the work co-ordinate system, so is 1-indexed.
+var wcsNumber = { var.workOffset + 1 }
 
 var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
@@ -63,15 +70,15 @@ var sZ   = { param.L }
 ; debug info.
 
 ; Probe the top surface of the workpiece from the current Z position
-G6510.1 R0 W{exists(param.W)? param.W : null} H4 I{param.T} O{param.O} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{var.safeZ}
-if { global.mosWPSfcPos[var.wpNum] == global.mosDfltWPSfcPos || global.mosWPSfcAxis[var.wpNum] != "Z" }
+G6510.1 R0 W{var.workOffset} H4 I{param.T} O{param.O} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{var.safeZ}
+if { global.mosWPSfcPos[var.workOffset] == global.mosDfltWPSfcPos || global.mosWPSfcAxis[var.workOffset] != "Z" }
     abort { "G6520: Failed to probe the top surface of the workpiece!" }
 
 ; Probe the corner surface
-G6508.1 R0 W{exists(param.W)? param.W : null} Q{param.Q} H{param.H} I{param.I} N{param.N} T{param.T} O{param.O} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{ global.mosWPSfcPos - param.P}
-if { global.mosWPCnrNum[var.wpNum] == null }
+G6508.1 R0 W{var.workOffset} Q{param.Q} H{param.H} I{param.I} N{param.N} T{param.T} O{param.O} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{ global.mosWPSfcPos[var.workOffset] - param.P }
+if { global.mosWPCnrNum[var.workOffset] == null }
     abort { "G6520: Failed to probe the corner surface of the workpiece!" }
 
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
-    M7601 W{var.wpNum}
+    M7601 W{var.workOffset}

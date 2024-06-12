@@ -29,9 +29,17 @@ if { global.mosTM && !global.mosDD[5] }
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
 
-var wpNum = { exists(param.W) && param.W != null ? param.W : limits.workplaces }
+; Default workOffset to the current workplace number if not specified
+; with the W parameter.
+var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
 
-var bW = { (global.mosWPDims[var.wpNum][0] != null) ? global.mosWPDims[var.wpNum][0] : 100 }
+
+; WCS Numbers and Offsets are confusing. Work Offset indicates the offset
+; from the first work co-ordinate system, so is 0-indexed. WCS number indicates
+; the number of the work co-ordinate system, so is 1-indexed.
+var wcsNumber = { var.workOffset + 1 }
+
+var bW = { (global.mosWPDims[var.workOffset][0] != null) ? global.mosWPDims[var.workOffset][0] : 100 }
 
 M291 P{"Please enter approximate <b>block width</b> in mm.<br/><b>NOTE</b>: <b>Width</b> is measured along the <b>X</b> axis."} R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{var.bW}
 if { result != 0 }
@@ -42,7 +50,7 @@ var blockWidth = { input }
 if { var.blockWidth < 1 }
     abort { "Block width too low!" }
 
-var bL = { (global.mosWPDims[var.wpNum][1] != null) ? global.mosWPDims[var.wpNum][1] : 100 }
+var bL = { (global.mosWPDims[var.workOffset][1] != null) ? global.mosWPDims[var.workOffset][1] : 100 }
 
 M291 P{"Please enter approximate <b>block length</b> in mm.<br/><b>NOTE</b>: <b>Length</b> is measured along the <b>Y</b> axis."} R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{var.bL}
 if { result != 0 }
@@ -91,4 +99,4 @@ if { global.mosTM }
     if { input != 0 }
         abort { "Rectangle block probe aborted!" }
 
-G6503.1 W{exists(param.W)? param.W : null} H{var.blockWidth} I{var.blockLength} T{var.clearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
+G6503.1 W{var.workOffset} H{var.blockWidth} I{var.blockLength} T{var.clearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}

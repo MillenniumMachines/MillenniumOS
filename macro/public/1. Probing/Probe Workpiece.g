@@ -1,2 +1,4 @@
 ; Probe Workpiece.g
-G6600
+
+; Prompt operator to select WCS
+G6600 W{null}
