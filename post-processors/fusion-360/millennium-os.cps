@@ -233,7 +233,7 @@ var radiusFmt = axesFmt;
 var feedFmt   = createFormat({decimals:(unit == MM ? 1 : 2), type: FORMAT_REAL, minDigitsRight: 1 });
 
 // Used for integer output - RPM, seconds, tool properties etc
-var intFmt = createFormat({ type: FORMAT_INTEGER });
+var intFmt = createFormat({ type: FORMAT_INTEGER, decimals: 0 });
 
 // Force output of G, M and T commands when executed
 var gCmd = createOutputVariable({ control: CONTROL_FORCE }, gFmt );
@@ -690,19 +690,7 @@ function onSection() {
     // because modal groups do not correctly handle
     // decimals.
 
-    // Use M98 to call the M3.9 macro, as there is currently an RRF bug that
-    // prevents delays from running in macros called directly.
-    // More info here: https://forum.duet3d.com/topic/35300/odd-g4-behaviour-from-macro-called-from-sd-file/13?_=1711622479937
-    // NOTE: The P parameter conflicts between M98 and M3, so
-    // using this approach we _cannot_ target a specific spindle.
-    // We don't do that anyway, because we select a tool before
-    // setting the spindle speed, but it's worth noting - if there
-    // is no tool selected, then this command will return an error.
-    writeBlock(mFmt.format(M.CALL_MACRO), 'P"M{code}.g"'.supplant({code: M.SPINDLE_ON_CW}), s);
-
-    // Uncomment this when RRF fixes delays not running in macros called
-    // directly.
-    //writeBlock(mFmt.format(M.SPINDLE_ON_CW), s);
+    writeBlock(mFmt.format(M.SPINDLE_ON_CW), s);
     writeln("");
   }
 
@@ -1105,19 +1093,7 @@ function onClose() {
   writeln("");
 
   writeComment("Double-check spindle is stopped!");
-  // Use M98 to call the M3.9 macro, as there is currently an RRF bug that
-  // prevents delays from running in macros called directly.
-  // More info here: https://forum.duet3d.com/topic/35300/odd-g4-behaviour-from-macro-called-from-sd-file/13?_=1711622479937
-  // NOTE: The P parameter conflicts between M98 and M3, so
-  // using this approach we _cannot_ target a specific spindle.
-  // We don't do that anyway, because we select a tool before
-  // setting the spindle speed, but it's worth noting - if there
-  // is no tool selected, then this command will return an error.
-  writeBlock(mFmt.format(M.CALL_MACRO), 'P"M{code}.g"'.supplant({code: M.SPINDLE_OFF}));
-
-  // Uncomment this when RRF fixes delays not running in macros called
-  // directly.
-  // writeBlock(mFmt.format(M.SPINDLE_OFF));
+  writeBlock(mFmt.format(M.SPINDLE_OFF));
   writeln("");
 }
 
