@@ -20,10 +20,13 @@ G94
 G53 G0 Z{move.axes[2].max}
 
 ; Stop spindle and wait
-M98 P"M5.9.g"
+M5.9
 
 ; If park is called with Z parameter, then the table itself will not be
 ; moved.
 if { !exists(param.Z) }
     ; Move table to center of X, and front of Y
     G53 G0 X{(move.axes[0].max - move.axes[0].min)/2} Y{move.axes[1].max}
+
+; Wait for all movement to stop before continuing.
+M400

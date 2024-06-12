@@ -17,6 +17,9 @@ if { !inputs[state.thisInput].active }
 if { exists(param.D) && param.D < 0 }
     abort { "Dwell time must be a positive value!" }
 
+; Wait for all movement to stop before continuing.
+M400
+
 ; Spindles only need to be stopped if they're actually running.
 ; The base M5 code will stop the spindle for the current tool, or
 ; all spindles if no tool is selected. To avoid having to wait the
