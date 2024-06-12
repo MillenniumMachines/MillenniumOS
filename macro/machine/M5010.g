@@ -28,13 +28,13 @@ var reset = { exists(param.R) ? param.R : 63 }
 
 if { mod(floor(var.reset/pow(2,0)),2) == 1 }
     ; Reset Center
-    if { !global.mosEM }
+    if { global.mosTM }
         echo { "Resetting WCS " ^ var.wcsNumber ^ " probed center"}
     set global.mosWPCtrPos[var.workOffset] = global.mosDfltWPCtrPos
 
 if { mod(floor(var.reset/pow(2,1)),2) == 1 }
     ; Reset Corner
-    if { !global.mosEM }
+    if { global.mosTM }
         echo { "Resetting WCS " ^ var.wcsNumber ^ " probed corner"}
     set global.mosWPCnrPos[var.workOffset] = global.mosDfltWPCnrPos
     set global.mosWPCnrDeg[var.workOffset] = global.mosDfltWPCnrDeg
@@ -42,26 +42,26 @@ if { mod(floor(var.reset/pow(2,1)),2) == 1 }
 
 if { mod(floor(var.reset/pow(2,2)),2) == 1}
     ; Reset Radius
-    if { !global.mosEM }
+    if { global.mosTM }
         echo { "Resetting WCS " ^ var.wcsNumber ^ " probed radius"}
     set global.mosWPRad[var.workOffset] = global.mosDfltWPRad
 
 if { mod(floor(var.reset/pow(2,3)),2) == 1 }
     ; Reset Surface
-    if { !global.mosEM }
+    if { global.mosTM }
         echo { "Resetting WCS " ^ var.wcsNumber ^ " probed surface"}
     set global.mosWPSfcAxis[var.workOffset] = global.mosDfltWPSfcAxis
     set global.mosWPSfcPos[var.workOffset] = global.mosDfltWPSfcPos
 
 if { mod(floor(var.reset/pow(2,4)),2) == 1 }
     ; Reset Dimensions
-    if { !global.mosEM }
+    if { global.mosTM }
         echo { "Resetting WCS " ^ var.wcsNumber ^ " probed dimensions"}
     set global.mosWPDims[var.workOffset] = global.mosDfltWPDims
     set global.mosWPDimsErr[var.workOffset] = global.mosDfltWPDimsErr
 
 if { mod(floor(var.reset/pow(2,5)),2) == 1 }
     ; Reset Rotation
-    if { !global.mosEM }
+    if { global.mosTM }
         echo { "Resetting WCS " ^ var.wcsNumber ^ " probed rotation"}
     set global.mosWPDeg[var.workOffset] = global.mosDfltWPDeg
