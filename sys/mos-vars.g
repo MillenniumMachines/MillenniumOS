@@ -6,6 +6,7 @@
 global mosFeatToolSetter=false
 global mosFeatTouchProbe=false
 global mosFeatSpindleFeedback=false
+global mosFeatCoolantControl=false
 global mosFeatVSSC=true
 
 ; Expert mode skips certain operator confirmation checks during tool changes and probing operations.
@@ -169,6 +170,11 @@ global mosTPRP = null ; Touch Probe Reference Point
 
 ; Datum tool configuration
 global mosDTR = null ; Datum Tool Radius
+
+; Coolant configuration
+global mosCAID = null ; Coolant Air ID
+global mosCMID = null ; Coolant Mist ID
+global mosCFID = null ; Coolant Flood ID
 
 ; Protected move configuration
 global mosPMBO = null ; Protected Move Back Off
