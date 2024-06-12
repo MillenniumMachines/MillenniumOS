@@ -66,12 +66,13 @@ class GCODES:
     PROBE_VISE_CORNER       = 6520.1
 
 class MCODES:
-    CALL_MACRO    = 98
-    ADD_TOOL      = 4000
-    VERSION_CHECK = 4005
-    VSSC_ENABLE   = 7000
-    VSSC_DISABLE  = 7001
-    SHOW_DIALOG   = 3000
+    CALL_MACRO                   = 98
+    ADD_TOOL                     = 4000
+    VERSION_CHECK                = 4005
+    ENABLE_ROTATION_COMPENSATION = 5011
+    VSSC_ENABLE                  = 7000
+    VSSC_DISABLE                 = 7001
+    SHOW_DIALOG                  = 3000
 
 # Define format strings for variable and command types
 class FORMATS:
@@ -590,128 +591,47 @@ class MillenniumOSPostProcessor(PostProcessor):
         if code in self._UNSUPPORTED:
             return None
 
-        # Parse and format the command into a list
-        cmd, changed = self._G(code, **params)
-        if not cmd:
-            return None
-
         # Reset tools, feed and spindle on park
         if code == GCODES.PARK:
-            self.onpark()
+            self.onpark(code, params)
 
         # If WCS is changing
         elif code in self._WCS_CHANGES:
-            self.onwcs(cmd, code, changed)
+            self.onwcs(code, params)
 
-            wcsOffset = int(code - (self._WCS_CHANGES[0]-1))
-
-            self.used_wcs.append(wcsOffset)
-
-            if self.active_wcs:
-                self.comment("Park ready for WCS change")
-                self.G(GCODES.PARK)
-                self.brk()
-
-            # Only probe inline if probe_on_change is set
-            if self.args.probe_mode == PROBE.ON_CHANGE:
-                self.probe(wcsOffset)
-                self.spindle_started = False
-
-            self.comment("Switch to WCS {}".format(wcsOffset))
-            self.active_wcs = True
-
-            self.comment("Activate rotation compensation if necessary")
-            # Calling this after the
-            self.M(MCODES.ACTIVATE_ROT_COMP)
 
         elif code in self._MOVES:
-            # Make sure the first arc move after a linear move
-            # contains the right parameters.
-            if code in self._LINEAR_MOVES:
-                self._forceArcParams()
+            self.onmove(code, params)
+        else:
+            # Parse and format the command into a list
+            cmd, _ = self._G(code, **params)
+            if not cmd:
+                return None
 
-            # Make sure the first linear move after an arc move
-            # contains the right parameters.
-            if code in self._ARC_MOVES:
-                self._forceLinearParams()
-
-            if not changed:
-                return
-
-            # If feed rate was changed
-            if ARGS.FEED in changed:
-                # But the code only has a feed arg
-                # Then do not output the command at all and
-                # make sure it is outputted with the next command
-                if len(changed) == 1:
-                    self._forceFeed()
-                    return
-
-                # And command is a rapid move
-                if code in self._RAPID_MOVES:
-                    # Then ignore the feed arg
-                    # as rapid moves follow machine limits
-                    del cmd[changed[ARGS.FEED]]
-                    # Make sure feed is output by the next
-                    # non-rapid move.
-                    self._forceFeed()
-
-            # If we haven't seen an X/Y move since starting the operation
-            if not self.xy_seen:
-                # And Z has been changed
-                if ARGS.Z in changed:
-                    # Then store the Z height for later
-                    self.delayed_z = [cmd, changed]
-                    return
-
-                if ARGS.X in changed or ARGS.Y in changed:
-                    self.xy_seen = True
-
-            # Otherwise if we have seen an X/Y move and there is a delayed Z,
-            # then output the delayed move.
-            elif self.delayed_z is not None:
-                dcmd, _ = self.delayed_z
-                self.brk()
-                self.comment("Delayed Z move following XY")
-                self.cmd(' '.join(dcmd))
-                self.delayed_z = None
-                self.brk()
-
-        return self.cmd(' '.join(cmd))
+            self.cmd(' '.join(cmd))
 
     def M(self, code, **params):
+
         # If code is a tool change, send the T command
         # and return so the M6 is not output.
         if ARGS.TOOL in params and code in self._TOOL_CHANGES:
-            self.T(params[ARGS.TOOL])
-            self.spindle_started = False
-            self.brk()
-            return None
+            self.ontoolchange(code, params)
 
-        if code in self._SPINDLE_ACTIONS:
-            if ARGS.RPM in params and code in self._SPINDLE_ACTIONS_START:
-                self.comment("Start spindle at requested RPM and wait for it to accelerate")
-                self.spindle_started = True
-            if code in self._SPINDLE_ACTIONS_STOP:
-                self.comment("Stop spindle and wait for it to decelerate")
-                self.spindle_started = False
+        elif code in self._SPINDLE_ACTIONS:
+            self.onspindle(code, params)
+        else:
+            cmd, _ = self._M(code, **params)
+            if not cmd:
+                return None
+            self.cmd(' '.join(cmd))
 
-            code += self._SPINDLE_WAIT_SUFFIX
-
-            macro = "M{}.g".format(code)
-            code = MCODES.CALL_MACRO
-            params['P'] = macro
-
-
-        cmd, args = self._M(code, **params)
-        if not cmd:
-            return None
-
-        self.cmd(' '.join(cmd))
-
-    def probe(self, wcsOffset):
-        self.comment("Probe origin and save in WCS {}".format(wcsOffset))
-        self.G(GCODES.PROBE_OPERATOR, W=wcsOffset)
+    def probe(self, wcsOffset=None):
+        if wcsOffset is None:
+            self.comment("Probe origin in current WCS")
+            self.G(GCODES.PROBE_OPERATOR)
+        else:
+            self.comment("Probe origin and save in WCS {}".format(wcsOffset))
+            self.G(GCODES.PROBE_OPERATOR, W=wcsOffset)
         self.brk()
 
     # Add tool index, name and params to tool info
@@ -733,13 +653,128 @@ class MillenniumOSPostProcessor(PostProcessor):
         self.M(MCODES.SHOW_DIALOG, R="FreeCAD", S=obj.Comment)
 
 
-    def onpark(self, _):
+    def onpark(self, _, __):
         self._forceTool()
         self._forceFeed()
         self._forceSpindle()
         self.spindle_started = False
 
-    def onunsupported(self, cmd):
+    def onwcs(self, code, params):
+        wcsOffset = int(code - (self._WCS_CHANGES[0]-1))
+        self.used_wcs.append(wcsOffset)
+
+        if self.active_wcs:
+            self.comment("Park ready for WCS change")
+            self.G(GCODES.PARK)
+            self.brk()
+
+        self.comment("Switch to WCS {}".format(wcsOffset))
+
+        cmd, _ = self._G(code, **params)
+        if not cmd:
+            return None
+        self.cmd(' '.join(cmd))
+
+        self.active_wcs = True
+        self.brk()
+
+        # With the WCS active, we can now call probe and rotation
+        # compensation commands without a WCS offset - they default
+        # to the active WCS.
+
+        # Only probe inline if probe_on_change is set
+        if self.args.probe_mode == PROBE.ON_CHANGE:
+            self.probe()
+            self.spindle_started = False
+
+
+        self.comment("Enable rotation compensation if necessary")
+        self.M(MCODES.ENABLE_ROTATION_COMPENSATION)
+
+        return None
+
+    def onmove(self, code, params):
+
+        # Make sure the first arc move after a linear move
+        # contains the right parameters.
+        if code in self._LINEAR_MOVES:
+            self._forceArcParams()
+
+        # Make sure the first linear move after an arc move
+        # contains the right parameters.
+        if code in self._ARC_MOVES:
+            self._forceLinearParams()
+
+        cmd, changed = self._G(code, **params)
+        if not cmd or not changed:
+            return
+
+        # If feed rate was changed
+        if ARGS.FEED in changed:
+            # But the code only has a feed arg
+            # Then do not output the command at all and
+            # make sure it is outputted with the next command
+            if len(changed) == 1:
+                self._forceFeed()
+                return
+
+            # And command is a rapid move
+            if code in self._RAPID_MOVES:
+                # Then ignore the feed arg
+                # as rapid moves follow machine limits
+                del cmd[changed[ARGS.FEED]]
+                # Make sure feed is output by the next
+                # non-rapid move.
+                self._forceFeed()
+
+        # If we haven't seen an X/Y move since starting the operation
+        if not self.xy_seen:
+            # And Z has been changed
+            if ARGS.Z in changed:
+                # Then store the Z height for later
+                self.delayed_z = [cmd, changed]
+                return
+
+            if ARGS.X in changed or ARGS.Y in changed:
+                self.xy_seen = True
+
+        # Otherwise if we have seen an X/Y move and there is a delayed Z,
+        # then output the delayed move.
+        elif self.delayed_z is not None:
+            dcmd, _ = self.delayed_z
+            self.brk()
+            self.comment("Delayed Z move following XY")
+            self.cmd(' '.join(dcmd))
+            self.delayed_z = None
+            self.brk()
+
+        self.cmd(' '.join(cmd))
+
+    def ontoolchange(self, code, params):
+        self.T(params[ARGS.TOOL])
+        self.spindle_started = False
+        self.brk()
+        return False
+
+    def onspindle(self, code, params):
+        if ARGS.RPM in params and code in self._SPINDLE_ACTIONS_START:
+            self.comment("Start spindle at requested RPM and wait for it to accelerate")
+            self.spindle_started = True
+        if code in self._SPINDLE_ACTIONS_STOP:
+            self.comment("Stop spindle and wait for it to decelerate")
+            self.spindle_started = False
+
+        code += self._SPINDLE_WAIT_SUFFIX
+
+        macro = "M{}.g".format(code)
+        code = MCODES.CALL_MACRO
+        params['P'] = macro
+
+        cmd, _ = self._M(code, **params)
+        if not cmd:
+            return None
+
+        self.cmd(' '.join(cmd))
 
 
     def onfixture(self, _):

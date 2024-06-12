@@ -561,16 +561,16 @@ if { var.wizFeatureTouchProbe && (var.wizTouchProbeID == null || var.wizTouchPro
     ; settings if it needs to run again.
     set global.mosFeatTouchProbe = null
 
-    if { global.mosWPDims[0] == null || global.mosWPDims[1] == null }
+    if { global.mosWPDims[move.workplaceNumber][0] == null || global.mosWPDims[move.workplaceNumber][1] == null }
         T-1 P0
         M4001 P{global.mosPTID}
         abort { "MillenniumOS: Rectangular block probing failed!" }
 
     if { global.mosTM }
-        M291 P{"Measured block dimensions are <b>X=" ^ global.mosWPDims[0] ^ " Y=" ^ global.mosWPDims[1] ^ "</b>.<br/>Current probe location is over the center of the item."} R"MillenniumOS: Configuration Wizard" S2 T0
+        M291 P{"Measured block dimensions are <b>X=" ^ global.mosWPDims[move.workplaceNumber][0] ^ " Y=" ^ global.mosWPDims[move.workplaceNumber][1] ^ "</b>.<br/>Current probe location is over the center of the item."} R"MillenniumOS: Configuration Wizard" S2 T0
 
-    var deflectionX = { (var.measuredX - global.mosWPDims[0])/2 }
-    var deflectionY = { (var.measuredY - global.mosWPDims[1])/2 }
+    var deflectionX = { (var.measuredX - global.mosWPDims[move.workplaceNumber][0])/2 }
+    var deflectionY = { (var.measuredY - global.mosWPDims[move.workplaceNumber][1])/2 }
 
     ; Deflection values are stored separately per axis, as 3d touch probes almost
     ; always have different deflection values. These are applied during the

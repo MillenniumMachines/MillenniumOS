@@ -7,8 +7,8 @@
 if { !inputs[state.thisInput].active }
     M99
 
-if { exists(param.W) && param.W != null && (param.W < 1 || param.W > limits.workplaces) }
-    abort { "WCS number (W..) must be between 1 and " ^ limits.workplaces ^ "!" }
+if { exists(param.W) && param.W != null && (param.W < 0 || param.W >= limits.workplaces) }
+    abort { "Work Offset (W..) must be between 0 and " ^ limits.workplaces-1 ^ "!" }
 
 if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
     abort { "Must provide a start position to probe from using J, K and L parameters!" }
@@ -20,7 +20,15 @@ if { (!exists(param.Q) || param.Q == 0) && !exists(param.H) || !exists(param.I) 
 if { !exists(param.N) || param.N < 0 || param.N > 3 }
     abort { "Must provide a valid corner index (N..)!" }
 
-var wpNum = { exists(param.W) && param.W != null ? param.W : limits.workplaces }
+; Default workOffset to the current workplace number if not specified
+; with the W parameter.
+var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
+
+
+; WCS Numbers and Offsets are confusing. Work Offset indicates the offset
+; from the first work co-ordinate system, so is 0-indexed. WCS number indicates
+; the number of the work co-ordinate system, so is 1-indexed.
+var wcsNumber = { var.workOffset + 1 }
 
 ; Probe ID
 var pID = { global.mosFeatTouchProbe ? global.mosTPID : null }
@@ -34,7 +42,7 @@ if { global.mosPTID != state.currentTool }
 
 ; Reset stored values that we're going to overwrite
 ; Reset corner, dimensions and rotation
-M4010 W{var.wpNum} R50
+M5010 W{var.workOffset} R50
 
 ; Store our own safe Z position as the current position. We return to
 ; this position where necessary to make moves across the workpiece to
@@ -107,10 +115,10 @@ var dirX = { (param.N == 0 || param.N == 3) ? -1 : 1 }
 var dirY = { (param.N == 0 || param.N == 1) ? 1 : -1 }
 
 var startX = { var.sX + var.dirX * var.clearance }
-var targetX = { var.sX + var.dirX * var.overtravel }
+var targetX = { var.sX - var.dirX * var.overtravel }
 
 var startY = { var.sY + var.dirY * var.clearance }
-var targetY = { var.sY + var.dirY * var.overtravel }
+var targetY = { var.sY - var.dirY * var.overtravel }
 
 ; Set dirXY for X probes
 set var.dirXY[0][0] = { var.startX, var.startY }
@@ -126,10 +134,10 @@ set var.dirX = { -var.dirX }
 set var.dirY = { -var.dirY }
 
 set var.startX = { var.sX + var.dirX * var.clearance }
-set var.targetX = { var.sX + var.dirX * var.overtravel }
+set var.targetX = { var.sX - var.dirX * var.overtravel }
 
 set var.startY = { var.sY + var.dirY * var.clearance }
-set var.targetY = { var.sY + var.dirY * var.overtravel }
+set var.targetY = { var.sY - var.dirY * var.overtravel }
 
 set var.dirXY[1][0] = { var.startX, var.startY }
 set var.dirXY[1][1] = { var.startX, var.targetY }
@@ -247,35 +255,38 @@ if { var.pMO == 0 }
     ; is being probed. We add 360 and take the modulo of 180 to make sure
     ; this stays a positive value less than 180 (ideally around 90).
     var diff = { abs(degrees(var.aX - var.aY)) }
-    set global.mosWPCnrDeg[var.wpNum] = { mod(var.diff + 360, 180) }
+    set global.mosWPCnrDeg[var.workOffset] = { mod(var.diff + 360, 180) }
+
+
+    ; The angle of the X line is our workpiece rotation.
+    set global.mosWPDeg[var.workOffset] = { 90 - degrees(var.aX) }
 
     ; If running in full mode, operator provided approximate width and
     ; height values of the workpiece. Assign these to the global
     ; variables for the workpiece width and height.
     ; This assumes that the workpiece is rectangular.
-    set global.mosWPDims[var.wpNum] = { var.fX, var.fY }
+    set global.mosWPDims[var.workOffset] = { var.fX, var.fY }
 
 else
     ; Calculate corner position in quick mode.
     set var.cX = { var.pX[0] }
     set var.cY = { var.pY[1] }
 
-    set global.mosWPCnrDeg[var.wpNum] = { 90 }
+    set global.mosWPCnrDeg[var.workOffset] = { 90 }
 
 ; Move above the corner position
 G6550 I{var.pID} X{var.cX} Y{var.cY}
 
 ; Set corner position
-set global.mosWPCnrPos[var.wpNum] = { var.cX, var.cY }
+set global.mosWPCnrPos[var.workOffset] = { var.cX, var.cY }
 
 ; Set corner number
-set global.mosWPCnrNum[var.wpNum] = { param.N }
+set global.mosWPCnrNum[var.workOffset] = { param.N }
 
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
-    M7601 W{var.wpNum}
+    M7601 W{var.workOffset}
 
-; Set WCS origin to the probed center, if requested
-if { exists(param.W) && param.W != null }
-    echo { "MillenniumOS: Setting WCS " ^ param.W ^ " X,Y origin to corner " ^ global.mosCnr[param.N] ^ "." }
-    G10 L2 P{param.W} X{var.cX} Y{var.cY}
+; Set WCS origin to the probed corner
+echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to " ^ global.mosCnr[param.N] ^ " corner." }
+G10 L2 P{param.W} X{var.cX} Y{var.cY}
