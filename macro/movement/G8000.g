@@ -37,9 +37,21 @@ M291 P"Welcome to MillenniumOS! This wizard will walk you through the configurat
 if { result == -1 }
     abort { "MillenniumOS: Operator aborted configuration wizard!" }
 
-if { fileexists("0:/sys/" ^ var.wizTVF) }
-    ; If resume file exists, allow the user to pick a resume option.
-    M291 P"The wizard did not complete the last time it ran!<br/>Click <b>Resume</b> to continue where you left off or <b>Reset</b> to reset all settings and start again." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Resume","Reset"}
+; If MOS is loaded, allow the user to reset all settings in one go.
+; Otherwise, they can choose to reconfigure individual features
+; below.
+if { global.mosLdd }
+    M291 P"MillenniumOS is already configured. Click <b>Continue</b> to re-configure and change persistent modes or features, or <b>Reset</b> to reset all settings and start again." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Continue","Reset"}
+elif { (exists(global.mosErr) && global.mosErr != null) || state.startupError != null }
+    M291 P"MillenniumOS could not be loaded due to a startup error.<br/>Click <b>Update</b> to configure any missing settings or <b>Reset</b> to reset all settings and start again." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Update","Reset"}
+
+; Reset if requested
+set var.wizReset = { (input == 1) }
+
+; If user doees not want to reset but we have a resume file
+if { !var.wizReset && fileexists("0:/sys/" ^ var.wizTVF) }
+    ; Allow the user to pick a resume option.
+    M291 P"The wizard did not complete the last time it ran!<br/>Click <b>Yes</b> to load stored settings, or <b>No</b> to start the wizard again." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes", "No"} F0
     if { input == 0 }
         M98 P{ var.wizTVF }
         ; Load settings that we ask for on every run in the wizard
@@ -52,18 +64,8 @@ if { fileexists("0:/sys/" ^ var.wizTVF) }
         set var.wizFeatureCoolantControl  = global.mosFeatCoolantControl
         set var.wizResumed                = true
     else
-        set var.wizReset = true
-else
-    ; If MOS is loaded, allow the user to reset all settings in one go.
-    ; Otherwise, they can choose to reconfigure individual features
-    ; below.
-    if { global.mosLdd }
-        M291 P"MillenniumOS is already configured. Click <b>Continue</b> to re-configure and change persistent modes or features, or <b>Reset</b> to reset all settings and start again." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Continue","Reset"}
-    elif { (exists(global.mosErr) && global.mosErr != null) || state.startupError != null }
-        M291 P"MillenniumOS could not be loaded due to a startup error.<br/>Click <b>Update</b> to configure any missing settings or <b>Reset</b> to reset all settings and start again." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Update","Reset"}
-
-    ; Reset if requested
-    set var.wizReset = { (input == 1) }
+        ; Delete the resume file if the user wants to start over.
+        M472 P{ "0:/sys/" ^ var.wizTVF }
 
 if { global.mosTM }
     M291 P"<b>NOTE</b>: No settings will be saved or overwritten until the configuration wizard has been completed." R"MillenniumOS: Configuration Wizard" S2 T0
@@ -181,21 +183,24 @@ if { var.wizFeatureSpindleFeedback == null }
     M291 P"Would you like to enable the <b>Spindle Feedback</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F{ global.mosFeatSpindleFeedback ? 0 : 1}
     set var.wizFeatureSpindleFeedback = { (input == 0) ? true : false }
 
-    ; Do not display this if the setting was not changed
-    if { var.wizFeatureSpindleFeedback && var.wizTutorialMode }
-        M291 P"The Spindle Feedback feature can be used to detect when a spindle has reached a target speed, has stopped, or both. How you use this will depend on your VFD configuration." R"MillenniumOS: Configuration Wizard" S2 T0
-        M291 P"We will start the spindle so we can measure the time it takes to accelerate and decelerate - these values will be used if you disable the Spindle Feedback feature later." R"MillenniumOS: Configuration Wizard" S2 T0
-        M291 P"While doing this, we will monitor the state of any configured general purpose inputs and ask you to confirm if these should be used for spindle feedback." R"MillenniumOS: Configuration Wizard" S2 T0
-
 ; Write spindle feedback feature to the resume file
 echo >>{var.wizTVF} {"set global.mosFeatSpindleFeedback = " ^ var.wizFeatureSpindleFeedback}
 
 if { var.wizSpindleAccelSec == null || var.wizSpindleDecelSec == null }
+    if { var.wizTutorialMode }
+        if { var.wizFeatureSpindleFeedback }
+            M291 P"The Spindle Feedback feature can be used to detect when a spindle has reached a target speed, has stopped, or both. How you use this will depend on your VFD configuration." R"MillenniumOS: Configuration Wizard" S2 T0
+            M291 P"We will start the spindle so we can measure the time it takes to accelerate and decelerate - these values will be used if you disable the Spindle Feedback feature later." R"MillenniumOS: Configuration Wizard" S2 T0
+            M291 P"While doing this, we will monitor the state of any configured general purpose inputs and ask you to confirm if these should be used for spindle feedback." R"MillenniumOS: Configuration Wizard" S2 T0
+
+        else
+            M291 P"Spindle Feedback is disabled. We need to measure the time it takes for your spindle to accelerate to maximum speed and then decelerate to a stop." R"MillenniumOS: Configuration Wizard" S2 T0
+
     M291 P"We need to start the spindle and accelerate to its maximum RPM.<br/><b>CAUTION</b>: Remove any tool and make sure your spindle nut is tightened before proceeding!" R"MillenniumOS: Configuration Wizard" S3 T0
     if { result != 0 }
         abort { "MillenniumOS: Operator aborted configuration wizard!" }
 
-    M291 P"When ready, click <b>OK</b> to start the spindle.<br />When it is no longer accelerating, click <b>OK</b> on the next screen." R"MillenniumOS: Configuration Wizard" S3 T0
+    M291 P"When ready, click <b>OK</b> to start the spindle.<br />When it is no longer accelerating, click <b>OK</b> on the next screen to stop the timer." R"MillenniumOS: Configuration Wizard" S3 T0
 
     var accelPins = { null }
     var decelPins = { null }
@@ -221,7 +226,7 @@ if { var.wizSpindleAccelSec == null || var.wizSpindleDecelSec == null }
         set var.accelPins = { global.mosGPD }
 
     ; Prompt to do the same for deceleration
-    M291 P"Now we need to measure deceleration. When ready, click <b>OK</b> to stop the spindle.<br />When it has stopped, click <b>OK</b> on the next screen." R"MillenniumOS: Configuration Wizard" S2 T0
+    M291 P"Now we need to measure deceleration. When ready, click <b>OK</b> to stop the spindle.<br />When it has stopped, click <b>OK</b> on the next screen to stop the timer." R"MillenniumOS: Configuration Wizard" S2 T0
 
     ; Store stop time
     set var.wizSpindleDecelSec = { state.time }
@@ -280,64 +285,29 @@ if { var.wizFeatureCoolantControl == null }
 echo >>{var.wizTVF} {"set global.mosFeatCoolantControl = " ^ var.wizFeatureCoolantControl}
 
 if { var.wizFeatureCoolantControl }
-    if { var.wizTutorialMode && (var.wizCoolantAirPinID == null || var.wizCoolantMistPinID == null || var.wizCoolantFloodPinID == null) }
-        M291 P"We need to select the control pins that will be used to activate air, mist or flood coolant on your machine." R"MillenniumOS: Configuration Wizard" S2 T0
-        M291 P"Please select the control pin from the configured list for each coolant type, or select <b>None</b> if your machine does not support that type of coolant." R"MillenniumOS: Configuration Wizard" S2 T0
-        M291 P"After selecting the pin, we will activate the coolant output temporarily to make sure the correct pin was selected." R"MillenniumOS: Configuration Wizard" S2 T0
+    if { #state.gpOut < 1 }
+        M291 P"<b>No general purpose outputs are configured!</b><br />Please configure at least one output using <b>M950</b> and re-run the wizard to configure coolant control." R"MillenniumOS: Configuration Wizard" S2 T0
+    else
+        if { var.wizTutorialMode && (var.wizCoolantAirPinID == null || var.wizCoolantMistPinID == null || var.wizCoolantFloodPinID == null) }
+            M291 P"We need to select the output pins that will be used to activate <b>Air</b>, <b>Mist</b> or <b>Flood</b> coolant on your machine." R"MillenniumOS: Configuration Wizard" S2 T0
+            M291 P"We will activate each configured output in turn, and you can select which coolant type the active pin is controlling." R"MillenniumOS: Configuration Wizard" S2 T0
+            M291 P"If the pin is not controlling a coolant type, select <b>None</b>.<br/><b>CAUTION</b>: If you have output pins hooked up to anything except coolant, <b>PROCEED WITH SEVERE CAUTION</b>." R"MillenniumOS: Configuration Wizard" S3 T0
 
-    ; Count the number of non-null output pins
-    var gpOutCount = 0
-    while { iterations < #state.gpOut }
-        if { state.gpOut[iterations] != null }
-            set var.gpOutCount = { var.gpOutCount + 1 }
+        while { iterations < #state.gpOut }
+            if { state.gpOut[iterations] != null }
+                M291 P{"Activate Output Pin <b>#" ^ iterations ^ "</b>?<br/><b>CAUTION</b>: Step away from the machine and remove any loose items before activating!"} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F1
+                if { input == 0 }
+                    M42 P{iterations} S1
+                    M291 P"Select the coolant type controlled by this output pin." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Air","Mist","Flood","None"} F{max(iterations, 3)}
+                    M42 P{iterations} S0
 
-    ; Initialise the output pin vector to the right size
-    var gpOutPins = { vector(var.gpOutCount+1, null) }
-
-    ; Iterate over the gpOut vector again and store the index of each
-    ; non-null pin.
-    while { iterations < #state.gpOut }
-        if { state.gpOut[iterations] != null }
-            set var.gpOutPins[var.gpOutCount] = { "Pin " ^ iterations }
-            set var.gpOutCount = { var.gpOutCount - 1 }
-
-    set var.gpOutPins[#var.gpOutPins] = { "None" }
-
-    while { var.wizCoolantAirPinID == null }
-        M291 P"Please select your <b>Air</b> output pin. Clicking the pin will activate the selected output." R"MillenniumOS: Configuration Wizard" S4 T0 K{var.gpOutPins} F1
-        var wizCoolantAirPinID = { input }
-        if { var.wizCoolantAirPinID == #var.gpOutPins }
-            set var.wizCoolantAirPinID = -1
-        else
-            M42 P{var.wizCoolantAirPinID} S1
-            M291 P"Is your <b>Air</b> output activated?<br/>Click <b>Yes</b> to continue, or <b>No<b> to select a different output." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F0
-            M42 P{var.wizCoolantAirPinID} S0
-            if { input == 1 }
-                set var.wizCoolantAirPinID = null
-
-    while { var.wizCoolantMistPinID == null }
-        M291 P"Please select your <b>Mist</b> output pin. Clicking the pin will activate the selected output." R"MillenniumOS: Configuration Wizard" S4 T0 K{var.gpOutPins} F{ #var.gpOutPins - 1 }
-        var wizCoolantMistPinID = { input }
-        if { var.wizCoolantMistPinID == #var.gpOutPins }
-            set var.wizCoolantMistPinID = -1
-        else
-            M42 P{var.wizCoolantMistPinID} S1
-            M291 P"Is your <b>Mist</b> output activated?<br/>Click <b>Yes</b> to continue, or <b>No<b> to select a different output." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F0
-            M42 P{var.wizCoolantMistPinID} S0
-            if { input == 1 }
-                set var.wizCoolantMistPinID = null
-
-    while { var.wizCoolantFloodPinID == null }
-        M291 P"Please select your <b>Flood</b> output pin. Clicking the pin will activate the selected output." R"MillenniumOS: Configuration Wizard" S4 T0 K{var.gpOutPins} F{ #var.gpOutPins - 1 }
-        var wizCoolantFloodPinID = { input }
-        if { var.wizCoolantFloodPinID == #var.gpOutPins }
-            set var.wizCoolantFloodPinID = -1
-        else
-            M42 P{var.wizCoolantFloodPinID} S1
-            M291 P"Is your <b>Flood</b> output activated?<br/>Click <b>Yes</b> to continue, or <b>No<b> to select a different output." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F0
-            M42 P{var.wizCoolantFloodPinID} S0
-            if { input == 1 }
-                set var.wizCoolantFloodPinID = null
+                    ; Assign pin to coolant type
+                    if { input == 0 }
+                        set var.wizCoolantAirPinID = { iterations }
+                    elif { input == 1 }
+                        set var.wizCoolantMistPinID = { iterations }
+                    elif { input == 2 }
+                        set var.wizCoolantFloodPinID = { iterations }
 
 ; Write coolant settings to resume file
 echo >>{var.wizTVF} {"set global.mosCAID = " ^ var.wizCoolantAirPinID}
