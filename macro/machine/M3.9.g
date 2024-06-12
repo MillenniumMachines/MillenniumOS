@@ -31,6 +31,9 @@ if { exists(param.S) }
 if { exists(param.D) && param.D < 0 }
     abort { "Dwell time must be a positive value!" }
 
+; Wait for all movement to stop before continuing.
+M400
+
 ; True if spindle is stopping
 var sStopping = { spindles[var.sID].current > 0 && param.S == 0 }
 
