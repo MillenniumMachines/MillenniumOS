@@ -778,7 +778,10 @@ class MillenniumOSPostProcessor(PostProcessor):
 
 
     def onfixture(self, _):
-        pass
+        self._forceTool()
+        self._forceFeed()
+        self._forceSpindle()
+        self.spindle_started = False
 
 
     def onoperation(self, op):
@@ -942,7 +945,7 @@ class MillenniumOSPostProcessor(PostProcessor):
             self.brk()
             self.comment("Begin postamble")
             self.brk()
-            self.comment("Park at user-defined location")
+            self.comment("Park")
             self.G(GCODES.PARK)
             self.brk()
 
