@@ -17,16 +17,17 @@ if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
 if { !exists(param.H) || !exists(param.I) }
     abort { "Must provide an approximate width and length using H and I parameters!" }
 
-var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
+var wpNum = { exists(param.W) && param.W != null ? param.W : limits.workplaces }
 
-set global.mosWPDeg = null
-set global.mosWPDimsErr = null
-set global.mosWPDims = { null, null }
-set global.mosWPCtrPos = { null, null }
+var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
 ; Make sure probe tool is selected
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
+
+; Reset stored values that we're going to overwrite -
+; center, dimensions and rotation
+M4010 W{var.wpNum} R49
 
 ; Store our own safe Z position as the current position. We return to
 ; this position where necessary to make moves across the workpiece to
@@ -193,7 +194,7 @@ if { var.xAngleDiff > global.mosAngleTol }
 ; Our midpoint for each line is the average of the 2 points, so
 ; we can just add all of the points together and divide by 4.
 set var.sX = { (var.pX[0] + var.pX[1] + var.pX[2] + var.pX[3]) / 4 }
-set global.mosWPCtrPos[0] = { var.sX }
+set global.mosWPCtrPos[var.wpNum][0] = { var.sX }
 
 ; Use the recalculated center of the pocket to probe Y surfaces.
 
@@ -270,10 +271,11 @@ if { var.yAngleDiff > global.mosAngleTol }
 ; The angles are between the line and their respective axis, so
 ; a perfect 90 degree corner with completely squared machine axes
 ; would report an error of 0 degrees.
-set global.mosWPCnrDeg = { 90 + degrees(var.aX1 - var.aY1) }
 
-; Square corners should be 90 degrees
-var cornerAngleError = { 90 - global.mosWPCnrDeg }
+var cornerAngleError = { degrees(var.aX1 - var.aY1) }
+
+; We report the corner angle around 90 degrees
+set global.mosWPCnrDeg[var.wpNum] = { 90 + var.cornerAngleError }
 
 ; Commented due to memory limitations
 ; M7500 S{"Rectangle Pocket Corner Angle Error: " ^ var.cornerAngleError }
@@ -284,24 +286,20 @@ if { (var.cornerAngleError > global.mosAngleTol) }
 
 ; Calculate Y centerpoint as before.
 set var.sY = { (var.pY[0] + var.pY[1] + var.pY[2] + var.pY[3]) / 4 }
-set global.mosWPCtrPos[1] = { var.sY }
+set global.mosWPCtrPos[var.wpNum][1] = { var.sY }
 
 ; We can now calculate the actual dimensions of the pocket.
 ; The dimensions are the difference between the average of each
 ; pair of points of each line.
-set global.mosWPDims[0] = { ((var.pX[2] + var.pX[3]) / 2) - ((var.pX[0] + var.pX[1]) / 2) }
-set global.mosWPDims[1] = { ((var.pY[2] + var.pY[3]) / 2) - ((var.pY[0] + var.pY[1]) / 2) }
-
-; Calculate error in dimensions from expected
-var dimErrorX = { abs(var.fW - global.mosWPDims[0]) }
-var dimErrorY = { abs(var.fL - global.mosWPDims[1]) }
+set global.mosWPDims[var.wpNum][0] = { ((var.pX[2] + var.pX[3]) / 2) - ((var.pX[0] + var.pX[1]) / 2) }
+set global.mosWPDims[var.wpNum][1] = { ((var.pY[2] + var.pY[3]) / 2) - ((var.pY[0] + var.pY[1]) / 2) }
 
 ; Set the global error in dimensions
 ; This can be used by other macros to configure the touch probe deflection.
-set global.mosWPDimsErr = { abs(var.fW - global.mosWPDims[0]), abs(var.fL - global.mosWPDims[1]) }
+set global.mosWPDimsErr[var.wpNum] = { abs(var.fW - global.mosWPDims[var.wpNum][0]), abs(var.fL - global.mosWPDims[var.wpNum][1]) }
 
 ; Move to the calculated center of the pocket
-G6550 I{var.probeId} X{global.mosWPCtrPos[0]} Y{global.mosWPCtrPos[1]}
+G6550 I{var.probeId} X{var.sX} Y{var.sY}
 
 ; Move to the safe Z height
 G6550 I{var.probeId} I{var.probeId} Z{var.safeZ}
@@ -314,26 +312,13 @@ G6550 I{var.probeId} I{var.probeId} Z{var.safeZ}
 ; as the angle of the first X line.
 
 ; Calculate the slope and angle of the first X line.
-set global.mosWPDeg = var.aX1
+set global.mosWPDeg[var.wpNum] = { degrees(var.aX1) }
 
-; Commented due to memory limitations
-; M7500 S{"Rectangle Pocket Rotation from X axis: " ^ global.mosWPDeg ^ " degrees" }
-
+; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
-    if { !global.mosEM }
-        ; Save as local variables because these variable names are
-        ; hella long and the echo would otherwise exceed the
-        ; maximum command length.
-        var ctr = { global.mosWPCtrPos }
-        var dim = { global.mosWPDims }
-        var rot = { global.mosWPDeg }
-        echo { "Rectangle Pocket - Center X=" ^ var.ctr[0] ^ " Y=" ^ var.ctr[1] ^ " Dims X=" ^ var.dim[0] ^ " Y=" ^ var.dim[1] ^ " Rotation=" ^ var.rot ^ " degrees" }
-    else
-        echo { "global.mosWPCtrPos=" ^ global.mosWPCtrPos }
-        echo { "global.mosWPDims=" ^ global.mosWPDims }
-        echo { "global.mosWPDeg=" ^ global.mosWPDeg }
+    M7601 W{var.wpNum}
 
 ; Set WCS origin to the probed center, if requested
 if { exists(param.W) && param.W != null }
     echo { "MillenniumOS: Setting WCS " ^ param.W ^ " X,Y origin to center of rectangle pocket." }
-    G10 L2 P{param.W} X{global.mosWPCtrPos[0]} Y{global.mosWPCtrPos[1]}
+    G10 L2 P{param.W} X{var.sX} Y{var.sY}

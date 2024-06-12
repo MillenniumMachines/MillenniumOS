@@ -529,6 +529,9 @@ class MillenniumOSPostProcessor(PostProcessor):
             # type specified above.
             Output(prefix='S', fmt=FORMATS.RPM, ctrl=Control.FORCE),
             Output(prefix='V', typ=str, fmt=FORMATS.STR, ctrl=Control.FORCE),
+            # This acts as default output for V if it does not match the
+            # type specified above.
+            Output(prefix='V', fmt=FORMATS.RPM, ctrl=Control.FORCE),
         ], ctrl=Control.FORCE)
 
     _T   = Output(fmt=FORMATS.CMD, prefix='T', ctrl=Control.FORCE)
@@ -594,14 +597,12 @@ class MillenniumOSPostProcessor(PostProcessor):
 
         # Reset tools, feed and spindle on park
         if code == GCODES.PARK:
-            self._forceTool()
-            self._forceFeed()
-            self._forceSpindle()
-            self.spindle_started = False
-
+            self.onpark()
 
         # If WCS is changing
         elif code in self._WCS_CHANGES:
+            self.onwcs(cmd, code, changed)
+
             wcsOffset = int(code - (self._WCS_CHANGES[0]-1))
 
             self.used_wcs.append(wcsOffset)
@@ -618,6 +619,10 @@ class MillenniumOSPostProcessor(PostProcessor):
 
             self.comment("Switch to WCS {}".format(wcsOffset))
             self.active_wcs = True
+
+            self.comment("Activate rotation compensation if necessary")
+            # Calling this after the
+            self.M(MCODES.ACTIVATE_ROT_COMP)
 
         elif code in self._MOVES:
             # Make sure the first arc move after a linear move
@@ -726,6 +731,15 @@ class MillenniumOSPostProcessor(PostProcessor):
     def oncomment(self, obj):
         self.comment("Output confirmable dialog to operator")
         self.M(MCODES.SHOW_DIALOG, R="FreeCAD", S=obj.Comment)
+
+
+    def onpark(self, _):
+        self._forceTool()
+        self._forceFeed()
+        self._forceSpindle()
+        self.spindle_started = False
+
+    def onunsupported(self, cmd):
 
 
     def onfixture(self, _):

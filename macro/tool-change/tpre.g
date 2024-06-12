@@ -65,7 +65,7 @@ else
     ; All other tools cannot be detected so we just have to
     ; trust the operator did the right thing given the
     ; information :)
-    if { global.mosTM && !global.mosDD13 }
+    if { global.mosTM && !global.mosDD[13] }
         M291 P{"A tool change is required. You will be asked to insert the correct tool, and then the tool length will be probed."} R"MillenniumOS: Tool Change" S2 T0
 
         if { global.mosFeatToolSetter && global.mosTT[state.nextTool][0] > global.mosTSR }
@@ -75,7 +75,7 @@ else
             M291 P"You can read more about how radius offset probing works <a target=""_blank"" href=""https://mos.diycnc.xyz/usage/radius-offset-probing"">here</a>." R"MillenniumOS: Tool Change" S2 T0
 
         M291 P"If you are unsure about this, you can <a target=""_blank"" href=""https://mos.diycnc.xyz/usage/tool-changes"">View the Tool Change Documentation</a> for more details." R"MillenniumOS: Tool Change" S2 T0
-        set global.mosDD13 = true
+        set global.mosDD[13] = true
 
     ; Prompt user to change tool
     M291 P{"Insert Tool <b>#" ^ state.nextTool ^ "</b>: " ^ tools[state.nextTool].name ^ " and press <b>Continue</b> when ready. <b>Cancel</b> will abort the running job!"} R"MillenniumOS: Tool Change" S4 K{"Continue", "Cancel"}
