@@ -68,7 +68,7 @@ if { global.mosTM && !global.mosDD[0] }
 ; a W parameter was not passed.
 
 if { var.workOffset == null }
-    M291 P{"Select WCS to probe"} R"MillenniumOS: Probe Workpiece" T0 S4 K{var.workOffsetCodes} F{move.workplaceNumber}
+    M291 P{"Select the WCS to probe. The current WCS is selected by default."} R"MillenniumOS: Probe Workpiece" T0 S4 K{var.workOffsetCodes} F{move.workplaceNumber}
     if { result != 0 || input == #var.workOffsetCodes-1 }
         abort {"Operator cancelled probe cycle, please set WCS origin manually or restart probing with <b>G6600</b>"}
         M99
