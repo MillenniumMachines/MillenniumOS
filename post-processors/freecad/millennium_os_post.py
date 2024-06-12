@@ -766,10 +766,6 @@ class MillenniumOSPostProcessor(PostProcessor):
 
         code += self._SPINDLE_WAIT_SUFFIX
 
-        macro = "M{}.g".format(code)
-        code = MCODES.CALL_MACRO
-        params['P'] = macro
-
         cmd, _ = self._M(code, **params)
         if not cmd:
             return None
