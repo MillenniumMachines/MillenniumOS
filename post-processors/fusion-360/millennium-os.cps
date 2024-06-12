@@ -71,7 +71,7 @@ allowSpiralMoves      = false;             // Linearize spirals (circular moves 
 allowedCircularPlanes = undefined;         // Allow arcs on all planes
 
 // Base WCS number, offset is added to this
-var wcsBase = 54;
+var wcsBase = 53;
 
 // Define WCS probing modes
 var wcsProbeMode = {
@@ -292,6 +292,7 @@ var G = {
 var M = {
   ADD_TOOL: 4000,
   VERSION_CHECK: 4005,
+  ENABLE_ROTATION_COMPENSATION: 5011,
   VSSC_ENABLE: 7000,
   VSSC_DISABLE: 7001,
   SPINDLE_ON_CW: 3.9,
@@ -362,7 +363,8 @@ var mCodes = createModalGroup(
     [0, 2],                           // Program codes
     [M.ADD_TOOL],                     // Tool data codes
     [M.VERSION_CHECK],                // Version check
-    [M.VSSC_ENABLE, M.VSSC_DISABLE]   // VSSC codes
+    [M.VSSC_ENABLE, M.VSSC_DISABLE],  // VSSC codes
+    [M.ENABLE_ROTATION_COMPENSATION]  // Rotation compensation
   ],
   mFmt);
 
@@ -616,35 +618,44 @@ function onSection() {
     currentSection.getForceToolChange && currentSection.getForceToolChange() ||
     (tool.number != getPreviousSection().getTool().number);
 
-  var curWCS = currentSection.workOffset;
+  var curWorkOffset = currentSection.workOffset;
 
-  if(curWCS > 9) {
+  if(curWorkOffset > 9) {
     error("Extended Work Co-ordinate Systems above G59.3 are not supported by MillenniumOS!")
+  }
+
+  // Work Offset
+  if (curWorkOffset < 1) {
+    curWorkOffset = 1;
   }
 
   // Only probe on WCS change if probe mode is set to ONCHANGE
   var doProbe = getProperty("jobWCSProbeMode") === wcsProbeMode.ONCHANGE && !isProbeOperation();
 
-  var wcsF = { wcs: curWCS + 1 };
+  var workOffsetF = { wcs: curWorkOffset };
 
   // WCS Gcode is the offset from 54 (first work offset).
-  var wcsCode = wcsBase + curWCS;
+  var wcsCode = wcsBase + curWorkOffset;
 
-  // If WCS requires changing and probe is required
-  if(wcsChanging && doProbe) {
-      writeComment("Park ready for WCS change");
-      writeBlock(gCodesF.format(G.PARK));
-      writeln("");
-      writeComment("Probe origin and save in WCS {wcs}".supplant(wcsF));
-      writeBlock(gCodesF.format(G.PROBE_OPERATOR), "W{wcs}".supplant(wcsF));
-      writeln("");
-  }
-
-  if (wcsChanging) {
-    writeComment("Switch to WCS {wcs}".supplant(wcsF));
+  // If WCS is changing,
+  if(wcsChanging) {
+    writeComment("Park ready for WCS change");
+    writeBlock(gCodesF.format(G.PARK));
+    writeln("");
+    writeComment("Switch to WCS {wcs}".supplant(workOffsetF));
     writeBlock(gCodes.format(wcsCode));
     writeln("");
+    if(doProbe) {
+      writeComment("Probe origin in current WCS");
+      writeBlock(gCodesF.format(G.PROBE_OPERATOR));
+      writeln("");
+    }
   }
+
+
+  writeComment("Enable rotation compensation if necessary");
+  writeBlock(mCodes.format(M.ENABLE_ROTATION_COMPENSATION));
+  writeln("");
 
   // If tool requires changing or wcs was probed
   // We must force a tool change if probe was required
@@ -1102,7 +1113,8 @@ function onClose() {
   // We don't do that anyway, because we select a tool before
   // setting the spindle speed, but it's worth noting - if there
   // is no tool selected, then this command will return an error.
-writeBlock(mFmt.format(M.CALL_MACRO), 'P"M{code}.g"'.supplant({code: M.SPINDLE_OFF}));
+  writeBlock(mFmt.format(M.CALL_MACRO), 'P"M{code}.g"'.supplant({code: M.SPINDLE_OFF}));
+
   // Uncomment this when RRF fixes delays not running in macros called
   // directly.
   // writeBlock(mFmt.format(M.SPINDLE_OFF));
