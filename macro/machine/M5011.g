@@ -21,8 +21,7 @@ if { global.mosWPDeg[var.workOffset] != global.mosDfltWPDeg }
             echo { "MillenniumOS: Rotation compensation not applied."}
             M99
 
-    ; Rotate the workpiece around the center.
-    ; Find the center by subtracting the
+    ; Rotate the workpiece around the origin.
     G68 X0 Y0 R{global.mosWPDeg[var.workOffset]}
 
     echo { "MillenniumOS: Rotation compensation of " ^ -global.mosWPDeg[var.workOffset] ^ " degrees applied around origin" }
