@@ -23,10 +23,10 @@ if { !inputs[state.thisInput].active }
 
 var wPN = { move.workplaceNumber + 1 }
 
-if { global.mosTM && !global.mosDD12 }
+if { global.mosTM && !global.mosDD[12] }
     M291 P{"The <b>Toolsetter</b> feature is disabled, so you must set the Z origin in the current WCS after each tool change.<br/>We will run a manual probe cycle to do this."} R"MillenniumOS: Reset Z Origin" S2 T0
     M291 P{"You <b>MUST</b> probe the location where WCS " ^ var.wPN ^ " expects the Z origin to be.<br/>Check in your CAM program to confirm where this is!"} R"MillenniumOS: Reset Z Origin" S2 T0
-    set global.mosDD12 = true
+    set global.mosDD[12] = true
 
 ; Ask the operator to jog to their chosen starting position
 M291 P"Please jog the tool above your origin point in Z.<br/><b>CAUTION</b>: Remember - Jogging in RRF does <b>NOT</b> watch the probe status. Be careful!" R"MillenniumOS: Reset Z Origin" X1 Y1 Z1 T0 S3

@@ -20,14 +20,17 @@ if { !exists(param.H) }
 if { !exists(param.I) }
     abort { "Must provide a distance to probe towards the target surface (I...)" }
 
-var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
+var wpNum = { exists(param.W) && param.W != null ? param.W : move.workplaceNumber }
 
-set global.mosWPSfcPos = null
-set global.mosWPSfcAxis = null
+var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
 ; Make sure probe tool is selected
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
+
+; Reset stored values that we're going to overwrite -
+; surface
+M4010 W{var.wpNum} R8
 
 var safeZ = { move.axes[2].machinePosition }
 
@@ -68,24 +71,21 @@ G6512 I{var.probeId} J{param.J} K{param.K} L{param.L} X{var.tPX} Y{var.tPY} Z{va
 var sAxis = { (var.probeAxis <= 1)? "X" : (var.probeAxis <= 3)? "Y" : "Z" }
 
 ; Set the axis that we probed on
-set global.mosWPSfcAxis = { var.sAxis }
+set global.mosWPSfcAxis[var.wpNum] = { var.sAxis }
 
 ; Set surface position on relevant axis
-set global.mosWPSfcPos = { (var.probeAxis <= 1)? global.mosPCX : (var.probeAxis <= 3)? global.mosPCY : global.mosPCZ }
+set global.mosWPSfcPos[var.wpNum] = { (var.probeAxis <= 1)? global.mosPCX : (var.probeAxis <= 3)? global.mosPCY : global.mosPCZ }
 
+; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
-    if { !global.mosEM }
-        echo { "MillenniumOS: Surface - " ^ var.sAxis ^ "=" ^ global.mosWPSfcPos }
-    else
-        echo { "global.mosWPSfcAxis=" ^ global.mosWPSfcAxis }
-        echo { "global.mosWPSfcPos=" ^ global.mosWPSfcPos }
+    M7601 W{var.wpNum}
 
 ; Set WCS if required
 if { exists(param.W) && param.W != null }
     echo { "MillenniumOS: Setting WCS " ^ param.W ^ " " ^ var.sAxis ^ " origin to probed co-ordinate." }
     if { var.probeAxis <= 1 }
-        G10 L2 P{param.W} X{global.mosWPSfcPos}
+        G10 L2 P{param.W} X{global.mosWPSfcPos[var.wpNum]}
     elif { var.probeAxis <= 3 }
-        G10 L2 P{param.W} Y{global.mosWPSfcPos}
+        G10 L2 P{param.W} Y{global.mosWPSfcPos[var.wpNum]}
     else
-        G10 L2 P{param.W} Z{global.mosWPSfcPos}
+        G10 L2 P{param.W} Z{global.mosWPSfcPos[var.wpNum]}

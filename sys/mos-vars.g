@@ -79,53 +79,57 @@ global mosOT=2.0
 ; or perpendicular.
 global mosAngleTol=0.2
 
-; Stores the calculated center position in X and Y of the last workpiece probed.
-; If this is used to probe a feature of the workpiece rather than the
-; whole workpiece itself, then this will refer to the center of the
-; _feature_. For example, if you probe a circular boss, this will be
-; the center of the boss, which is not necessarily the center of the
-; workpiece.
-; When writing macros that implement cutting moves, it is very important
-; to remember this distinction, and make sure that the operator has
-; been made aware of this when probing for a cutting macro.
-global mosWPCtrPos = { null, null }
+; Stores the calculated center position in X and Y against the workplace
+; index that was zeroed.
+global mosDfltWPCtrPos = { null, null }
+global mosWPCtrPos = { vector(limits.workplaces, global.mosDfltWPCtrPos) }
 
-; Stores the calculated radius of the last circular workpiece probed.
-global mosWPRad = null
+; Stores the calculated radius of the circular workpiece probed against the workplace
+; index that was zeroed.
+global mosDfltWPRad = null
+global mosWPRad = { vector(limits.workplaces, global.mosDfltWPRad) }
 
 ; Stores the calculated dimensions of the last rectangular workpiece probed.
-global mosWPDims = { null, null }
+global mosDfltWPDims = { null, null }
+global mosWPDims = { vector(limits.workplaces, global.mosDfltWPDims) }
 
 ; Stores the calculated dimensional error of the last dimensions versus
 ; what the operator inputted.
 ; This can be used to set a touch probe deflection value.
-global mosWPDimsErr = { null, null }
+global mosDfltWPDimsErr = { null, null }
+global mosWPDimsErr = { vector(limits.workplaces, global.mosDfltWPDimsErr) }
 
 ; Stores the calculated rotation of the workpiece in relation to the
 ; X axis. This value can be applied as a G68 rotation value to align
 ; the workpiece with the machine axes.
-global mosWPDeg = null
+global mosDfltWPDeg = null
+global mosWPDeg = { vector(limits.workplaces, global.mosDfltWPDeg) }
 
 ; This is the corner number that was picked by the
 ; operator for the most recent outside or inside
 ; corner probe.
-global mosWPCnrNum = null
+global mosDfltWPCnrNum = null
+global mosWPCnrNum = { vector(limits.workplaces, global.mosDfltWPCnrNum) }
 
 ; These are the X and Y coordinates of the most recent
 ; corner probe.
-global mosWPCnrPos = { null, null }
+global mosDfltWPCnrPos = { null, null }
+global mosWPCnrPos = { vector(limits.workplaces, global.mosDfltWPCnrPos) }
 
 ; This is the angle of the corner of the most recent
 ; outside corner probe.
-global mosWPCnrDeg = { null, null }
+global mosDfltWPCnrDeg = null
+global mosWPCnrDeg = { vector(limits.workplaces, global.mosDfltWPCnrDeg) }
 
 ; This is the Co-ordinate along the chosen axis of the
 ; most recent single surface probe.
-global mosWPSfcPos = null
+global mosDfltWPSfcPos = null
+global mosWPSfcPos = { vector(limits.workplaces, global.mosDfltWPSfcPos) }
 
 ; This is the axis of the measurement of the most recent
 ; single surface probe.
-global mosWPSfcAxis = null
+global mosDfltWPSfcAxis = null
+global mosWPSfcAxis = { vector(limits.workplaces, global.mosDfltWPSfcAxis) }
 
 ; Canned Cycle settings
 global mosCCD = null ; Canned Cycle Drilling status
@@ -208,19 +212,6 @@ global mosGPD = null
 ; Tracks whether description messages have been
 ; displayed during this session. The first 2 indexes
 ; are used by the G6600 macro, the others are used by
-; G6500 to G6509, one each, in order. G6520 uses mosDD11,
-; and G37.1 uses mosDD12. mosDD13 is used during tool changes.
-global mosDD0 = false
-global mosDD1 = false
-global mosDD2 = false
-global mosDD3 = false
-global mosDD4 = false
-global mosDD5 = false
-global mosDD6 = false
-global mosDD7 = false
-global mosDD8 = false
-global mosDD9 = false
-global mosDD10 = false
-global mosDD11 = false
-global mosDD12 = false
-global mosDD13 = false
+; G6500 to G6509, one each, in order. G6520 uses mosDD[11],
+; and G37.1 uses mosDD[12]. mosDD[13] is used during tool changes.
+global mosDD = { vector(14, false) }

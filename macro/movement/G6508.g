@@ -21,7 +21,7 @@ if { !inputs[state.thisInput].active }
     M99
 
 ; Display description of rectangle block probe if not already displayed this session
-if { global.mosTM && !global.mosDD10 }
+if { global.mosTM && !global.mosDD[10] }
     M291 P"This probe cycle finds the X and Y co-ordinates of the corner of a rectangular workpiece by probing along the 2 edges that form the corner." R"MillenniumOS: Probe Outside Corner " T0 S2
     M291 P"In <b>Full</b> mode, this cycle will take 2 probe points on each edge, allowing us to calculate the position and angle of the corner and the rotation of the workpiece." R"MillenniumOS: Probe Outside Corner" T0 S2
     M291 P"You will be asked to enter an approximate <b>surface length</b> for the surfaces forming the corner, to calculate the 4 probe locations." R"MillenniumOS: Probe Outside Corner" T0 S2
@@ -33,13 +33,15 @@ if { global.mosTM && !global.mosDD10 }
     M291 P"If you are still unsure, you can <a target=""_blank"" href=""https://mos.diycnc.xyz/usage/outside-corner"">View the Outside Corner Documentation</a> for more details." R"MillenniumOS: Probe Outside Corner" T0 S4 K{"Continue", "Cancel"} F0
     if { input != 0 }
         abort { "Outside corner probe aborted!" }
-    set global.mosDD10 = true
+    set global.mosDD[10] = true
 
 ; Make sure probe tool is selected
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
 
 var tR = { global.mosTT[state.currentTool][0]}
+
+var wpNum = { exists(param.W) && param.W != null ? param.W : limits.workplaces }
 
 M291 P{"Please select the probing mode to use.<br/><b>Full</b> will probe 2 points on each horizontal surface, while <b>Quick</b> will probe only 1 point."} R"MillenniumOS: Probe Outside Corner" T0 S4 K{"Full","Quick"} F0
 if { result != 0 }
@@ -52,7 +54,7 @@ var ySL  = null
 
 ; 0 = Full mode, 1 = Quick mode
 if { var.mode == 0 }
-    var sW = { (global.mosWPDims[0] != null) ? global.mosWPDims[0] : 100 }
+    var sW = { (global.mosWPDims[var.wpNum][0] != null) ? global.mosWPDims[var.wpNum][0] : 100 }
     M291 P{"Please enter approximate <b>surface length</b> along the X axis in mm.<br/><b>NOTE</b>: Along the X axis means the surface facing towards or directly away from the operator."} R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{var.sW}
     if { result != 0 }
         abort { "Outside corner probe aborted!" }
@@ -62,7 +64,7 @@ if { var.mode == 0 }
     if { var.xSL < var.tR }
         abort { "X surface length too low. Cannot probe distances smaller than the tool radius (" ^ var.tR ^ ")!"}
 
-    var sL = { (global.mosWPDims[1] != null) ? global.mosWPDims[1] : 100 }
+    var sL = { (global.mosWPDims[var.wpNum][1] != null) ? global.mosWPDims[var.wpNum][1] : 100 }
     M291 P{"Please enter approximate <b>surface length</b> along the Y axis in mm.<br/><b>NOTE</b>: Along the Y axis means the surface to the left or the right of the operator."} R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{var.sL}
     if { result != 0 }
         abort { "Outside corner probe aborted!" }

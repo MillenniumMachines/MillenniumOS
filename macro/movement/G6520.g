@@ -22,7 +22,7 @@ if { !inputs[state.thisInput].active }
     M99
 
 ; Display description of vise corner probe if not already displayed this session
-if { global.mosTM && !global.mosDD11 }
+if { global.mosTM && !global.mosDD[11] }
     M291 P"This probe cycle finds the X, Y and Z co-ordinates of the corner of a workpiece by probing the top surface and each of the edges that form the corner." R"MillenniumOS: Probe Vise Corner" T0 S2
     M291 P"In <b>Full</b> mode, this cycle will take 2 probe points on each edge, allowing us to calculate the position and angle of the corner and the rotation of the workpiece." R"MillenniumOS: Probe Vise Corner" T0 S2
     M291 P"You will be asked to enter an approximate <b>surface length</b> for the surfaces forming the corner, to calculate the 4 probe locations." R"MillenniumOS: Probe Vise Corner" T0 S2
@@ -34,7 +34,7 @@ if { global.mosTM && !global.mosDD11 }
     M291 P"If you are still unsure, you can <a target=""_blank"" href=""https://mos.diycnc.xyz/usage/vise-corner"">View the Vise Corner Documentation</a> for more details." R"MillenniumOS: Probe Vise Corner" T0 S4 K{"Continue", "Cancel"} F0
     if { input != 0 }
         abort { "Vise corner probe aborted!" }
-    set global.mosDD11 = true
+    set global.mosDD[11] = true
 
 ; Make sure probe tool is selected
 if { global.mosPTID != state.currentTool }

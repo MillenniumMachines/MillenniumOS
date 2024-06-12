@@ -20,19 +20,21 @@ if { (!exists(param.Q) || param.Q == 0) && !exists(param.H) || !exists(param.I) 
 if { !exists(param.N) || param.N < 0 || param.N > 3 }
     abort { "Must provide a valid corner index (N..)!" }
 
+var wpNum = { exists(param.W) && param.W != null ? param.W : limits.workplaces }
+
 ; Probe ID
 var pID = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
 ; Probe mode defaults to (0=Full)
 var pMO = { exists(param.Q)? param.Q : 0 }
 
-set global.mosWPCnrNum =  null
-set global.mosWPCnrDeg = null
-set global.mosWPCnrPos = { null, null }
-
 ; Make sure probe tool is selected
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
+
+; Reset stored values that we're going to overwrite
+; Reset corner, dimensions and rotation
+M4010 W{var.wpNum} R50
 
 ; Store our own safe Z position as the current position. We return to
 ; this position where necessary to make moves across the workpiece to
@@ -245,39 +247,35 @@ if { var.pMO == 0 }
     ; is being probed. We add 360 and take the modulo of 180 to make sure
     ; this stays a positive value less than 180 (ideally around 90).
     var diff = { abs(degrees(var.aX - var.aY)) }
-    set global.mosWPCnrDeg = { mod(var.diff + 360, 180) }
+    set global.mosWPCnrDeg[var.wpNum] = { mod(var.diff + 360, 180) }
 
     ; If running in full mode, operator provided approximate width and
     ; height values of the workpiece. Assign these to the global
     ; variables for the workpiece width and height.
     ; This assumes that the workpiece is rectangular.
-    set global.mosWPDims = { var.fX, var.fY }
+    set global.mosWPDims[var.wpNum] = { var.fX, var.fY }
 
 else
     ; Calculate corner position in quick mode.
     set var.cX = { var.pX[0] }
     set var.cY = { var.pY[1] }
 
-    set global.mosWPCnrDeg = { 90 }
+    set global.mosWPCnrDeg[var.wpNum] = { 90 }
 
 ; Move above the corner position
 G6550 I{var.pID} X{var.cX} Y{var.cY}
 
 ; Set corner position
-set global.mosWPCnrPos = { var.cX, var.cY }
+set global.mosWPCnrPos[var.wpNum] = { var.cX, var.cY }
 
 ; Set corner number
-set global.mosWPCnrNum = { param.N }
+set global.mosWPCnrNum[var.wpNum] = { param.N }
 
+; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
-    if { !global.mosEM }
-        echo { "Outside " ^ global.mosCnr[param.N] ^ " corner is X=" ^ global.mosWPCnrPos[0] ^ " Y=" ^ global.mosWPCnrPos[1] ^ ", angle is " ^ global.mosWPCnrDeg ^ " degrees" }
-    else
-        echo { "global.mosWPCnrNum=" ^ global.mosWPCnrNum }
-        echo { "global.mosWPCnrPos=" ^ global.mosWPCnrPos }
-        echo { "global.mosWPCnrDeg=" ^ global.mosWPCnrDeg }
+    M7601 W{var.wpNum}
 
 ; Set WCS origin to the probed center, if requested
 if { exists(param.W) && param.W != null }
     echo { "MillenniumOS: Setting WCS " ^ param.W ^ " X,Y origin to corner " ^ global.mosCnr[param.N] ^ "." }
-    G10 L2 P{param.W} X{global.mosWPCnrPos[0]} Y{global.mosWPCnrPos[1]}
+    G10 L2 P{param.W} X{var.cX} Y{var.cY}

@@ -14,7 +14,7 @@ if { !inputs[state.thisInput].active }
     M99
 
 ; Display description of rectangle block probe if not already displayed this session
-if { global.mosTM && !global.mosDD5 }
+if { global.mosTM && !global.mosDD[5] }
     M291 P"This probe cycle finds the X and Y co-ordinates of the center of a rectangular block (protruding feature) on a workpiece by probing towards the block surfaces from all 4 directions." R"MillenniumOS: Probe Rect. Block " T0 S2
     M291 P"You will be asked to enter an approximate <b>width</b> and <b>length</b> of the block, and a <b>clearance distance</b>." R"MillenniumOS: Probe Rect. Block" T0 S2
     M291 P"These define how far the probe will move away from the center point before moving downwards and probing back towards the relevant surfaces." R"MillenniumOS: Probe Rect. Block" T0 S2
@@ -23,13 +23,15 @@ if { global.mosTM && !global.mosDD5 }
     M291 P"If you are still unsure, you can <a target=""_blank"" href=""https://mos.diycnc.xyz/usage/rectangle-block"">View the Rectangle Block Documentation</a> for more details." R"MillenniumOS: Probe Rect. Block" T0 S4 K{"Continue", "Cancel"} F0
     if { input != 0 }
         abort { "Rectangle block probe aborted!" }
-    set global.mosDD5 = true
+    set global.mosDD[5] = true
 
 ; Make sure probe tool is selected
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
 
-var bW = { (global.mosWPDims[0] != null) ? global.mosWPDims[0] : 100 }
+var wpNum = { exists(param.W) && param.W != null ? param.W : limits.workplaces }
+
+var bW = { (global.mosWPDims[var.wpNum][0] != null) ? global.mosWPDims[var.wpNum][0] : 100 }
 
 M291 P{"Please enter approximate <b>block width</b> in mm.<br/><b>NOTE</b>: <b>Width</b> is measured along the <b>X</b> axis."} R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{var.bW}
 if { result != 0 }
@@ -40,7 +42,7 @@ var blockWidth = { input }
 if { var.blockWidth < 1 }
     abort { "Block width too low!" }
 
-var bL = { (global.mosWPDims[1] != null) ? global.mosWPDims[1] : 100 }
+var bL = { (global.mosWPDims[var.wpNum][1] != null) ? global.mosWPDims[var.wpNum][1] : 100 }
 
 M291 P{"Please enter approximate <b>block length</b> in mm.<br/><b>NOTE</b>: <b>Length</b> is measured along the <b>Y</b> axis."} R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{var.bL}
 if { result != 0 }
