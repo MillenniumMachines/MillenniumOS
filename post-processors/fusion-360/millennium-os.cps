@@ -41,6 +41,10 @@ String.prototype.supplant = function (o) {
     );
 };
 
+String.prototype.capitalize = function() {
+    return this[0].toUpperCase() + this.slice(1);
+};
+
 // Set display configuration of Postprocessor in Fusion360
 description = "MillenniumOS %%MOS_VERSION%% for Milo v1.5";
 longDescription = "MillenniumOS %%MOS_VERSION%% Post Processor for Milo v1.5.";
@@ -304,17 +308,12 @@ var M = {
   COOLANT_OFF: 9
 };
 
-// Enumerate the operation:tool_coolant options into clean names
+// Enumerate the operation:tool_coolant options into codes
 var COOLANT = {
-  disabled: "COOLANT_OFF",
-  flood: "COOLANT_FLOOD",
-  mist: "COOLANT_MIST",
-  air: "COOLANT_AIR",
-  tool: "COOLANT_TOOL",
-  "air through tool": "COOLANT_AIR_THROUGH_TOOL",
-  suction: "COOLANT_SUCTION",
-  "flood mist": "COOLANT_FLOOD_MIST",
-  "flood through tool": "COOLANT_FLOOD_THROUGH_TOOL"
+  disabled: M.COOLANT_OFF,
+  flood: M.COOLANT_FLOOD,
+  mist: M.COOLANT_MIST,
+  air: M.COOLANT_AIR
 }
 
 var CYCLE = {
@@ -705,9 +704,9 @@ function onSection() {
   // operations may have different RPMs set on the
   // same tool.
   var s = sVar.format(curTool['rpm']);
-  var coolant = COOLANT[curTool.coolant];
   if(s && curTool['type'] !== TOOL_PROBE) {
     writeComment("Start spindle at requested RPM and wait for it to accelerate");
+
     // We must use mFmt directly rather than mCodes here
     // because modal groups do not correctly handle
     // decimals.
@@ -715,16 +714,19 @@ function onSection() {
     writeBlock(mFmt.format(M.SPINDLE_ON_CW), s);
     writeln("");
 
-    // Set to valid coolant option, otherwise set coolant to off.
-    if (M[coolant]) {
-      writeComment("Setting the coolant to: {c}".supplant({c: curTool.coolant}));
-      writeBlock(mFmt.format(M[coolant]));
-    } else {
-      writeComment("Unknown or unsupported coolant therefore setting the coolant to: disabled");
-      writeBlock(mFmt.format(M["COOLANT_OFF"]));
+    if(!(curTool.coolant in COOLANT)) {
+      error("Unsupported coolant type '{c}'.".supplant({c: curTool.coolant}));
     }
 
-    writeln("");
+    var coolant = COOLANT[curTool.coolant];
+
+    // Set to valid coolant option, otherwise set coolant to off.
+    if (coolant != COOLANT.disabled) {
+      writeComment("Enable {c} Coolant".supplant({c: curTool.coolant.capitalize()}));
+      writeBlock(mFmt.format(coolant));
+      writeln("");
+    }
+
   }
 
   // Output operation details after WCS and tool changing.
@@ -759,9 +761,11 @@ function onSectionEnd() {
     writeln("");
   }
 
-  writeComment("Ensure ALL coolants are off.");
-  writeBlock(mFmt.format(M["COOLANT_OFF"]));
-  writeln("");
+  if (COOLANT[curTool.coolant] != COOLANT.disabled) {
+    writeComment("Disable Coolant");
+    writeBlock(mFmt.format(M.COOLANT_OFF));
+    writeln("");
+  }
 
   // Reset all variable outputs ready for the next section
   resetAll();
