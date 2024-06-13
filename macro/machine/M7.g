@@ -1,13 +1,17 @@
-; M7.g: MIST COOLANT ON
+; M7.g: MIST ON
 ;
-; Enables two pins meant to open solenoids to control pressurized air and liquid coolant
-; in a mist configuration. 
+; Mist is a combination output of air and unpressurized coolant.
+; Turn on the blast air first, then turn on the coolant.
 
-; Turn on Air if not already on
+if { !global.mosFeatCoolantControl || global.mosCMID == null }
+    echo { "MillenniumOS: Coolant Control feature is disabled or not configured, cannot enable Mist Coolant." }
+    M99
+
+; Wait for all movement to stop before continuing.
+M400
+
+; Turn on air if not already on
 M7.1
 
-if { !exists(state.gpOut[1]) }
-    abort { "Coolant for mist must be defined in your system config as P1." }
-
-; Turn on Mist Coolant
-M42 P1 S1
+; Turn on mist
+M42 P{global.mosCMID} S1

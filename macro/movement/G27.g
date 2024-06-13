@@ -16,11 +16,14 @@ G90
 G21
 G94
 
-; Turn all digital pins off and save their state.
-M9.1 R0
+; Turn off all coolant outputs
+M9
 
 ; Move spindle to top of Z travel
 G53 G0 Z{move.axes[2].max}
+
+; Wait for movement to stop
+M400
 
 ; Stop spindle and wait
 M5.9
@@ -31,5 +34,5 @@ if { !exists(param.Z) }
     ; Move table to center of X, and front of Y
     G53 G0 X{(move.axes[0].max - move.axes[0].min)/2} Y{move.axes[1].max}
 
-; Wait for all movement to stop before continuing.
+; Wait for movement to stop
 M400
