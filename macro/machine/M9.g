@@ -1,7 +1,26 @@
-; M9.g: ALL COOLANTS OFF
+; M9.g: CONTROL ALL COOLANTS
 ;
-; Disables all possible Coolant Outputs.
+; By default, disables all possible Coolant Outputs.
+; If called with R1, restores the previous state of the
+; coolant outputs. The state is only saved on pause.
 
-while { iterations < #state.gpOut }
-    M42 P{iterations} S0
+if { !global.mosFeatCoolantControl }
+    M99
 
+; Wait for all movement to stop before continuing.
+M400
+
+; Restore previous state if requested
+var restore = { exists(param.R) && param.R == 1 }
+
+; Configure flood
+if { global.mosCFID != null }
+    M42 P{global.mosCFID} S{ restore ? global.mosPS[global.mosCFID] : 0 }
+
+; Configure mist
+if { global.mosCMID != null }
+    M42 P{global.mosCMID} S{ restore ? global.mosPS[global.mosCMID] : 0 }
+
+; Configure air blast
+if { global.mosCAID != null }
+    M42 P{global.mosCAID} S{ restore ? global.mosPS[global.mosCAID] : 0 }
