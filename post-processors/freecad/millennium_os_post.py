@@ -750,7 +750,7 @@ class MillenniumOSPostProcessor(PostProcessor):
 
         self.cmd(' '.join(cmd))
 
-    def ontoolchange(self, code, params):
+    def ontoolchange(self, _, params):
         self.T(params[ARGS.TOOL])
         self.spindle_started = False
         self.brk()
