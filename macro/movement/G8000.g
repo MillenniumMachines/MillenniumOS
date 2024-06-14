@@ -298,7 +298,7 @@ if { var.wizFeatureCoolantControl }
                 M291 P{"Activate Output Pin <b>#" ^ iterations ^ "</b>?<br/><b>CAUTION</b>: Step away from the machine and remove any loose items before activating!"} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F1
                 if { input == 0 }
                     M42 P{iterations} S1
-                    M291 P"Select the coolant type controlled by activated Output Pin <b>#" ^ iterations ^ "</b>." R"MillenniumOS: Configuration Wizard" S4 T0 K{"Air","Mist","Flood","None"} F{max(iterations, 3)}
+                    M291 P{"Select the coolant type controlled by activated Output Pin <b>#" ^ iterations ^ "</b>."} R"MillenniumOS: Configuration Wizard" S4 T0 K{"Air","Mist","Flood","None"} F{max(iterations, 3)}
                     M42 P{iterations} S0
 
                     ; Assign pin to coolant type
