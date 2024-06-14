@@ -38,7 +38,7 @@ var workOffsetCodes={"G54","G55","G56","G57","G58","G59","G59.1","G59.2","G59.3"
 
 
 ; Define probe cycle names
-var probeCycleNames = { "Vise Corner (X,Y,Z)", "Circular Bore (X,Y)", "Circular Boss (X,Y)", "Rectangle Pocket (X,Y)", "Rectangle Block (X,Y)", "Outside Corner (X,Y)", "Single Surface (X/Y/Z)" }
+var probeCycleNames = { "Vise Corner (X,Y,Z)", "Circular Bore (X,Y)", "Circular Boss (X,Y)", "Rectangle Pocket (X,Y)", "Rectangle Block (X,Y)", "Outside Corner (X,Y)", "Single Surface (X/Y/Z)", "Cancel" }
 
 if { global.mosTM && !global.mosDD[0] }
     M291 P{"Before executing cutting operations, it is necessary to identify where the workpiece for a part is. We will do this by probing and setting a work co-ordinate system (WCS) origin point."} R"MillenniumOS: Probe Workpiece" T0 S2
@@ -109,7 +109,7 @@ if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
 
 ; Prompt the user to pick a probing operation.
-M291 P"Please select a probe cycle type." R"MillenniumOS: Probe Workpiece" T0 J1 S4 F0 K{var.probeCycleNames}
+M291 P"Please select a probe cycle type." R"MillenniumOS: Probe Workpiece" T0 S4 F0 K{var.probeCycleNames}
 if { result != 0 }
     abort { "Operator cancelled probe cycle!" }
 
@@ -135,7 +135,7 @@ elif { input == 5 } ; Outside Corner
 elif { input == 6 } ; Single Surface
     G6510 W{var.workOffset}
 else
-    abort { "Invalid probe operation " ^ input ^ " selected!" }
+    abort { "Invalid probe operation " ^ input ^ " selected or operator clicked Cancel!" }
 
 if { var.workOffset != null }
     var paZ = { (move.axes[0].workplaceOffsets[var.workOffset] == 0)? " X" : "" }
