@@ -286,7 +286,7 @@ echo >>{var.wizTVF} {"set global.mosFeatCoolantControl = " ^ var.wizFeatureCoola
 
 if { var.wizFeatureCoolantControl }
     if { #state.gpOut < 1 }
-        M291 P"<b>No general purpose outputs are configured!</b><br />Please configure at least one output using <b>M950</b> and re-run the wizard to configure coolant control." R"MillenniumOS: Configuration Wizard" S2 T0
+        M291 P"No general purpose outputs are configured - cannot complete <b>Coolant Control</b> configuration.<br />Please configure at least one output using <b>M950</b> and re-run the wizard." R"MillenniumOS: Configuration Wizard" S2 T0
     else
         if { var.wizTutorialMode && (var.wizCoolantAirPinID == null || var.wizCoolantMistPinID == null || var.wizCoolantFloodPinID == null) }
             M291 P"We need to select the output pins that will be used to activate <b>Air</b>, <b>Mist</b> or <b>Flood</b> coolant on your machine." R"MillenniumOS: Configuration Wizard" S2 T0
@@ -668,6 +668,7 @@ echo >>{var.wizUVF} "; Features"
 echo >>{var.wizUVF} {"set global.mosFeatTouchProbe = " ^ var.wizFeatureTouchProbe}
 echo >>{var.wizUVF} {"set global.mosFeatToolSetter = " ^ var.wizFeatureToolSetter}
 echo >>{var.wizUVF} {"set global.mosFeatSpindleFeedback = " ^ var.wizFeatureSpindleFeedback}
+echo >>{var.wizUVF} {"set global.mosFeatCoolantControl = " ^ var.wizFeatureCoolantControl}
 echo >>{var.wizUVF} ""
 
 echo >>{var.wizUVF} "; Modes"
