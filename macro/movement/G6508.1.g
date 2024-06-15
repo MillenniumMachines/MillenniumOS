@@ -65,10 +65,6 @@ var sZ   = { param.L }
 var fX   = { param.H }
 var fY   = { param.I }
 
-; Middle point of the surfaces
-var hX   = { var.fX / 2 }
-var hY   = { var.fY / 2 }
-
 ; Tool Radius is the first entry for each value in
 ; our extended tool table.
 
@@ -280,7 +276,7 @@ if { var.pMO == 0 }
 
     ; Calculate the center of the workpiece based on the corner position,
     ; the width and height of the workpiece and the rotation.
-    set global.mosWPCtrPos = { var.cX + (var.hX * cos(radians(var.aR)) - var.hY * sin(radians(var.aR))), var.cY + (var.hX * sin(radians(var.aR)) + var.hY * cos(radians(var.aR))) }
+    set global.mosWPCtrPos = { var.cX + ((var.fX/2) * cos(radians(var.aR)) - (var.fY/2) * sin(radians(var.aR))), var.cY + ((var.fX/2) * sin(radians(var.aR)) + (var.fY/2) * cos(radians(var.aR))) }
 
     ; If running in full mode, operator provided approximate width and
     ; height values of the workpiece. Assign these to the global
