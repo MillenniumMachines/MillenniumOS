@@ -518,8 +518,7 @@ function onOpen() {
       writeBlock(gCodes.format(21));
       break;
     case IN:
-      writeBlock(gCodes.format(20));
-      break;
+      error("MillenniumOS does not support gcode output in inches. Please switch your post-processor output to millimeters.");
   }
 
   // All feeds in mm/min
