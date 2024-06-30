@@ -488,11 +488,11 @@ if { var.wizFeatureToolSetter }
         ; Distance to move towards target is the lower of (min Z - current Z) or 20mm.
         G6510.1 R0 W{null} H4 I{min(abs(move.axes[2].min - move.axes[2].machinePosition), 20)} O0 J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition}
 
-        if { global.mosWPSfcPos == null || global.mosWPSfcAxis[move.workplaceNumber] != "Z" }
+        if { global.mosWPSfcPos[move.workplaceNumber] == null || global.mosWPSfcAxis[move.workplaceNumber] != "Z" }
             abort { "MillenniumOS: Failed to probe the reference surface!" }
 
         ; Store the reference surface position in Z
-        set var.wizTouchProbeReferencePos[2] = { global.mosWPSfcPos }
+        set var.wizTouchProbeReferencePos[2] = { global.mosWPSfcPos[move.workplaceNumber] }
 
     ; Write touch probe reference surface position to the resume file
     echo >>{var.wizTVF} {"set global.mosTPRP = " ^ var.wizTouchProbeReferencePos }
