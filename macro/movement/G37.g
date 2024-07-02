@@ -138,7 +138,7 @@ if { global.mosTT[state.currentTool][0] > global.mosTSR }
             G6512 I{global.mosTSID} J{global.mosTSP[0] - global.mosTT[state.currentTool][0]} K{global.mosTSP[1]} L{move.axes[2].max} Z{move.axes[2].min}
 
         ; Right
-        elif { input == 2 }
+        elif { input == 3 }
             G6512 I{global.mosTSID} J{global.mosTSP[0] + global.mosTT[state.currentTool][0]} K{global.mosTSP[1]} L{move.axes[2].max} Z{move.axes[2].min}
 
         set var.aP = global.mosPCZ
