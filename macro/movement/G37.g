@@ -127,19 +127,26 @@ if { global.mosTT[state.currentTool][0] > global.mosTSR }
 
         ; Front
         if { input == 0 }
-            G6512 I{global.mosTSID} J{global.mosTSP[0]} K{global.mosTSP[1] + global.mosTT[state.currentTool][0]} L{move.axes[2].max} Z{move.axes[2].min}
+            G0 Y{global.mosTSP[1] + global.mosTT[state.currentTool][0]}
         
         ; Back
         elif { input == 1 }
-            G6512 I{global.mosTSID} J{global.mosTSP[0]} K{global.mosTSP[1] - global.mosTT[state.currentTool][0]} L{move.axes[2].max} Z{move.axes[2].min}
+            G0 Y{global.mosTSP[1] - global.mosTT[state.currentTool][0]}
 
         ; Left
         elif { input == 2 }
-            G6512 I{global.mosTSID} J{global.mosTSP[0] - global.mosTT[state.currentTool][0]} K{global.mosTSP[1]} L{move.axes[2].max} Z{move.axes[2].min}
+            G0 X{global.mosTSP[0] - global.mosTT[state.currentTool][0]}
 
         ; Right
         elif { input == 3 }
-            G6512 I{global.mosTSID} J{global.mosTSP[0] + global.mosTT[state.currentTool][0]} K{global.mosTSP[1]} L{move.axes[2].max} Z{move.axes[2].min}
+            G0 X{global.mosTSP[0] + global.mosTT[state.currentTool][0]}
+
+        M291 P"Please rotate the tool so the cutting edge is above your ToolSetter and then press <b>Continue</b>" R"MillenniumOS: Warning" S4 K{"Continue", "Cancel"} F0
+        ; If operator picked cancel, then abort the job
+        if { input == 1 }
+            abort { "MillenniumOS: Operator aborted toolsetter operation!" }
+
+        G6512 I{global.mosTSID} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].max} Z{move.axes[2].min}
 
         set var.aP = global.mosPCZ
 
