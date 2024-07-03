@@ -78,10 +78,18 @@ var aP = 0
 if { global.mosTT[state.currentTool][0] > global.mosTSR }
 
     ; Prompt Tool Setting Routine
-    M291 P{"Your bit is bigger than your ToolSetter. Select the Tool Setting Routine to use:"} R"MillenniumOS: Tool Setting Routine" S4 T0 K{"Automatic Radial","Offset","Manual Alignment"} F0
+    M291 P{"Your tool is bigger than your ToolSetter. Select the Tool Setting Routine to use:"} R"MillenniumOS: Tool Setting Routine" S4 T0 K{"Automatic Radial","Offset","Manual Alignment"} F0
 
     ; Automatic Radial Tool Setting
     if { input == 0 }
+
+        ; Tutorial mode movement and strategy warning
+        if { global.mosTM && !global.mosDD[14] }
+            M291 P{"The tool is about to move over the <b>ToolSetter<\b> and measure the center of the tool. Then the tool will be measured along it's circumference to find the lowest point."} R"MillenniumOS: Automatic Radial ToolSetting Tutorial" S4 K{"Continue", "Cancel"} F0
+            set global.mosDD[14] = true
+            ; If operator picked cancel, then abort the job
+            if { input == 1 }
+                abort { "MillenniumOS: Operator aborted toolsetter operation!" }
 
         ; The following probes will only go as low as the central point, var.pZ[0]
         ; Calculate the number of probe points to get 100% coverage of the tool radius,
@@ -119,6 +127,15 @@ if { global.mosTT[state.currentTool][0] > global.mosTSR }
 
     ; Offset Tool Setting
     elif { input == 1 }
+
+        ; Tutorial mode movement and strategy warning
+        if { global.mosTM && !global.mosDD[15] }
+            M291 P{"The tool is about to move over the <b>ToolSetter<\b>! You will then be presented with an option to <b>Offset<\b> the tool by it's radius in your chosen direction."} R"MillenniumOS: Offset ToolSetting Tutorial" S4 K{"Continue", "Cancel"} F0
+            set global.mosDD[15] = true
+            ; If operator picked cancel, then abort the job
+            if { input == 1 }
+                abort { "MillenniumOS: Operator aborted toolsetter operation!" }
+
         ; Go above the default position
         G0 X{global.mosTSP[0]} Y{global.mosTSP[1]}
 
@@ -152,6 +169,15 @@ if { global.mosTT[state.currentTool][0] > global.mosTSR }
 
     ; Manual Tool Setting
     elif { input == 2 }
+
+        ; Tutorial mode movement and strategy warning
+        if { global.mosTM  && !global.mosDD[16] }
+            M291 P{"The tool is about to move over the <b>ToolSetter<\b>! You will then be presented with a jog menu to <b>Manually<\b> decide where to measure from."} R"MillenniumOS: Manual ToolSetting Tutorial" S4 K{"Continue", "Cancel"} F0
+            set global.mosDD[16] = true
+            ; If operator picked cancel, then abort the job
+            if { input == 1 }
+                abort { "MillenniumOS: Operator aborted toolsetter operation!" }
+
         ; Go above the default position
         G0 X{global.mosTSP[0]} Y{global.mosTSP[1]}
 
