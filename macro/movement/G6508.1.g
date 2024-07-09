@@ -276,7 +276,7 @@ if { var.pMO == 0 }
 
     ; Calculate the center of the workpiece based on the corner position,
     ; the width and height of the workpiece and the rotation.
-    set global.mosWPCtrPos = { var.cX + ((var.fX/2) * cos(radians(var.aR)) - (var.fY/2) * sin(radians(var.aR))), var.cY + ((var.fX/2) * sin(radians(var.aR)) + (var.fY/2) * cos(radians(var.aR))) }
+    set global.mosWPCtrPos[var.workOffset] = { var.cX + ((var.fX/2) * cos(radians(var.aR)) - (var.fY/2) * sin(radians(var.aR))), var.cY + ((var.fX/2) * sin(radians(var.aR)) + (var.fY/2) * cos(radians(var.aR))) }
 
     ; If running in full mode, operator provided approximate width and
     ; height values of the workpiece. Assign these to the global
