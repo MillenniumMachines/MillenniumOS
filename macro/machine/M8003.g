@@ -15,7 +15,8 @@ if { global.mosGPD == null || #global.mosGPD != #sensors.gpIn }
     set global.mosGPD = { vector(#sensors.gpIn, false) }
     set global.mosGPV = { vector(#sensors.gpIn, null) }
 
-; Loop until a pin is detected or the maximum number of iterations is reached
+; Loop through all the general purpose inputs, storing true if
+; the value has changed since the last call to this macro.
 while { iterations < #sensors.gpIn }
     if { global.mosGPV[iterations] != null && global.mosGPV[iterations] != sensors.gpIn[iterations].value }
         set global.mosGPD[iterations] = true
