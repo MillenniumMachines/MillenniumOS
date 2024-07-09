@@ -8,7 +8,7 @@
 ; expert mode is on.
 
 
-if { !exists(param.W) || param.W < 0 || param.W >= limits.workplaces }
+if { exists(param.W) && (param.W < 0 || param.W >= limits.workplaces) }
     abort { "Work Offset must be between 0 and " ^ limits.workplaces-1 ^ "!" }
 
 var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
