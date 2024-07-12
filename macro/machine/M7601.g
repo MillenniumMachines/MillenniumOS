@@ -28,7 +28,7 @@ if { !global.mosEM }
 
     if { global.mosWPCnrNum[var.workOffset] != null }
         echo {"WCS " ^ var.wcsNumber ^ " - Probed Corner Number=" ^ global.mosWPCnrNum[var.workOffset] }
-        echo {"WCS " ^ var.wcsNumber ^ " - Probed Corner Name=" ^ global.mosCnr[global.mosWPCnrNum[var.workOffset]] }
+        echo {"WCS " ^ var.wcsNumber ^ " - Probed Corner Name=" ^ global.mosCornerNames[global.mosWPCnrNum[var.workOffset]] }
 
     if { global.mosWPCnrPos[var.workOffset][0] != null && global.mosWPCnrPos[var.workOffset][1] != null}
         echo {"WCS " ^ var.wcsNumber ^ " - Probed Corner Position X=" ^ global.mosWPCnrPos[var.workOffset][0] ^ " Y=" ^ global.mosWPCnrPos[var.workOffset][1] }
