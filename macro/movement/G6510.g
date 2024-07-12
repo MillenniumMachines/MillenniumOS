@@ -12,16 +12,8 @@
 if { !inputs[state.thisInput].active }
     M99
 
-; Friendly names to indicate the location of a surface to be probed, relative to the tool.
-; Left means 'surface is to the left of the tool', i.e. we will move the table towards the
-; _right_ to probe it.
-; If your machine is configured with the axes in a different orientation, you can override
-; these names in mos-user-vars.g but there is no way to override the "Below" option (which)
-; is a Z axis, and always probes towards Z minimum. On the Milo, Z Max is 0 and Z min is 60 or 120.
-var surfaceLocationNames = {"Left","Right","Front","Back","Top"}
-
 ; Index of the zProbe entry as this requires different inputs.
-var zProbeI = { #var.surfaceLocationNames - 1 }
+var zProbeI = { #global.mosSurfaceNames - 1 }
 
 ; Display description of surface probe if not displayed this session
 if { global.mosTM && !global.mosDD[4] }
@@ -57,7 +49,7 @@ if { result != 0 }
     abort { "Surface probe aborted!" }
 
 ; Prompt the operator for the location of the surface
-M291 P"Please select the surface to probe.<br/><b>NOTE</b>: These surface names are relative to an operator standing at the front of the machine." R"MillenniumOS: Probe Surface" T0 S4 F{var.zProbeI} K{var.surfaceLocationNames}
+M291 P"Please select the surface to probe.<br/><b>NOTE</b>: These surface names are relative to an operator standing at the front of the machine." R"MillenniumOS: Probe Surface" T0 S4 F{var.zProbeI} K{global.mosSurfaceNames}
 var probeAxis = { input }
 
 ; For Z probes, our depth is 0 but our distance is the probing depth
@@ -87,11 +79,11 @@ if { var.probeDist < 0 }
 
 if { global.mosTM }
     if { !var.isZProbe }
-        M291 P{"Probe will now move down <b>" ^ var.probeDepth ^ "</b> mm and probe towards the <b>" ^ var.surfaceLocationNames[var.probeAxis] ^ "</b> surface." } R"MillenniumOS: Probe Surface" T0 S4 K{"Continue", "Cancel"} F0
+        M291 P{"Probe will now move down <b>" ^ var.probeDepth ^ "</b> mm and probe towards the <b>" ^ global.mosSurfaceNames[var.probeAxis] ^ "</b> surface." } R"MillenniumOS: Probe Surface" T0 S4 K{"Continue", "Cancel"} F0
         if { input != 0 }
             abort { "Single Surface probe aborted!" }
     else
-        M291 P{"Probe will now move towards the <b>" ^ var.surfaceLocationNames[var.probeAxis] ^ "</b> surface." } R"MillenniumOS: Probe Surface" T0 S4 K{"Continue", "Cancel"} F0
+        M291 P{"Probe will now move towards the <b>" ^ global.mosSurfaceNames[var.probeAxis] ^ "</b> surface." } R"MillenniumOS: Probe Surface" T0 S4 K{"Continue", "Cancel"} F0
         if { input != 0 }
             abort { "Single Surface probe aborted!" }
 

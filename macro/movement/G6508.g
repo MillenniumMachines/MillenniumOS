@@ -104,7 +104,7 @@ M291 P"Please jog the probe <b>OVER</b> the corner and press <b>OK</b>.<br/><b>C
 if { result != 0 }
     abort { "Outside corner probe aborted!" }
 
-M291 P"Please select the corner to probe.<br/><b>NOTE</b>: These surface names are relative to an operator standing at the front of the machine." R"MillenniumOS: Probe Outside Corner" T0 S4 K{global.mosCnr}
+M291 P"Please select the corner to probe.<br/><b>NOTE</b>: These surface names are relative to an operator standing at the front of the machine." R"MillenniumOS: Probe Outside Corner" T0 S4 K{global.mosCornerNames}
 if { result != 0 }
     abort { "Outside corner probe aborted!" }
 
@@ -121,7 +121,7 @@ if { var.probingDepth < 0 }
 
 ; Run the block probe cycle
 if { global.mosTM }
-    var cN = { global.mosCnr[var.corner] }
+    var cN = { global.mosCornerNames[var.corner] }
     M291 P{"We will now move outside the <b>" ^ var.cN ^ "</b> corner, down by " ^ var.probingDepth ^ "mm and probe each surface forming the corner." } R"MillenniumOS: Probe Outside Corner" T0 S4 K{"Continue", "Cancel"} F0
     if { input != 0 }
         abort { "Outside corner probe aborted!" }
