@@ -106,7 +106,7 @@ M291 P"Please jog the probe <b>OVER</b> the corner and press <b>OK</b>.<br/><b>C
 if { result != 0 }
     abort { "Vise corner probe aborted!" }
 
-M291 P"Please select the corner to probe.<br/><b>NOTE</b>: These surface names are relative to an operator standing at the front of the machine." R"MillenniumOS: Probe Vise Corner" T0 S4 K{global.mosCnr}
+M291 P"Please select the corner to probe.<br/><b>NOTE</b>: These surface names are relative to an operator standing at the front of the machine." R"MillenniumOS: Probe Vise Corner" T0 S4 K{global.mosCornerNames}
 if { result != 0 }
     abort { "Vise corner probe aborted!" }
 
@@ -123,7 +123,7 @@ if { var.probeDepth < 0 }
 
 ; Run the block probe cycle
 if { global.mosTM }
-    var cN = { global.mosCnr[var.corner] }
+    var cN = { global.mosCornerNames[var.corner] }
     M291 P{"We will now probe the top surface, then move outside the <b>" ^ var.cN ^ "</b> corner, down " ^ var.probeDepth ^ "mm, and probe each surface forming the corner." } R"MillenniumOS: Probe Vise Corner" T0 S4 K{"Continue", "Cancel"} F0
     if { input != 0 }
         abort { "Vise corner probe aborted!" }

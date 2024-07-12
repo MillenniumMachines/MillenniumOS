@@ -26,8 +26,12 @@ global mosDebug=false
 ; These can be overridden in mos-user-vars.g if necessary (but almost certainly do not need to be).
 
 ; Relative to the operator, where is the corner to be probed?
-; This is a global because it is used by both G6520 and G6508
-global mosCnr = {"Front Left", "Front Right", "Back Right", "Back Left"}
+; If your machine axes move in the opposite directions, you can rename or
+; reorder these options to match your machine correctly.
+global mosCornerNames = {"Front Left", "Front Right", "Back Right", "Back Left"}
+
+; Relative to the workpiece, where is the surface to be probed?
+global mosSurfaceNames = {"Left","Right","Front","Back","Top"}
 
 ; Store additional tool information.
 ; Values are: [radius, {deflection-x, deflection-y}]

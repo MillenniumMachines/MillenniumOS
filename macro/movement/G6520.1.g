@@ -31,7 +31,7 @@ if { !exists(param.P) }
 if { (!exists(param.Q) || param.Q == 0) && !exists(param.H) || !exists(param.I) }
     abort { "Must provide an approximate X length and Y length using H and I parameters when using full probe, Q0!" }
 
-if { !exists(param.N) || param.N < 0 || param.N >= (#global.mosCnr) }
+if { !exists(param.N) || param.N < 0 || param.N >= (#global.mosCornerNames) }
     abort { "Must provide a valid corner index using the N parameter!" }
 
 ; Default workOffset to the current workplace number if not specified
