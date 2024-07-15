@@ -669,12 +669,12 @@ function onSection() {
       writeBlock(gCodesF.format(G.PROBE_OPERATOR));
       writeln("");
     }
+
+    writeComment("Enable rotation compensation if necessary");  
+    writeBlock(mCodes.format(M.ENABLE_ROTATION_COMPENSATION));
+    writeln("");
   }
 
-
-  writeComment("Enable rotation compensation if necessary");
-  writeBlock(mCodes.format(M.ENABLE_ROTATION_COMPENSATION));
-  writeln("");
 
   // If tool requires changing or wcs was probed
   // We must force a tool change if probe was required
