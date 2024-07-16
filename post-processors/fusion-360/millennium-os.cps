@@ -149,7 +149,7 @@ properties = {
     value: true
   },
   outputJobNotes: {
-    title: "Output Job Notes",
+    title: "Output job notes",
     description: "When enabled and notes are made on your setup, the the post-processor will output a popup with the contents of the notes you add.",
     group: "formats",
     scope: "post",
