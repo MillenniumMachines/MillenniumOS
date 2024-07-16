@@ -148,6 +148,14 @@ properties = {
     type: "boolean",
     value: true
   },
+  outputJobNotes: {
+    title: "Output Job Notes",
+    description: "When enabled and notes are made on your setup, the the post-processor will output a popup with the contents of the notes you add.",
+    group: "formats",
+    scope: "post",
+    type: "boolean",
+    value: true
+  },
   warpSpeedMode: {
     title: "Restore rapid moves at and above the selected height",
     description: "The operation height above which G0 moves will be restored. Only vertical OR lateral moves are considered. None disables warp mode. Retract and Clearance restore rapid moves at and above the relevant height set on the operation. Zero restores all rapid moves at or above Z=0 in the active WCS. BEWARE: Be absolutely certain when using Zero mode that your tool offsets are calculated accurately, as rapid moves back down to Z=0 will not allow any leeway for tool length errors! Additionally, only use Zero if you can guarantee there is nothing above Z=0 that could interfere with rapid moves.",
@@ -667,7 +675,7 @@ function onSection() {
     writeComment("Switch to WCS {wcs}".supplant(workOffsetF));
     writeBlock(gCodes.format(wcsCode));
     writeln("");
-    if(jobNotes !== '') writeConfirmableDialog(jobNotes);
+    if(getProperty("outputJobNotes") && jobNotes !== '') writeConfirmableDialog(jobNotes);
     if(doProbe) {
       writeComment("Probe origin in current WCS");
       writeBlock(gCodesF.format(G.PROBE_OPERATOR));
