@@ -16,8 +16,9 @@ if { !global.mosStartupMsgsDisplayed }
             echo { "No user configuration file found. Run the configuration wizard with G8000 to silence this warning. MillenniumOS is not loaded." }
             M99
         else
-            var startupError = { (exists(global.mosErr) && global.mosErr != null) ? global.mosErr : "Unknown error. Have you added <b>M98 P""mos.g""</b> at the bottom of your <b>config.g</b>?" }
-            M291 P{ var.startupError } R"MillenniumOS: Startup Error" S2 T10
+            var startupError = { (exists(global.mosErr) && global.mosErr != null) ? global.mosErr : "Unknown Startup Error. Have you added <b>M98 P""mos.g""</b> at the bottom of your <b>config.g</b>?" }
+            echo { "MillenniumOS: " ^ var.startupError }
+            M291 P"<b>One or more settings required for MillenniumOS to function are not set.</b><br/>This can happen after upgrading or on first installation.<br/>Click <b>OK</b> to run the Configuration Wizard." R"MillenniumOS: Startup Error" S3 T0
             G8000
             M99
     else
