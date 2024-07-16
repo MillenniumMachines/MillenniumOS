@@ -497,12 +497,9 @@ function onOpen() {
     if(getProperty("jobWCSProbeMode") === wcsProbeMode.ATSTART) {
       writeln("")
       for(var i = 0; i < seenWCS.length; i++) {
-        // MillenniumOS uses 1-indexed WCS numbers.
-        // WCS 1 is G54, WCS 2 is G55, etc.
-        // Fusion360 uses _offsets_, which are 0-indexed.
-        var wcs = seenWCS[i]+1;
-        writeComment("Probe origin and save in WCS {wcs}".supplant({wcs: wcs}));
-        writeBlock(gCodesF.format(G.PROBE_OPERATOR), "W{wcs}".supplant({wcs: wcs}));
+        var offset = seenWCS[i];
+        writeComment("Probe origin and save in WCS {wcs}".supplant({wcs: offset+1}));
+        writeBlock(gCodesF.format(G.PROBE_OPERATOR), "W{offset}".supplant({offset: offset}));
         writeln("");
       }
     } else {
