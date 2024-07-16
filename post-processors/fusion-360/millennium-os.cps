@@ -548,6 +548,9 @@ var curTool = {
   coolant: "disabled"
 }
 
+// Track values containing details about the job notes.
+var jobNotes = '';
+
 // Handle parameters.
 function onParameter(param, value) {
   switch(param) {
@@ -592,7 +595,10 @@ function onParameter(param, value) {
     case 'operation:tool_spindleSpeed':
       curTool['rpm'] = value;
     break;
-
+    // Save Job Notes
+    case 'job-notes':
+      jobNotes = value;
+    break;
     // Generate errors on unsupported parameter values
     case 'operation:tool_clockwise':
       if(value !== 1) {
@@ -661,6 +667,7 @@ function onSection() {
     writeComment("Switch to WCS {wcs}".supplant(workOffsetF));
     writeBlock(gCodes.format(wcsCode));
     writeln("");
+    if(jobNotes !== '') writeConfirmableDialog(jobNotes);
     if(doProbe) {
       writeComment("Probe origin in current WCS");
       writeBlock(gCodesF.format(G.PROBE_OPERATOR));
