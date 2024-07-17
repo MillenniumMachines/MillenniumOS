@@ -150,7 +150,7 @@ properties = {
   },
   outputNotes: {
     title: "Output notes",
-    description: "When enabled and notes are made on your setup or tooling strategies, the the post-processor will output a popup dialogs with the contents of the notes you have added.",
+    description: "When enabled and notes are made on your setup or tooling strategies, the the post-processor will output popup dialogs with the contents of the notes you have added.",
     group: "formats",
     scope: "post",
     type: "boolean",
