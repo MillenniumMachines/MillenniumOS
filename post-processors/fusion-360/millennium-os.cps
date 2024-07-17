@@ -148,9 +148,9 @@ properties = {
     type: "boolean",
     value: true
   },
-  outputJobNotes: {
-    title: "Output job notes",
-    description: "When enabled and notes are made on your setup, the the post-processor will output a popup with the contents of the notes you add.",
+  outputNotes: {
+    title: "Output notes",
+    description: "When enabled and notes are made on your setup or tooling strategies, the the post-processor will output a popup dialogs with the contents of the notes you have added.",
     group: "formats",
     scope: "post",
     type: "boolean",
@@ -556,8 +556,9 @@ var curTool = {
   coolant: "disabled"
 }
 
-// Track values containing details about the job notes.
+// Track values containing details about notes.
 var jobNotes = '';
+var sectionNotes = '';
 
 // Handle parameters.
 function onParameter(param, value) {
@@ -603,9 +604,12 @@ function onParameter(param, value) {
     case 'operation:tool_spindleSpeed':
       curTool['rpm'] = value;
     break;
-    // Save Job Notes
+    // Save Notes
     case 'job-notes':
       jobNotes = value;
+    break;
+    case 'notes':
+      sectionNotes = value;
     break;
     // Generate errors on unsupported parameter values
     case 'operation:tool_clockwise':
@@ -675,7 +679,7 @@ function onSection() {
     writeComment("Switch to WCS {wcs}".supplant(workOffsetF));
     writeBlock(gCodes.format(wcsCode));
     writeln("");
-    if(getProperty("outputJobNotes") && jobNotes !== '') writeConfirmableDialog(jobNotes);
+    if(getProperty("outputNotes") && jobNotes !== '') writeConfirmableDialog(jobNotes);
     if(doProbe) {
       writeComment("Probe origin in current WCS");
       writeBlock(gCodesF.format(G.PROBE_OPERATOR));
@@ -743,6 +747,8 @@ function onSection() {
   // Output operation details after WCS and tool changing.
   writeComment("Begin {c} {s}: {v}".supplant({c: curOp['ctx'], s: curOp['strat'], v: curOp['comment']}));
   writeln("");
+
+  if(getProperty("outputNotes") && sectionNotes !== '') writeNonBlockingDialog(sectionNotes);
 
   resetAll();
 
@@ -1132,6 +1138,13 @@ function writeConfirmableDialog(text) {
   writeln("");
   writeComment("Output confirmable dialog to operator");
   writeBlock("M3000 R\"Fusion360\" S\"{text}\"".supplant({text: text}));
+  writeln("");
+}
+
+function writeNonBlockingDialog(text) {
+  writeln("");
+  writeComment("Output non-blocking dialog to operator that auto-closes in 15 seconds");
+  writeBlock("M291 R\"Fusion360\" P\"{text}\" S1 T15".supplant({text: text}));
   writeln("");
 }
 
