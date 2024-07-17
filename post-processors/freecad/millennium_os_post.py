@@ -139,7 +139,7 @@ parser.add_argument('--output-version', action=argparse.BooleanOptionalAction, d
 parser.add_argument('--output-tools', action=argparse.BooleanOptionalAction, default=True,
     help="Output tool details. Disabling this will make tool changes much harder!")
 
-parser.add_argument('--home-before-start', action=argparse.BooleanOptionalAction, default=True,
+parser.add_argument('--home-before-start', action=argparse.BooleanOptionalAction, default=False,
     help="When enabled, machine will home in X, Y and Z directions prior to executing any operations.")
 
 parser.add_argument('--allow-zero-rpm', action=argparse.BooleanOptionalAction, default=False,
