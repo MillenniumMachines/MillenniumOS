@@ -171,7 +171,7 @@ properties = {
     group: "homePositions",
     scope: ["machine","post"],
     type: "boolean",
-    value: true
+    value: false
   },
   jobWCSProbeMode: {
     title: "WCS Origin Probing Mode",
