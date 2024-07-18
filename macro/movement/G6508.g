@@ -90,7 +90,7 @@ if { result != 0 }
 var surfaceClearance = { input }
 
 if { var.surfaceClearance <= 0.1 }
-    abort { "Surface clearance distance too low!" }
+    abort { "Clearance distance too low!" }
 
 ; Calculate the maximum clearance distance we can use before
 ; the probe points will be flipped
@@ -101,10 +101,9 @@ var cornerClearance = null
 if { var.surfaceClearance >= var.mC }
     var defCC = { max(1, var.mC-1) }
     M291 P"The <b>clearance</b> distance is more than half of the length of one of the corner surfaces.<br/>Please enter a <b>corner clearance</b> distance less than <b>" ^ var.mC ^ "</b>." R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{var.defCC}
-    set var.cnrClearance = { input }
-    if { var.cnrClearance >= var.mC }
+    set var.cornerClearance = { input }
+    if { var.cornerClearance >= var.mC }
         abort { "Corner clearance distance too high!" }
-
 
 ; Prompt for overtravel distance
 M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far we move past the expected surface to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{global.mosOT}
@@ -141,4 +140,4 @@ if { global.mosTM }
     if { input != 0 }
         abort { "Outside corner probe aborted!" }
 
-G6508.1 W{var.workOffset} Q{var.mode} H{var.xSL} I{var.ySL} N{var.cnr} T{var.SurfaceClearance} C{var.cnrClearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
+G6508.1 W{var.workOffset} Q{var.mode} H{var.xSL} I{var.ySL} N{var.cnr} T{var.SurfaceClearance} C{var.cornerClearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}

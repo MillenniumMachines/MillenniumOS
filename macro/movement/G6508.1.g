@@ -33,7 +33,6 @@ if { exists(param.O) && param.O != null && param.O <= 0 }
 ; with the W parameter.
 var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
 
-
 ; WCS Numbers and Offsets are confusing. Work Offset indicates the offset
 ; from the first work co-ordinate system, so is 0-indexed. WCS number indicates
 ; the number of the work co-ordinate system, so is 1-indexed.
@@ -74,8 +73,18 @@ var sZ   = { param.L }
 var fX   = { param.H }
 var fY   = { param.I }
 
+; Half of length of surfaces forming the corner
+var hX   = { var.fX/2 }
+var hY   = { var.fY/2 }
+
 ; Tool Radius is the first entry for each value in
 ; our extended tool table.
+
+; Apply tool radius to surface clearance. We want to
+; make sure the surface of the tool and the workpiece
+; are the clearance distance apart, rather than less
+; than that.
+var surfaceClearance = { ((!exists(param.T) || param.T == null) ? global.mosCL : param.T) + ((state.currentTool < #tools && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
 
 ; Default corner clearance to the normal clearance
 ; distance, but allow it to be overridden if necessary.
@@ -89,14 +98,6 @@ var cornerClearance = { (!exists(param.C) || param.C == null) ? ((!exists(param.
 ; as the configured tool radius is accurate.
 var overtravel = { (exists(param.O) ? param.O : global.mosOT) - ((state.currentTool < #tools && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
 
-; Apply tool radius to overtravel. We want to allow
-; less movement past the expected point of contact
-; with the surface based on the tool radius.
-; For big tools and low overtravel values, this value
-; might end up being negative. This is fine, as long
-; as the configured tool radius is accurate.
-var overtravel = { (exists(param.O) ? param.O : global.mosOT) - ((state.currentTool <= limits.tools-1 && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
-
 ; Check that the clearance distance isn't
 ; higher than the width or height of the block if
 ; in full mode.
@@ -105,8 +106,8 @@ var overtravel = { (exists(param.O) ? param.O : global.mosOT) - ((state.currentT
 ; the expected corners, a clearance higher than
 ; the width or height would mean we would try to
 ; probe off the edge of the block.
-if { var.pMO == 0 && (var.clearance >= var.fX || var.clearance >= var.fY) }
-    abort { "Clearance distance is higher than the length of the surfaces to be probed! Cannot probe." }
+if { var.pMO == 0 && (var.cornerClearance >= var.hX || var.cornerClearance >= var.hY) }
+    abort { "Corner clearance distance is more than half of the length of one or more surfaces forming the corner! Cannot probe." }
 
 ; The overtravel distance does not have the same
 ; requirement, as it is only used to adjust the
@@ -115,14 +116,12 @@ if { var.pMO == 0 && (var.clearance >= var.fX || var.clearance >= var.fY) }
 
 ; Y start location (K) direction is dependent on the chosen corner.
 ; If this is the front left corner, then our first probe is at
-; var.sY + var.clearance. If it is the back left corner, then our
-; first probe is at var.sY - var.clearance.
+; var.sY + var.cornerClearance. If it is the back left corner, then our
+; first probe is at var.sY - var.cornerClearance.
 
 ; Our second probe is always at the other end of the surface (away
 ; from the chosen corner), so we either add or subtract var.fY from
 ; the Y start location to get the second probe location.
-; If we add var.fY, then we need to subtract var.clearance and vice
-; versa.
 ; For each probe point: {start x, start y}, {target x, target y}
 var dirXY = { vector(4 - var.pMO * 2, {{null, null}, {null, null}}) }
 
@@ -130,10 +129,10 @@ var dirXY = { vector(4 - var.pMO * 2, {{null, null}, {null, null}}) }
 var dirX = { (param.N == 0 || param.N == 3) ? -1 : 1 }
 var dirY = { (param.N == 0 || param.N == 1) ? 1 : -1 }
 
-var startX = { var.sX + var.dirX * var.clearance }
+var startX = { var.sX + var.dirX * var.surfaceClearance }
 var targetX = { var.sX - var.dirX * var.overtravel }
 
-var startY = { var.sY + var.dirY * var.clearance }
+var startY = { var.sY + var.dirY * var.cornerClearance }
 var targetY = { var.sY - var.dirY * var.overtravel }
 
 ; Set dirXY for X probes
@@ -142,17 +141,17 @@ set var.dirXY[0][1] = { var.targetX, var.startY }
 
 ; Only probe the second X point if we're in full mode
 if { var.pMO == 0 }
-    set var.dirXY[2][0] = { var.startX, var.sY + var.dirY * (var.fY - var.clearance) }
-    set var.dirXY[2][1] = { var.targetX, var.sY + var.dirY * (var.fY - var.clearance) }
+    set var.dirXY[2][0] = { var.startX, var.sY + var.dirY * (var.fY - var.cornerClearance) }
+    set var.dirXY[2][1] = { var.targetX, var.sY + var.dirY * (var.fY - var.cornerClearance) }
 
 ; Set dirXY for Y probes
 set var.dirX = { -var.dirX }
 set var.dirY = { -var.dirY }
 
-set var.startX = { var.sX + var.dirX * var.clearance }
+set var.startX = { var.sX + var.dirX * var.cornerClearance }
 set var.targetX = { var.sX - var.dirX * var.overtravel }
 
-set var.startY = { var.sY + var.dirY * var.clearance }
+set var.startY = { var.sY + var.dirY * var.surfaceClearance }
 set var.targetY = { var.sY - var.dirY * var.overtravel }
 
 set var.dirXY[1][0] = { var.startX, var.startY }
@@ -160,8 +159,8 @@ set var.dirXY[1][1] = { var.startX, var.targetY }
 
 ; Only probe the second Y point if we're in full mode
 if { var.pMO == 0 }
-    set var.dirXY[3][0] = { var.sX + var.dirX * (var.fX - var.clearance), var.startY }
-    set var.dirXY[3][1] = { var.sX + var.dirX * (var.fX - var.clearance), var.targetY }
+    set var.dirXY[3][0] = { var.sX + var.dirX * (var.fX - var.cornerClearance), var.startY }
+    set var.dirXY[3][1] = { var.sX + var.dirX * (var.fX - var.cornerClearance), var.targetY }
 
 ; Assign result variables
 var pX = { vector(4 - var.pMO * 2, null) }
@@ -177,7 +176,7 @@ G6550 I{var.pID} Z{var.sZ}
 G6550 I{var.pID} Y{var.dirXY[0][0][1]}
 
 ; Run X probe 1
-G6512 D1 I{var.pID} J{var.dirXY[0][0][0]} K{var.dirXY[0][0][1]} L{var.sZ} X{var.dirXY[0][1][0]}
+G6512 D1 I{var.pID} J{var.dirXY[0][0][0]} L{var.sZ} X{var.dirXY[0][1][0]}
 set var.pX[0] = { global.mosPCX }
 set var.pY[0] = { var.dirXY[0][0][1] }
 
@@ -203,7 +202,7 @@ G6550 I{var.pID} Y{var.dirXY[1][0][1]}
 G6550 I{var.pID} X{var.dirXY[1][0][0]}
 
 ; Run Y probes
-G6512 D1 I{var.pID} J{var.dirXY[1][0][0]} K{var.dirXY[1][0][1]} L{var.sZ} Y{var.dirXY[1][1][1]}
+G6512 D1 I{var.pID} K{var.dirXY[1][0][1]} L{var.sZ} Y{var.dirXY[1][1][1]}
 set var.pX[1] = { var.dirXY[1][0][0] }
 set var.pY[1] = { global.mosPCY }
 
@@ -244,8 +243,8 @@ if { var.pMO == 0 }
     var mY = { (var.pY[3] - var.pY[2]) / (var.pX[3] - var.pX[2]) }
 
     ; Extend both lines by the 2*clearance distance
-    var eX = { var.pX[0] - (2*var.clearance * cos(atan2(var.pY[2] - var.pY[0], var.pX[2] - var.pX[0]))) }
-    var eY = { var.pY[1] - (2*var.clearance * sin(atan2(var.pY[3] - var.pY[1], var.pX[3] - var.pX[1]))) }
+    var eX = { var.pX[0] - (2*var.cornerClearance * cos(atan2(var.pY[2] - var.pY[0], var.pX[2] - var.pX[0]))) }
+    var eY = { var.pY[1] - (2*var.cornerClearance * sin(atan2(var.pY[3] - var.pY[1], var.pX[3] - var.pX[1]))) }
 
     ; Calculate the intersection of the extended lines
     ; If the gradient of either line is 0, then the
