@@ -66,9 +66,9 @@ M291 P"Please enter <b>clearance</b> distance in mm.<br/>This is how far away fr
 if { result != 0 }
     abort { "Rectangle block probe aborted!" }
 
-var clearance = { input }
+var surfaceClearance = { input }
 
-if { var.clearance <= 0.1 }
+if { var.surfaceClearance <= 0.1 }
     abort { "Clearance distance too low!" }
 
 ; Calculate the maximum clearance distance we can use before
@@ -77,7 +77,7 @@ var mC = { min(var.blockWidth, var.blockLength) / 2 }
 
 var cornerClearance = null
 
-if { var.clearance >= var.mC }
+if { var.surfaceClearance >= var.mC }
     var defCC = { max(1, var.mC-1) }
     M291 P"The <b>clearance</b> distance is more than half of the length or width of the block.<br/>Please enter a <b>corner clearance</b> distance less than <b>" ^ var.mC ^ "</b>." R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{var.defCC}
     set var.cornerClearance = { input }
@@ -112,4 +112,4 @@ if { global.mosTM }
     if { input != 0 }
         abort { "Rectangle block probe aborted!" }
 
-G6503.1 W{var.workOffset} H{var.blockWidth} I{var.blockLength} T{var.clearance} C{var.cornerClearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
+G6503.1 W{var.workOffset} H{var.blockWidth} I{var.blockLength} T{var.surfaceClearance} C{var.cornerClearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}

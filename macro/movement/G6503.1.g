@@ -82,11 +82,11 @@ var hL   = { var.fL/2 }
 ; make sure the surface of the tool and the workpiece
 ; are the clearance distance apart, rather than less
 ; than that.
-var surfaceClearance = { (exists(param.T) ? param.T : global.mosCL) + ((state.currentTool < #tools && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
+var surfaceClearance = { ((!exists(param.T) || param.T == null) ? global.mosCL : param.T) + ((state.currentTool < #tools && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
 
 ; Default corner clearance to the normal clearance
 ; distance, but allow it to be overridden if necessary.
-var cornerClearance = { (exists(param.C) ? ((param.C != null) ? param.C : (exists(param.T) ? ((param.T != null) ? param.T : global.mosCL)))) }
+var cornerClearance = { (!exists(param.C) || param.C == null) ? ((!exists(param.T) || param.T == null) ? global.mosCL : param.T) : param.C }
 
 ; Apply tool radius to overtravel. We want to allow
 ; less movement past the expected point of contact
@@ -103,7 +103,7 @@ var overtravel = { (exists(param.O) ? param.O : global.mosOT) - ((state.currentT
 ; the expected corners, a clearance higher than
 ; the width or height would mean we would try to
 ; probe off the edge of the block.
-if { (var.cornerClearance * 2) >= var.fW || (var.cornerClearance * 2) >= var.fL }
+if { var.cornerClearance >= var.hW || var.cornerClearance >= var.hL }
     abort { "Corner clearance distance is more than half of the width or height of the block! Cannot probe." }
 
 ; The overtravel distance does not have the same
