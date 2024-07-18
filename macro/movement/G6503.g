@@ -62,14 +62,27 @@ if { var.blockLength < 1 }
     abort { "Block length too low!" }
 
 ; Prompt for clearance distance
-M291 P"Please enter <b>clearance</b> distance in mm.<br/>This is how far away from the expected surfaces we start probing from, to account for any innaccuracy in the center location." R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{global.mosCL}
+M291 P"Please enter <b>clearance</b> distance in mm.<br/>This is how far away from the expected surfaces and corners we probe from, to account for any innaccuracy in the start position." R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{global.mosCL}
 if { result != 0 }
     abort { "Rectangle block probe aborted!" }
 
 var clearance = { input }
 
-if { var.clearance < 1 }
+if { var.clearance <= 0.1 }
     abort { "Clearance distance too low!" }
+
+; Calculate the maximum clearance distance we can use before
+; the probe points will be flipped
+var mC = { min(var.blockWidth, var.blockLength) / 2 }
+
+var cornerClearance = null
+
+if { var.clearance >= var.mC }
+    var defCC = { max(1, var.mC-1) }
+    M291 P"The <b>clearance</b> distance you entered is more than half of the length or width of the block.<br/>Please enter a <b>corner clearance</b> distance less than <b>" ^ var.mC ^ "</b>." R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{var.defCC}
+    set var.cornerClearance = { input }
+    if { var.cornerClearance >= var.mC }
+        abort { "Corner clearance distance too high!" }
 
 ; Prompt for overtravel distance
 M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far we move past the expected surfaces to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{global.mosOT}
@@ -99,4 +112,4 @@ if { global.mosTM }
     if { input != 0 }
         abort { "Rectangle block probe aborted!" }
 
-G6503.1 W{var.workOffset} H{var.blockWidth} I{var.blockLength} T{var.clearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
+G6503.1 W{var.workOffset} H{var.blockWidth} I{var.blockLength} T{var.clearance} N{var.cornerClearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
