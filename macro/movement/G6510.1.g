@@ -24,7 +24,6 @@ if { !exists(param.I) }
 ; with the W parameter.
 var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
 
-
 ; WCS Numbers and Offsets are confusing. Work Offset indicates the offset
 ; from the first work co-ordinate system, so is 0-indexed. WCS number indicates
 ; the number of the work co-ordinate system, so is 1-indexed.
