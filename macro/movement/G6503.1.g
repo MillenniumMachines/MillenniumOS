@@ -17,6 +17,15 @@ if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
 if { !exists(param.H) || !exists(param.I) }
     abort { "Must provide an approximate width and length using H and I parameters!" }
 
+if { exists(param.T) && param.T != null && param.T <= 0 }
+    abort { "Surface clearance distance must be greater than 0!" }
+
+if { exists(param.C) && param.C != null && param.C <= 0 }
+    abort { "Corner clearance distance must be greater than 0!" }
+
+if { exists(param.O) && param.O != null && param.O <= 0 }
+    abort { "Overtravel distance must be greater than 0!" }
+
 ; Default workOffset to the current workplace number if not specified
 ; with the W parameter.
 var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
@@ -77,7 +86,7 @@ var surfaceClearance = { (exists(param.T) ? param.T : global.mosCL) + ((state.cu
 
 ; Default corner clearance to the normal clearance
 ; distance, but allow it to be overridden if necessary.
-var cornerClearance = { (exists(param.N) ? param.N : (exists(param.T) ? param.T : global.mosCL)) }
+var cornerClearance = { (exists(param.C) ? ((param.C != null) ? param.C : (exists(param.T) ? ((param.T != null) ? param.T : global.mosCL)))) }
 
 ; Apply tool radius to overtravel. We want to allow
 ; less movement past the expected point of contact

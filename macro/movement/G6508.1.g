@@ -20,6 +20,15 @@ if { (!exists(param.Q) || param.Q == 0) && !exists(param.H) || !exists(param.I) 
 if { !exists(param.N) || param.N < 0 || param.N > 3 }
     abort { "Must provide a valid corner index (N..)!" }
 
+if { exists(param.T) && param.T != null && param.T <= 0 }
+    abort { "Surface clearance distance must be greater than 0!" }
+
+if { exists(param.C) && param.C != null && param.C <= 0 }
+    abort { "Corner clearance distance must be greater than 0!" }
+
+if { exists(param.O) && param.O != null && param.O <= 0 }
+    abort { "Overtravel distance must be greater than 0!" }
+
 ; Default workOffset to the current workplace number if not specified
 ; with the W parameter.
 var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
@@ -68,10 +77,17 @@ var fY   = { param.I }
 ; Tool Radius is the first entry for each value in
 ; our extended tool table.
 
-; Apply tool radius to clearance. We want to make sure
-; the surface of the tool and the workpiece are the
-; clearance distance apart, rather than less than that.
-var clearance = { (exists(param.T) ? param.T : global.mosCL) + ((state.currentTool <= limits.tools-1 && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
+; Default corner clearance to the normal clearance
+; distance, but allow it to be overridden if necessary.
+var cornerClearance = { (!exists(param.C) || param.C == null) ? ((!exists(param.T) || param.T == null) ? global.mosCL : param.T) : param.C }
+
+; Apply tool radius to overtravel. We want to allow
+; less movement past the expected point of contact
+; with the surface based on the tool radius.
+; For big tools and low overtravel values, this value
+; might end up being negative. This is fine, as long
+; as the configured tool radius is accurate.
+var overtravel = { (exists(param.O) ? param.O : global.mosOT) - ((state.currentTool < #tools && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
 
 ; Apply tool radius to overtravel. We want to allow
 ; less movement past the expected point of contact
