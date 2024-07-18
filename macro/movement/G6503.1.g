@@ -69,10 +69,15 @@ var hL   = { var.fL/2 }
 ; Tool Radius is the first entry for each value in
 ; our extended tool table.
 
-; Apply tool radius to clearance. We want to make sure
-; the surface of the tool and the workpiece are the
-; clearance distance apart, rather than less than that.
-var clearance = { (exists(param.T) ? param.T : global.mosCL) + ((state.currentTool < #tools && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
+; Apply tool radius to surface clearance. We want to
+; make sure the surface of the tool and the workpiece
+; are the clearance distance apart, rather than less
+; than that.
+var surfaceClearance = { (exists(param.T) ? param.T : global.mosCL) + ((state.currentTool < #tools && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
+
+; Default corner clearance to the normal clearance
+; distance, but allow it to be overridden if necessary.
+var cornerClearance = { (exists(param.N) ? param.N : (exists(param.T) ? param.T : global.mosCL)) }
 
 ; Apply tool radius to overtravel. We want to allow
 ; less movement past the expected point of contact
@@ -82,23 +87,20 @@ var clearance = { (exists(param.T) ? param.T : global.mosCL) + ((state.currentTo
 ; as the configured tool radius is accurate.
 var overtravel = { (exists(param.O) ? param.O : global.mosOT) - ((state.currentTool < #tools && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
 
-; Check that the clearance distance isn't
+; Check that 2 times the clearance distance isn't
 ; higher than the width or height of the block.
 ; Since we use the clearance distance to choose
 ; how far along each surface we should probe from
 ; the expected corners, a clearance higher than
 ; the width or height would mean we would try to
 ; probe off the edge of the block.
-if { var.clearance >= var.fW || var.clearance >= var.fL }
-    abort { "Clearance distance is higher than the width or height of the rectangle block! Cannot probe." }
+if { (var.cornerClearance * 2) >= var.fW || (var.cornerClearance * 2) >= var.fL }
+    abort { "Corner clearance distance is more than half of the width or height of the block! Cannot probe." }
 
 ; The overtravel distance does not have the same
 ; requirement, as it is only used to adjust the
 ; probe target towards or away from the target
 ; surface rather.
-
-; Commented due to memory limitations
-; M7500 S{"Distance Modifiers adjusted for Tool Radius - Clearance=" ^ var.clearance ^ " Overtravel=" ^ var.overtravel }
 
 ; We can calculate the squareness of the block by probing inwards
 ; from each edge and calculating an angle.
@@ -114,45 +116,48 @@ var pY = { null, null, null, null }
 ; probing, and we must manage this ourselves.
 
 ; Move outwards on X first
-G6550 I{var.probeId} X{(var.sX - var.hW - var.clearance)}
+G6550 I{var.probeId} X{(var.sX - var.hW - var.surfaceClearance)}
 
 ; First probe point - left edge, inwards from front face by clearance distance
 ; towards the face plus overtravel distance.
-G6512 I{var.probeId} D1 J{(var.sX - var.hW - var.clearance)} K{(var.sY - var.hL + var.clearance)} L{param.L} X{(var.sX - var.hW + var.overtravel)}
+G6512 I{var.probeId} D1 K{(var.sY - var.hL + var.cornerClearance)} L{param.L} X{(var.sX - var.hW + var.overtravel)}
 set var.pX[0] = { global.mosPCX }
 
 ; Return to our starting position
-G6550 I{var.probeId} X{(var.sX - var.hW - var.clearance)}
+G6550 I{var.probeId} X{(var.sX - var.hW - var.surfaceClearance)}
 
 ; Second probe point - left edge, inwards from rear face by clearance distance
 ; towards the face minus overtravel distance.
-G6512 I{var.probeId} D1 J{(var.sX - var.hW - var.clearance)} K{(var.sY + var.hL - var.clearance)} L{param.L} X{(var.sX - var.hW + var.overtravel)}
+G6512 I{var.probeId} D1 K{(var.sY + var.hL - var.cornerClearance)} L{param.L} X{(var.sX - var.hW + var.overtravel)}
 set var.pX[1] = { global.mosPCX }
 
 ; Return to our starting position and then raise the probe
-G6550 I{var.probeId} X{(var.sX - var.hW - var.clearance)}
+G6550 I{var.probeId} X{(var.sX - var.hW - var.surfaceClearance)}
 G6550 I{var.probeId} Z{var.safeZ}
 
 ; NOTE: Second surface probes from the rear first
 ; as this shortens the movement distance.
 
+; Move over the block
+G6550 I{var.probeId} X{(var.sX + var.hW + var.surfaceClearance)}
+
 ; Third probe point - right edge, inwards from rear face by clearance distance
 ; towards the face minus overtravel distance.
-G6512 I{var.probeId} D1 J{(var.sX + var.hW + var.clearance)} K{(var.sY + var.hL - var.clearance)} L{param.L} X{(var.sX + var.hW - var.overtravel)}
+G6512 I{var.probeId} D1 K{(var.sY + var.hL - var.cornerClearance)} L{param.L} X{(var.sX + var.hW - var.overtravel)}
 set var.pX[2] = { global.mosPCX }
 
 ; Return to our starting position
-G6550 I{var.probeId} X{(var.sX + var.hW + var.clearance)}
+G6550 I{var.probeId} X{(var.sX + var.hW + var.surfaceClearance)}
 
 ; Fourth probe point - right edge, inwards from front face by clearance distance
 ; towards the face plus overtravel distance.
-G6512 I{var.probeId} D1 J{(var.sX + var.hW + var.clearance)} K{(var.sY - var.hL + var.clearance)} L{param.L} X{(var.sX + var.hW - var.overtravel)}
+G6512 I{var.probeId} D1 K{(var.sY - var.hL + var.cornerClearance)} L{param.L} X{(var.sX + var.hW - var.overtravel)}
 set var.pX[3] = { global.mosPCX }
 
 ; Return to our starting position. Our first Y probe will
 ; move around the edge we just probed so we don't need to
 ; lift the probe here.
-G6550 I{var.probeId} X{(var.sX + var.hW + var.clearance)}
+G6550 I{var.probeId} X{(var.sX + var.hW + var.surfaceClearance)}
 
 ; Okay, we now have 2 'lines' representing the X edges of the block.
 ; Line 1: var.pX[0] to var.pX[1]
@@ -179,8 +184,8 @@ G6550 I{var.probeId} X{(var.sX + var.hW + var.clearance)}
 ; the angle of the Y edges of the block.
 
 ; Calculate the angle difference of each line.
-var aX1 = { atan((var.pX[1] - var.pX[0]) / (var.fL - (2*var.clearance))) }
-var aX2 = { atan((var.pX[2] - var.pX[3]) / (var.fL - (2*var.clearance))) }
+var aX1 = { atan((var.pX[1] - var.pX[0]) / (var.fL - (2*var.cornerClearance))) }
+var aX2 = { atan((var.pX[2] - var.pX[3]) / (var.fL - (2*var.cornerClearance))) }
 var xAngleDiff = { degrees(abs(var.aX1 - var.aX2)) }
 
 ; Commented due to memory limitations
@@ -206,42 +211,45 @@ set global.mosWPCtrPos[var.workOffset][0] = { var.sX }
 
 ; Move outwards on Y first
 ; Any movement on X here will crash the probe, DO NOT.
-G6550 I{var.probeId} Y{(var.sY - var.hL - var.clearance)}
+G6550 I{var.probeId} Y{(var.sY - var.hL - var.surfaceClearance)}
 
 ; Probe Y surfaces
 
 ; First probe point - front edge, inwards from right face by clearance distance
 ; towards the face minus overtravel distance.
-G6512 I{var.probeId} D1 K{(var.sY - var.hL - var.clearance)} J{(var.sX + var.hW - var.clearance)} L{param.L} Y{(var.sY - var.hL + var.overtravel)}
+G6512 I{var.probeId} D1 J{(var.sX + var.hW - var.cornerClearance)} L{param.L} Y{(var.sY - var.hL + var.overtravel)}
 set var.pY[0] = { global.mosPCY }
 
 ; Return to our starting position
-G6550 I{var.probeId} Y{(var.sY - var.hL - var.clearance)}
+G6550 I{var.probeId} Y{(var.sY - var.hL - var.surfaceClearance)}
 
 ; Second probe point - front edge, inwards from left face by clearance distance
 ; towards the face plus overtravel distance.
-G6512 I{var.probeId} D1 K{(var.sY - var.hL - var.clearance)} J{(var.sX - var.hW + var.clearance)} L{param.L} Y{(var.sY - var.hL + var.overtravel)}
+G6512 I{var.probeId} D1 J{(var.sX - var.hW + var.cornerClearance)} L{param.L} Y{(var.sY - var.hL + var.overtravel)}
 set var.pY[1] = { global.mosPCY }
 
 ; Return to our starting position and then raise the probe
-G6550 I{var.probeId} Y{(var.sY - var.hL - var.clearance)}
+G6550 I{var.probeId} Y{(var.sY - var.hL - var.surfaceClearance)}
 G6550 I{var.probeId} Z{var.safeZ}
+
+; Move over the block
+G6550 I{var.probeId} Y{(var.sY + var.hL + var.surfaceClearance)}
 
 ; Third probe point - rear edge, inwards from left face by clearance distance
 ; towards the face plus overtravel distance.
-G6512 I{var.probeId} D1 K{(var.sY + var.hL + var.clearance)} J{(var.sX - var.hW + var.clearance)} L{param.L} Y{(var.sY + var.hL - var.overtravel)}
+G6512 I{var.probeId} D1 J{(var.sX - var.hW + var.cornerClearance)} L{param.L} Y{(var.sY + var.hL - var.overtravel)}
 set var.pY[2] = { global.mosPCY }
 
 ; Return to our starting position
-G6550 I{var.probeId} Y{(var.sY + var.hL + var.clearance)}
+G6550 I{var.probeId} Y{(var.sY + var.hL + var.surfaceClearance)}
 
 ; Fourth probe point - rear edge, inwards from right face by clearance distance
 ; towards the face minus overtravel distance.
-G6512 I{var.probeId} D1 K{(var.sY + var.hL + var.clearance)} J{(var.sX + var.hW - var.clearance)} L{param.L} Y{(var.sY + var.hL - var.overtravel)}
+G6512 I{var.probeId} D1 J{(var.sX + var.hW - var.cornerClearance)} L{param.L} Y{(var.sY + var.hL - var.overtravel)}
 set var.pY[3] = { global.mosPCY }
 
 ; Return to our starting position and then raise the probe
-G6550 I{var.probeId} Y{(var.sY + var.hL + var.clearance)}
+G6550 I{var.probeId} Y{(var.sY + var.hL + var.surfaceClearance)}
 G6550 I{var.probeId} Z{var.safeZ}
 
 ; Okay like before, we now have 2 'lines' representing the Y edges of the block.
@@ -249,8 +257,8 @@ G6550 I{var.probeId} Z{var.safeZ}
 ; Line 2: var.pY[2] to var.pY[3]
 
 ; Calculate the angle of each line.
-var aY1 = { atan((var.pY[1] - var.pY[0]) / (var.fW - (2*var.clearance))) }
-var aY2 = { atan((var.pY[2] - var.pY[3]) / (var.fW - (2*var.clearance))) }
+var aY1 = { atan((var.pY[1] - var.pY[0]) / (var.fW - (2*var.cornerClearance))) }
+var aY2 = { atan((var.pY[2] - var.pY[3]) / (var.fW - (2*var.cornerClearance))) }
 var yAngleDiff = { degrees(abs(var.aY1 - var.aY2)) }
 
 ; Commented due to memory limitations
