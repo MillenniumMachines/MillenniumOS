@@ -667,7 +667,7 @@ function onSection() {
       writeln("");
     }
 
-    writeComment("Enable rotation compensation if necessary");  
+    writeComment("Enable rotation compensation if necessary");
     writeBlock(mCodes.format(M.ENABLE_ROTATION_COMPENSATION));
     writeln("");
   }
