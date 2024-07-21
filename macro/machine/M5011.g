@@ -19,9 +19,14 @@ if { global.mosWPDeg[var.workOffset] != global.mosDfltWPDeg }
         M291 P{"Workpiece in WCS " ^ var.wcsNumber ^ " is rotated by " ^ global.mosWPDeg[var.workOffset] ^ " degrees. Apply compensation?"} R{"MillenniumOS: Workpiece Rotation Compensation"} S4 K{"Yes","No"} F0
         if { input != 0 }
             echo { "MillenniumOS: Rotation compensation not applied."}
+            ; Cancel any existing rotation applied
+            G69
             M99
 
     ; Rotate the workpiece around the origin.
     G68 X0 Y0 R{global.mosWPDeg[var.workOffset]}
 
     echo { "MillenniumOS: Rotation compensation of " ^ -global.mosWPDeg[var.workOffset] ^ " degrees applied around origin" }
+else
+    ; Cancel any existing rotation applied
+    G69
