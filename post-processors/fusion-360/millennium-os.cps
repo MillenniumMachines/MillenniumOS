@@ -1126,6 +1126,9 @@ function onManualNC(command, value) {
     case COMMAND_DISPLAY_MESSAGE:
       return writeConfirmableDialog(value);
 
+    case COMMAND_PRINT_MESSAGE:
+      return writeNonBlockingDialog(value);
+
     case COMMAND_PASS_THROUGH:
       return writeBlock(value);
 
@@ -1143,8 +1146,8 @@ function writeConfirmableDialog(text) {
 
 function writeNonBlockingDialog(text) {
   writeln("");
-  writeComment("Output non-blocking dialog to operator that auto-closes in 15 seconds");
-  writeBlock("M291 R\"Fusion360\" P\"{text}\" S1 T15".supplant({text: text}));
+  writeComment("Output non-blocking dialog to operator");
+  writeBlock("M112 P0 S\"{text}\" L2".supplant({text: text}));
   writeln("");
 }
 
