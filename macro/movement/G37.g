@@ -76,39 +76,125 @@ var aP = 0
 ; If radius of tool is greater than radius of the toolsetter, then we use a
 ; modified probing mechanism to identify the longest (lowest) point of the tool
 if { global.mosTT[state.currentTool][0] > global.mosTSR }
-    ; The following probes will only go as low as the central point, var.pZ[0]
-    ; Calculate the number of probe points to get 100% coverage of the tool radius,
-    ; based on the toolsetter surface radius.
-    var points = { ceil((2 * pi * global.mosTT[state.currentTool][0]) / (2 * global.mosTSR)) }
-    echo {"Tool #" ^ state.currentTool ^ " requires " ^ var.points ^ " probe points for full coverage."}
 
-    ; We record the center point and each of the points on the tool radius
-    var pZ = { vector(var.points+1, move.axes[2].min) }
+    ; Prompt Tool Setting Routine
+    M291 P{"Your tool is bigger than your ToolSetter. Select the Tool Setting Routine to use:"} R"MillenniumOS: Tool Setting Routine" S4 T0 K{"Automatic Radial","Offset","Manual Alignment"} F0
 
-    ; Only probe once, this tells us the activation point at the center of the tool.
-    ; Do _not_ return to the safe position. Back-off position is fine.
-    G6512 D1 I{global.mosTSID} J{global.mosTSP[0]} K{global.mosTSP[1]} L{move.axes[2].max} Z{move.axes[2].min} R0
-    set var.pZ[0] = global.mosPCZ
+    ; Automatic Radial Tool Setting
+    if { input == 0 }
 
-    while { iterations < var.points }
-        var angle = { radians(360 / var.points) * iterations }
-        var tX = { global.mosTSP[0] + global.mosTT[state.currentTool][0] * cos(var.angle) }
-        var tY = { global.mosTSP[1] + global.mosTT[state.currentTool][0] * sin(var.angle) }
+        ; Tutorial mode movement and strategy warning
+        if { global.mosTM && !global.mosDD[14] }
+            M291 P{"The tool is about to move over the <b>ToolSetter<\b> and measure the center of the tool. Then the tool will be measured along it's circumference to find the lowest point."} R"MillenniumOS: Automatic Radial ToolSetting Tutorial" S4 K{"Continue", "Cancel"} F0
+            set global.mosDD[14] = true
+            ; If operator picked cancel, then abort the job
+            if { input == 1 }
+                abort { "MillenniumOS: Operator aborted toolsetter operation!" }
 
-        ; Some people have their touch probe mounted at their X or Y axis min or max. We can still
-        ; probe a tool with a radius larger than the toolsetter surface radius, but we need to ignore
-        ; the probe start points that are outside of the machine limits.
-        if { var.tX < move.axes[0].min || var.tX > move.axes[0].max || var.tY < move.axes[1].min || var.tY > move.axes[1].max }
-            echo {"Probe point " ^ iterations+1 ^ " is outside of machine limits. Skipping."}
-            continue
+        ; The following probes will only go as low as the central point, var.pZ[0]
+        ; Calculate the number of probe points to get 100% coverage of the tool radius,
+        ; based on the toolsetter surface radius.
+        var points = { ceil((2 * pi * global.mosTT[state.currentTool][0]) / (2 * global.mosTSR)) }
+        echo {"Tool #" ^ state.currentTool ^ " requires " ^ var.points ^ " probe points for full coverage."}
 
-        ; Probe the point to see if we're activated.
-        G6512 D1 E0 I{global.mosTSID} J{var.tX} K{var.tY} L{move.axes[2].machinePosition} Z{var.pZ[0]}
+        ; We record the center point and each of the points on the tool radius
+        var pZ = { vector(var.points+1, move.axes[2].min) }
 
-        ; Set the height to the probed point
-        set var.pZ[iterations+1] = global.mosPCZ
+        ; Only probe once, this tells us the activation point at the center of the tool.
+        ; Do _not_ return to the safe position. Back-off position is fine.
+        G6512 D1 I{global.mosTSID} J{global.mosTSP[0]} K{global.mosTSP[1]} L{move.axes[2].max} Z{move.axes[2].min} R0
+        set var.pZ[0] = global.mosPCZ
 
-    set var.aP = { max(var.pZ) }
+        while { iterations < var.points }
+            var angle = { radians(360 / var.points) * iterations }
+            var tX = { global.mosTSP[0] + global.mosTT[state.currentTool][0] * cos(var.angle) }
+            var tY = { global.mosTSP[1] + global.mosTT[state.currentTool][0] * sin(var.angle) }
+
+            ; Some people have their touch probe mounted at their X or Y axis min or max. We can still
+            ; probe a tool with a radius larger than the toolsetter surface radius, but we need to ignore
+            ; the probe start points that are outside of the machine limits.
+            if { var.tX < move.axes[0].min || var.tX > move.axes[0].max || var.tY < move.axes[1].min || var.tY > move.axes[1].max }
+                echo {"Probe point " ^ iterations+1 ^ " is outside of machine limits. Skipping."}
+                continue
+
+            ; Probe the point to see if we're activated.
+            G6512 D1 E0 I{global.mosTSID} J{var.tX} K{var.tY} L{move.axes[2].machinePosition} Z{var.pZ[0]}
+
+            ; Set the height to the probed point
+            set var.pZ[iterations+1] = global.mosPCZ
+
+        set var.aP = { max(var.pZ) }
+
+    ; Offset Tool Setting
+    elif { input == 1 }
+
+        ; Tutorial mode movement and strategy warning
+        if { global.mosTM && !global.mosDD[15] }
+            M291 P{"The tool is about to move over the <b>ToolSetter<\b>! You will then be presented with an option to <b>Offset<\b> the tool by it's radius in your chosen direction."} R"MillenniumOS: Offset ToolSetting Tutorial" S4 K{"Continue", "Cancel"} F0
+            set global.mosDD[15] = true
+            ; If operator picked cancel, then abort the job
+            if { input == 1 }
+                abort { "MillenniumOS: Operator aborted toolsetter operation!" }
+
+        ; Go above the default position
+        G0 X{global.mosTSP[0]} Y{global.mosTSP[1]}
+
+        ; The following probe will be offset the tool by the radius in the chosen direction
+        M291 P{"Select the direction to Offset"} R"MillenniumOS: Offset Tool Setting Routine" S4 T0 K{"Front","Back","Left","Right"} F0
+
+        ; Front
+        if { input == 0 }
+            G0 Y{global.mosTSP[1] + global.mosTT[state.currentTool][0]}
+        
+        ; Back
+        elif { input == 1 }
+            G0 Y{global.mosTSP[1] - global.mosTT[state.currentTool][0]}
+
+        ; Left
+        elif { input == 2 }
+            G0 X{global.mosTSP[0] - global.mosTT[state.currentTool][0]}
+
+        ; Right
+        elif { input == 3 }
+            G0 X{global.mosTSP[0] + global.mosTT[state.currentTool][0]}
+
+        ; Wait for all movement to stop before continuing.
+        M400
+
+        M291 P"Please rotate the tool so the cutting edge is above your ToolSetter and then press <b>Continue</b>" R"MillenniumOS: Warning" S4 K{"Continue", "Cancel"} F0
+        ; If operator picked cancel, then abort the job
+        if { input == 1 }
+            abort { "MillenniumOS: Operator aborted toolsetter operation!" }
+
+        G6512 I{global.mosTSID} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].max} Z{move.axes[2].min}
+
+        set var.aP = global.mosPCZ
+
+    ; Manual Tool Setting
+    elif { input == 2 }
+
+        ; Tutorial mode movement and strategy warning
+        if { global.mosTM  && !global.mosDD[16] }
+            M291 P{"The tool is about to move over the <b>ToolSetter<\b>! You will then be presented with a jog menu to <b>Manually<\b> decide where to measure from."} R"MillenniumOS: Manual ToolSetting Tutorial" S4 K{"Continue", "Cancel"} F0
+            set global.mosDD[16] = true
+            ; If operator picked cancel, then abort the job
+            if { input == 1 }
+                abort { "MillenniumOS: Operator aborted toolsetter operation!" }
+
+        ; Go above the default position
+        G0 X{global.mosTSP[0]} Y{global.mosTSP[1]}
+
+        ; The following probe will happen after the tool is manually jogged into place
+        M291 P{"Please jog the the cutting edge of the Tool over the toolsetter within 10mm and press <b>OK</b>."} R"MillenniumOS: Manual Alignment Tool Setting Routine" X1 Y1 Z1 S3
+        if { result != 0 }
+            abort { "MillenniumOS: Operator aborted toolsetter operation!" }
+
+        ; Wait for all movement to stop before continuing.
+        M400
+
+        G6512 I{global.mosTSID} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].max} Z{move.axes[2].machinePosition - 10}
+
+        set var.aP = global.mosPCZ
 
 else
     ; Probe towards axis minimum until toolsetter is activated
