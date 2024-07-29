@@ -34,6 +34,15 @@ if { (!exists(param.Q) || param.Q == 0) && !exists(param.H) || !exists(param.I) 
 if { !exists(param.N) || param.N < 0 || param.N >= (#global.mosCornerNames) }
     abort { "Must provide a valid corner index using the N parameter!" }
 
+if { exists(param.T) && param.T != null && param.T <= 0 }
+    abort { "Surface clearance distance must be greater than 0!" }
+
+if { exists(param.C) && param.C != null && param.C <= 0 }
+    abort { "Corner clearance distance must be greater than 0!" }
+
+if { exists(param.O) && param.O != null && param.O <= 0 }
+    abort { "Overtravel distance must be greater than 0!" }
+
 ; Default workOffset to the current workplace number if not specified
 ; with the W parameter.
 var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
@@ -75,7 +84,7 @@ if { global.mosWPSfcPos[var.workOffset] == global.mosDfltWPSfcPos || global.mosW
     abort { "G6520: Failed to probe the top surface of the workpiece!" }
 
 ; Probe the corner surface
-G6508.1 R0 W{var.workOffset} Q{param.Q} H{param.H} I{param.I} N{param.N} T{param.T} O{param.O} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{ global.mosWPSfcPos[var.workOffset] - param.P }
+G6508.1 R0 W{var.workOffset} Q{param.Q} H{param.H} I{param.I} N{param.N} T{param.T} C{param.C} O{param.O} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{ global.mosWPSfcPos[var.workOffset] - param.P }
 if { global.mosWPCnrNum[var.workOffset] == null }
     abort { "G6520: Failed to probe the corner surface of the workpiece!" }
 

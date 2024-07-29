@@ -17,6 +17,15 @@ if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
 if { !exists(param.H) || !exists(param.I) }
     abort { "Must provide an approximate width and length using H and I parameters!" }
 
+if { exists(param.T) && param.T != null && param.T <= 0 }
+    abort { "Surface clearance distance must be greater than 0!" }
+
+if { exists(param.C) && param.C != null && param.C <= 0 }
+    abort { "Corner clearance distance must be greater than 0!" }
+
+if { exists(param.O) && param.O != null && param.O <= 0 }
+    abort { "Overtravel distance must be greater than 0!" }
+
 ; Default workOffset to the current workplace number if not specified
 ; with the W parameter.
 var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
@@ -69,10 +78,15 @@ var hL   = { var.fL/2 }
 ; Tool Radius is the first entry for each value in
 ; our extended tool table.
 
-; Apply tool radius to clearance. We want to make sure
-; the surface of the tool and the workpiece are the
-; clearance distance apart, rather than less than that.
-var clearance = { (exists(param.T) ? param.T : global.mosCL) + ((state.currentTool < #tools && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
+; Apply tool radius to surface clearance. We want to
+; make sure the surface of the tool and the workpiece
+; are the clearance distance apart, rather than less
+; than that.
+var surfaceClearance = { ((!exists(param.T) || param.T == null) ? global.mosCL : param.T) + ((state.currentTool < #tools && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
+
+; Default corner clearance to the normal clearance
+; distance, but allow it to be overridden if necessary.
+var cornerClearance = { (!exists(param.C) || param.C == null) ? ((!exists(param.T) || param.T == null) ? global.mosCL : param.T) : param.C }
 
 ; Apply tool radius to overtravel. We want to allow
 ; less movement past the expected point of contact
@@ -82,15 +96,15 @@ var clearance = { (exists(param.T) ? param.T : global.mosCL) + ((state.currentTo
 ; as the configured tool radius is accurate.
 var overtravel = { (exists(param.O) ? param.O : global.mosOT) - ((state.currentTool < #tools && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
 
-; Check that the clearance distance isn't
+; Check that 2 times the clearance distance isn't
 ; higher than the width or height of the pocket.
 ; Since we use the clearance distance to choose
 ; how far along each surface we should probe from
 ; the expected corners, a clearance higher than
 ; the width or height would mean we would try to
 ; probe off the edge of the pocket.
-if { var.clearance >= var.fW || var.clearance >= var.fL }
-    abort { "Clearance distance is higher than the width or height of the rectangle pocket! Cannot probe." }
+if { var.cornerClearance >= var.hW || var.cornerClearance >= var.hL }
+    abort { "Corner clearance distance is more than half of the width or height of the pocket! Cannot probe." }
 
 ; The overtravel distance does not have the same
 ; requirement, as it is only used to adjust the
@@ -117,44 +131,47 @@ var pY = { null, null, null, null }
 G6550 I{var.probeId} Z{param.L}
 
 ; Move outwards on X first
-G6550 I{var.probeId} X{(var.sX - var.hW + var.clearance)}
+G6550 I{var.probeId} X{(var.sX - var.hW + var.surfaceClearance)}
 
 ; First probe point - left edge, inwards from front face by clearance distance
 ; towards the face plus overtravel distance.
-G6512 I{var.probeId} D1 J{(var.sX - var.hW + var.clearance)} K{(var.sY - var.hL + var.clearance)} L{param.L} X{(var.sX - var.hW - var.overtravel)}
+G6512 I{var.probeId} D1 K{(var.sY - var.hL + var.cornerClearance)} L{param.L} X{(var.sX - var.hW - var.overtravel)}
 set var.pX[0] = { global.mosPCX }
 
 ; Return to our starting position
-G6550 I{var.probeId} X{(var.sX - var.hW + var.clearance)}
+G6550 I{var.probeId} X{(var.sX - var.hW + var.surfaceClearance)}
 
 ; Second probe point - left edge, inwards from rear face by clearance distance
 ; towards the face minus overtravel distance.
-G6512 I{var.probeId} D1 J{(var.sX - var.hW + var.clearance)} K{(var.sY + var.hL - var.clearance)} L{param.L} X{(var.sX - var.hW - var.overtravel)}
+G6512 I{var.probeId} D1 K{(var.sY + var.hL - var.cornerClearance)} L{param.L} X{(var.sX - var.hW - var.overtravel)}
 set var.pX[1] = { global.mosPCX }
 
 ; Return to our starting position
-G6550 I{var.probeId} X{(var.sX - var.hW + var.clearance)}
+G6550 I{var.probeId} X{(var.sX - var.hW + var.surfaceClearance)}
 
 ; No need to raise probe as we are in a pocket
 
 ; NOTE: Second surface probes from the rear first
 ; as this shortens the movement distance.
 
+; Move to new starting position
+G6550 I{var.probeId} X{(var.sX + var.hW - var.surfaceClearance)}
+
 ; Third probe point - right edge, inwards from rear face by clearance distance
 ; towards the face minus overtravel distance.
-G6512 I{var.probeId} D1 J{(var.sX + var.hW - var.clearance)} K{(var.sY + var.hL - var.clearance)} L{param.L} X{(var.sX + var.hW + var.overtravel)}
+G6512 I{var.probeId} D1 K{(var.sY + var.hL - var.cornerClearance)} L{param.L} X{(var.sX + var.hW + var.overtravel)}
 set var.pX[2] = { global.mosPCX }
 
 ; Return to our starting position
-G6550 I{var.probeId} X{(var.sX + var.hW - var.clearance)}
+G6550 I{var.probeId} X{(var.sX + var.hW - var.surfaceClearance)}
 
 ; Fourth probe point - right edge, inwards from front face by clearance distance
 ; towards the face plus overtravel distance.
-G6512 I{var.probeId} D1 J{(var.sX + var.hW - var.clearance)} K{(var.sY - var.hL + var.clearance)} L{param.L} X{(var.sX + var.hW + var.overtravel)}
+G6512 I{var.probeId} D1 K{(var.sY - var.hL + var.cornerClearance)} L{param.L} X{(var.sX + var.hW + var.overtravel)}
 set var.pX[3] = { global.mosPCX }
 
 ; Return to our starting position.
-G6550 I{var.probeId} X{(var.sX + var.hW - var.clearance)}
+G6550 I{var.probeId} X{(var.sX + var.hW - var.surfaceClearance)}
 
 ; Okay, we now have 2 'lines' representing the X edges of the pocket.
 ; Line 1: var.pX[0] to var.pX[1]
@@ -181,8 +198,8 @@ G6550 I{var.probeId} X{(var.sX + var.hW - var.clearance)}
 ; the angle of the Y edges of the pocket.
 
 ; Calculate the angle difference of each line.
-var aX1 = { atan((var.pX[1] - var.pX[0]) / (var.fL - (2*var.clearance))) }
-var aX2 = { atan((var.pX[2] - var.pX[3]) / (var.fL - (2*var.clearance))) }
+var aX1 = { atan((var.pX[1] - var.pX[0]) / (var.fL - (2*var.cornerClearance))) }
+var aX2 = { atan((var.pX[2] - var.pX[3]) / (var.fL - (2*var.cornerClearance))) }
 var xAngleDiff = { degrees(abs(var.aX1 - var.aX2)) }
 
 ; Commented due to memory limitations
@@ -209,43 +226,43 @@ set global.mosWPCtrPos[var.workOffset][0] = { var.sX }
 ; Move outwards on X first. This _looks_ like a no-op because it
 ; is the same as the previous G6550, but var.sX has been updated with
 ; the _calculated_ center of the pocket in X, so we can now be more
-; accurate with out offsets from each end of the Y surfaces.
-G6550 I{var.probeId} X{(var.sX + var.hW - var.clearance)}
+; accurate with our offsets from each end of the Y surfaces.
+G6550 I{var.probeId} X{(var.sX + var.hW - var.cornerClearance)}
 
 ; Probe Y surfaces
 
 ; First probe point - front edge, inwards from right face by clearance distance
 ; towards the face minus overtravel distance.
-G6512 I{var.probeId} D1 K{(var.sY - var.hL + var.clearance)} J{(var.sX + var.hW - var.clearance)} L{param.L} Y{(var.sY - var.hL - var.overtravel)}
+G6512 I{var.probeId} D1 K{(var.sY - var.hL + var.surfaceClearance)} L{param.L} Y{(var.sY - var.hL - var.overtravel)}
 set var.pY[0] = { global.mosPCY }
 
 ; Return to our starting position
-G6550 I{var.probeId} Y{(var.sY - var.hL + var.clearance)}
+G6550 I{var.probeId} Y{(var.sY - var.hL + var.surfaceClearance)}
 
 ; Second probe point - front edge, inwards from left face by clearance distance
 ; towards the face plus overtravel distance.
-G6512 I{var.probeId} D1 K{(var.sY - var.hL + var.clearance)} J{(var.sX - var.hW + var.clearance)} L{param.L} Y{(var.sY - var.hL - var.overtravel)}
+G6512 I{var.probeId} D1 J{(var.sX - var.hW + var.cornerClearance)} L{param.L} Y{(var.sY - var.hL - var.overtravel)}
 set var.pY[1] = { global.mosPCY }
 
 ; Return to our starting position.
 ; Again, no need to raise probe as we are in a pocket.
-G6550 I{var.probeId} Y{(var.sY - var.hL + var.clearance)}
+G6550 I{var.probeId} Y{(var.sY - var.hL + var.surfaceClearance)}
 
 ; Third probe point - rear edge, inwards from left face by clearance distance
 ; towards the face plus overtravel distance.
-G6512 I{var.probeId} D1 K{(var.sY + var.hL - var.clearance)} J{(var.sX - var.hW + var.clearance)} L{param.L} Y{(var.sY + var.hL + var.overtravel)}
+G6512 I{var.probeId} D1 K{(var.sY + var.hL - var.surfaceClearance)} J{(var.sX - var.hW + var.cornerClearance)} L{param.L} Y{(var.sY + var.hL + var.overtravel)}
 set var.pY[2] = { global.mosPCY }
 
 ; Return to our starting position
-G6550 I{var.probeId} Y{(var.sY + var.hL - var.clearance)}
+G6550 I{var.probeId} Y{(var.sY + var.hL - var.surfaceClearance)}
 
 ; Fourth probe point - rear edge, inwards from right face by clearance distance
 ; towards the face minus overtravel distance.
-G6512 I{var.probeId} D1 K{(var.sY + var.hL - var.clearance)} J{(var.sX + var.hW - var.clearance)} L{param.L} Y{(var.sY + var.hL + var.overtravel)}
+G6512 I{var.probeId} D1 J{(var.sX + var.hW - var.cornerClearance)} L{param.L} Y{(var.sY + var.hL + var.overtravel)}
 set var.pY[3] = { global.mosPCY }
 
 ; Return to our starting position.
-G6550 I{var.probeId} Y{(var.sY + var.hL - var.clearance)}
+G6550 I{var.probeId} Y{(var.sY + var.hL - var.surfaceClearance)}
 
 
 ; Okay like before, we now have 2 'lines' representing the Y edges of the pocket.
@@ -253,8 +270,8 @@ G6550 I{var.probeId} Y{(var.sY + var.hL - var.clearance)}
 ; Line 2: var.pY[2] to var.pY[3]
 
 ; Calculate the angle of each line.
-var aY1 = { atan((var.pY[1] - var.pY[0]) / (var.fW - (2*var.clearance))) }
-var aY2 = { atan((var.pY[2] - var.pY[3]) / (var.fW - (2*var.clearance))) }
+var aY1 = { atan((var.pY[1] - var.pY[0]) / (var.fW - (2*var.cornerClearance))) }
+var aY2 = { atan((var.pY[2] - var.pY[3]) / (var.fW - (2*var.cornerClearance))) }
 var yAngleDiff = { degrees(abs(var.aY1 - var.aY2)) }
 
 ; Commented due to memory limitations
