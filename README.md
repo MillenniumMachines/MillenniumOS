@@ -1,6 +1,6 @@
 # MillenniumOS (MOS) - An "Operations System" for RepRapFirmware
 
-## ⚠️ ⚠️ ⚠️ Please download MillenniumOS from the [Releases](https://github.com/MillenniumMachines/MillenniumOS/releases) page only ⚠️ ⚠️ ⚠️
+## ⚠️ ⚠️ ⚠️ Please download MillenniumOS from the [Releases](https://github.com/MillenniumMachines/MillenniumOS/releases) page only
 
 ## Introduction
 
