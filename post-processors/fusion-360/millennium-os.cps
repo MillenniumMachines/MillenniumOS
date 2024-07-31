@@ -1147,7 +1147,7 @@ function writeConfirmableDialog(text) {
 function writeNonBlockingDialog(text) {
   writeln("");
   writeComment("Output non-blocking dialog to operator");
-  writeBlock("M112 P0 S\"{text}\" L2".supplant({text: text}));
+  writeBlock("M118 P0 S\"{text}\" L2".supplant({text: text}));
   writeln("");
 }
 
