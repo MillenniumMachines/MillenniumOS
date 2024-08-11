@@ -257,22 +257,15 @@ if { var.pMO == 0 }
     var diff = { abs(degrees(var.aX - var.aY)) }
     set global.mosWPCnrDeg[var.workOffset] = { mod(var.diff + 360, 180) }
 
-    ; The angle of the X line is our workpiece rotation.
-    ; We have to do the same compensation as above to make sure
-    ; we receive a value around 90 degrees regardless of the corner chosen.
+    ; Calculate the rotation based on the length of the surface.
+    ; Longer surfaces are more likely to be accurate due to the
+    ; distance between the probe points.
+    ; If the Y surface is longer, no adjustment is necessary.
+    ; If the X surface is longer, we need to subtract 90 degrees
+    ; from the angle.
+    var aR = { (var.fX > var.fY) ? var.aX - radians(90) : var.aY }
 
-    ; Calculate rotation based on the longer surface, as this should
-    ; give us the most accurate result.
-    ; Calculate the angles based on both surfaces
-    ; We want the angle to sit within 90 degrees between -45 and 45.
-    var aR = { ((90 - (degrees(var.aX))) + -(degrees(var.aY))) /2 }
-
-    if { var.aR < -45 }
-        set var.aR = { var.aR + 90 }
-    elif { var.aR > 45 }
-        set var.aR = { var.aR - 90 }
-
-    set global.mosWPDeg[var.workOffset] = { var.aR }
+    set global.mosWPDeg[var.workOffset] = { degrees(var.aR) }
 
     ; Calculate the center of the workpiece based on the corner position,
     ; the width and height of the workpiece and the rotation.
