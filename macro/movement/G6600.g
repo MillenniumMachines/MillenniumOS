@@ -104,6 +104,9 @@ if { var.pdX != 0 && var.pdY != 0 && var.pdZ != 0 }
         echo {"MillenniumOS: WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") origin retained, skipping probe cycle."}
         M99
 
+    ; Reset the WCS origin so that all axes must be re-probed.
+    G10 L2 P{var.workOffset} X0 Y0 Z0
+
 ; Switch to touchprobe if not already connected
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
