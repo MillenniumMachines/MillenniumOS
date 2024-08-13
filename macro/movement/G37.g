@@ -126,12 +126,27 @@ else
 ; offset from there instead.
 
 var toolOffset = 0
+
+; If touch probe is configured, then our offset is relative to the activation
+; point distance from the reference surface.
 if { global.mosFeatTouchProbe }
     set var.toolOffset = { -(var.aP - global.mosTSAP) }
+
+; Otherwise, if we're probing the probe tool (datum tool in this case since
+; the touch probe is disabled), then we store the activation point against
+; which subsequent tools will be offset - but we do not set an offset for
+; the datum tool itself.
+elif { global.mosPTID == state.currentTool }
+    set global.mosTSP[2] = { var.aP }
+    echo {"Datum Tool Reference Position=" ^ global.mosTSP[2] ^ "mm"}
+
+; If we're probing a normal cutting tool, then we calculate the offset
+; based on the previously probed datum tool activation point.
 else
     set var.toolOffset = { -(abs(global.mosTSP[2]) - abs(var.aP)) }
 
-echo {"Tool #" ^ state.currentTool ^ " Offset=" ^ var.toolOffset ^ "mm"}
+if { var.toolOffset != 0 }
+    echo {"Tool #" ^ state.currentTool ^ " Offset=" ^ var.toolOffset ^ "mm"}
 
 ; Park spindle in Z ready for next operation
 G27 Z1
