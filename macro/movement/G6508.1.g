@@ -263,9 +263,26 @@ if { var.pMO == 0 }
     ; If the Y surface is longer, no adjustment is necessary.
     ; If the X surface is longer, we need to subtract 90 degrees
     ; from the angle.
-    var aR = { (var.fX > var.fY) ? var.aX - radians(90) : var.aY }
 
-    set global.mosWPDeg[var.workOffset] = { degrees(var.aR) }
+    ; Example values:
+    ;  Back Left: var.aX: -89.9213333 var.aY: 0.0450074
+    ;  Front Left: var.aX: 90.08427 var.aY: 0.0553877
+    ;  Front Right: var.aX: 90.08710 var.aY: -179.9480591
+    ;  Back Right: var.aX: -89.9101028 var.aY: -179.9532471
+
+    var aR = { degrees((var.fX > var.fY) ? var.aX - radians(90) : var.aY) }
+
+    if { var.aR > 90 }
+        set var.aR = { var.aR - 180 }
+    elif { var.aR < -90 }
+        set var.aR = { var.aR + 180 }
+
+    if { var.aR > 45 }
+        set var.aR = { var.aR - 90 }
+    elif { var.aR < -45 }
+        set var.aR = { var.aR + 90 }
+
+    set global.mosWPDeg[var.workOffset] = { var.aR }
 
     ; Calculate the center of the workpiece based on the corner position,
     ; the width and height of the workpiece and the rotation.
