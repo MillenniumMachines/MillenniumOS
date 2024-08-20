@@ -137,13 +137,13 @@ if { global.mosFeatTouchProbe }
 ; which subsequent tools will be offset - but we do not set an offset for
 ; the datum tool itself.
 elif { global.mosPTID == state.currentTool }
-    set global.mosTSP[2] = { var.aP }
-    echo {"Datum Tool Reference Position=" ^ global.mosTSP[2] ^ "mm"}
+    set global.mosTSAP = { var.aP }
+    echo {"Toolsetter Activation Point =" ^ global.mosTSAP ^ "mm"}
 
-; If we're probing a normal cutting tool, then we calculate the offset
-; based on the previously probed datum tool activation point.
 else
-    set var.toolOffset = { -(abs(global.mosTSP[2]) - abs(var.aP)) }
+    ; If we're probing a normal cutting tool, then we calculate the offset
+    ; based on the previously probed datum tool activation point.
+    set var.toolOffset = { -(abs(global.mosTSAP) - abs(var.aP)) }
 
 if { var.toolOffset != 0 }
     echo {"Tool #" ^ state.currentTool ^ " Offset=" ^ var.toolOffset ^ "mm"}
