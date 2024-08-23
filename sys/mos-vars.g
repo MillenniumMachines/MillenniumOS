@@ -218,3 +218,23 @@ global mosPS = { vector(limits.gpOutPorts, 0.0) }
 ; and G37.1 uses mosDD[12]. mosDD[13] is used during tool changes.
 global mosDD = { vector(14, false) }
 
+; Spindle State.
+; Running Forward
+; Running Reverse
+; Running
+; Requested Frequency
+; Output Frequency
+; Output Current
+; Output Voltage
+; Target Speed Reached
+; Spindle Acceleration Complete
+global mosSRF = null
+global mosSRR = null
+global mosSR  = null
+global mosSIF = null
+global mosSOF = null
+global mosSOC = null
+global mosSOV = null
+global mosSOP = null
+global mosSTR = false
+global mosSAC = false
