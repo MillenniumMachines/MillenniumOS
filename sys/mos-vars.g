@@ -230,3 +230,8 @@ global mosPS = { vector(limits.gpOutPorts, 0.0) }
 ; and G37.1 uses mosDD[12]. mosDD[13] is used during tool changes.
 global mosDD = { vector(14, false) }
 
+; Continuous Movement
+global mosCM   = false
+global mosCMA  = false
+global mosCMR  = { 0, 0, 0 }
+global mosCMFM = 0.1

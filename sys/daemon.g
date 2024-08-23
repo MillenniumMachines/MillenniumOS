@@ -16,5 +16,8 @@ while { exists(global.mosDAE) && global.mosDAE }
     if { exists(global.mosFeatVSSC) && global.mosFeatVSSC == true && global.mosVSEnabled && global.mosVSOE }
         M98 P"mos/run-vssc.g" ; Update active spindle speed based on timings
 
+    if { fileexists("0:/sys/mos/continuous-movement.g") }
+        M98 P"mos/continuous-movement.g" ; Continuous movement
+
     if { fileexists("0:/sys/user-daemon.g") }
         M98 P"user-daemon.g"
