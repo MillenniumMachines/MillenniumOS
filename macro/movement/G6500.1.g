@@ -144,5 +144,4 @@ if { !exists(param.R) || param.R != 0 }
     M7601 W{var.workOffset}
 
 ; Set WCS origin to the probed center
-echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to center of bore." }
-G10 L2 P{var.wcsNumber} X{var.cX} Y{var.cY}
+M5012 W{var.workOffset} X{var.cX} Y{var.cY}

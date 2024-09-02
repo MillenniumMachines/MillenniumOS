@@ -327,5 +327,4 @@ if { !exists(param.R) || param.R != 0 }
     M7601 W{var.workOffset}
 
 ; Set WCS origin to the probed center
-echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to the center of the rectangle block." }
-G10 L2 P{var.wcsNumber} X{var.sX} Y{var.sY}
+M5012 W{var.workOffset} X{var.sX} Y{var.sY}

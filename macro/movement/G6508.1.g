@@ -314,6 +314,5 @@ set global.mosWPCnrNum[var.workOffset] = { param.N }
 if { !exists(param.R) || param.R != 0 }
     M7601 W{var.workOffset}
 
-; Set WCS origin to the probed corner
-echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to " ^ global.mosCornerNames[param.N] ^ " corner." }
-G10 L2 P{var.wcsNumber} X{var.cX} Y{var.cY}
+; Set WCS origin to the probed center
+M5012 W{var.workOffset} X{var.cX} Y{var.cY}

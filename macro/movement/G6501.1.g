@@ -29,7 +29,6 @@ if { !exists(param.H) }
 ; with the W parameter.
 var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
 
-
 ; WCS Numbers and Offsets are confusing. Work Offset indicates the offset
 ; from the first work co-ordinate system, so is 0-indexed. WCS number indicates
 ; the number of the work co-ordinate system, so is 1-indexed.
@@ -170,5 +169,4 @@ if { !exists(param.R) || param.R != 0 }
     M7601 W{var.workOffset}
 
 ; Set WCS origin to the probed center
-echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to the center of the boss." }
-G10 L2 P{var.wcsNumber} X{var.cX} Y{var.cY}
+M5012 W{var.workOffset} X{var.cX} Y{var.cY}
