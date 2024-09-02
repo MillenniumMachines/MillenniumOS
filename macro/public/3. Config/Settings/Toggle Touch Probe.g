@@ -16,6 +16,9 @@ set global.mosFeatTouchProbe = {!global.mosFeatTouchProbe}
 if { global.mosFeatTouchProbe }
     M4000 P{global.mosPTID} S{"Touch Probe"} R{global.mosTPR}
 else
+    ; Reset toolsetter activation point as this is used to store
+    ; the datum tool Z position when touch probe is disabled.
+    set global.mosTSAP = null
     M4000 P{global.mosPTID} S{"Datum Tool"} R{global.mosDTR}
 
 echo {"MillenniumOS: Touch Probe " ^ (global.mosFeatTouchProbe ? "Enabled" : "Disabled")}
