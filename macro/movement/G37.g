@@ -132,18 +132,19 @@ var toolOffset = 0
 if { global.mosFeatTouchProbe }
     set var.toolOffset = { -(var.aP - global.mosTSAP) }
 
-; Otherwise, if we're probing the probe tool (datum tool in this case since
-; the touch probe is disabled), then we store the activation point against
-; which subsequent tools will be offset - but we do not set an offset for
-; the datum tool itself.
 elif { global.mosPTID == state.currentTool }
+    ; Otherwise, if we're probing the probe tool (datum tool in this case since
+    ; the touch probe is disabled), then we store the activation point against
+    ; which subsequent tools will be offset - but we do not set an offset for
+    ; the datum tool itself.
     set global.mosTSAP = { var.aP }
     echo {"Toolsetter Activation Point =" ^ global.mosTSAP ^ "mm"}
-
-else
+elif { global.mosTSAP != null }
     ; If we're probing a normal cutting tool, then we calculate the offset
     ; based on the previously probed datum tool activation point.
     set var.toolOffset = { -(abs(global.mosTSAP) - abs(var.aP)) }
+else
+    abort { "No Datum Tool Activation Point found. You must set the Z origin with the datum tool (T" ^ global.mosPTID ^ ") before probing tool lengths!" }
 
 if { var.toolOffset != 0 }
     echo {"Tool #" ^ state.currentTool ^ " Offset=" ^ var.toolOffset ^ "mm"}
