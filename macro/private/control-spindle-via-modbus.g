@@ -29,6 +29,8 @@ G4 P1
 M261.1 P1 A1 F3 R4123 B1 V"spindlePower"
 ;2f10 0124 30ea
 
+G4 P1
+
 ; Read any error codes
 M261.1 P1 A1 F3 R4103 B2 V"spindleErrors"
 
