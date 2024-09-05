@@ -138,13 +138,15 @@ M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
 
 ; Probing move either complete or stopped due to collision, we need to
 ; check the location of the machine to determine if the move was completed.
-var tolerance = 0.01
 
-if { (move.axes[0].machinePosition) < (var.tPX - var.tolerance/2) || (move.axes[0].machinePosition) > (var.tPX + var.tolerance/2) }
+var tolerance = { 0.01 }
+
+if { (move.axes[0].machinePosition) < (var.tPX - max(move.axes[0].backlash, var.tolerance)) || (move.axes[0].machinePosition) > (var.tPX + max(move.axes[0].backlash, var.tolerance)) }
     abort { "G6550: Machine position does not match expected position -  X=" ^ var.tPX ^ " != " ^ move.axes[0].machinePosition }
 
-if { (move.axes[1].machinePosition) < (var.tPY - var.tolerance/2) || (move.axes[1].machinePosition) > (var.tPY + var.tolerance/2) }
+if { (move.axes[1].machinePosition) < (var.tPY - max(move.axes[1].backlash, var.tolerance)) || (move.axes[1].machinePosition) > (var.tPY + max(move.axes[1].backlash, var.tolerance)) }
     abort { "G6550: Machine position does not match expected position -  Y=" ^ var.tPY ^ " != " ^ move.axes[1].machinePosition }
 
-if { (move.axes[2].machinePosition) < (var.tPZ - var.tolerance/2) || (move.axes[2].machinePosition) > (var.tPZ + var.tolerance/2) }
+if { (move.axes[2].machinePosition) < (var.tPZ - max(move.axes[2].backlash, var.tolerance)) || (move.axes[2].machinePosition) > (var.tPZ + max(move.axes[2].backlash, var.tolerance)) }
     abort { "G6550: Machine position does not match expected position -  Z=" ^ var.tPZ ^ " != " ^ move.axes[2].machinePosition }
+
