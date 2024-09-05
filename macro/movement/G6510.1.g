@@ -89,10 +89,10 @@ if { !exists(param.R) || param.R != 0 }
     M7601 W{var.workOffset}
 
 ; Set WCS if required
-echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " " ^ var.sAxis ^ " origin to probed co-ordinate." }
 if { var.probeAxis <= 1 }
-    G10 L2 P{var.wcsNumber} X{global.mosWPSfcPos[var.workOffset]}
+    ; Set WCS origin to the probed center
+    M5012 W{var.workOffset} X{global.mosWPSfcPos[var.workOffset]}
 elif { var.probeAxis <= 3 }
-    G10 L2 P{var.wcsNumber} Y{global.mosWPSfcPos[var.workOffset]}
+    M5012 W{var.workOffset} Y{global.mosWPSfcPos[var.workOffset]}
 else
-    G10 L2 P{var.wcsNumber} Z{global.mosWPSfcPos[var.workOffset]}
+    M5012 W{var.workOffset} Z{global.mosWPSfcPos[var.workOffset]}

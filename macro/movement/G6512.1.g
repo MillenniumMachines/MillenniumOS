@@ -112,6 +112,7 @@ while { iterations <= var.retries }
     ; Record current position into local variable
     set var.cP = { move.axes[0].machinePosition, move.axes[1].machinePosition, move.axes[2].machinePosition }
 
+    echo { "Probe " ^ param.I ^ " at X=" ^ var.cP[0] ^ " Y=" ^ var.cP[1] ^ " Z=" ^ var.cP[2] }
     ; If this is the first probe, set the initial values
     if { iterations == 0 }
         set var.oM = var.cP
