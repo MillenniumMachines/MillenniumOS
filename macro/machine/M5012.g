@@ -30,7 +30,7 @@ var pdZ = { move.axes[2].workplaceOffsets[var.workOffset] }
 if { exists(param.X) }
     if { var.pdX != 0 }
         var avgX = { (var.pdX + param.X) / 2 }
-        M291 P{"WCS " ^ var.wcsNumber ^ " has existing X origin.<b>Override</b> it or <b>Average</b> with the new value?"} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Override (" ^ var.pdX ^ )","Average (" ^ var.avgX ^ )" }
+        M291 P{"WCS " ^ var.wcsNumber ^ " has existing X origin.<b>Override</b> it or <b>Average</b> with the new value?"} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Override (" ^ var.pdX ^ ")","Average (" ^ var.avgX ^ ")" }
 
         if { input == 0 }
             G10 L2 P{var.wcsNumber} X{param.X}
@@ -42,7 +42,7 @@ if { exists(param.X) }
 if { exists(param.Y) }
     if { var.pdY != 0 }
         var avgY = { (var.pdY + param.Y) / 2 }
-        M291 P{"WCS " ^ var.wcsNumber ^ " has existing Y origin.<b>Override</b> it or <b>Average</b> with the new value?"} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Override (" ^ var.pdY ^ )","Average (" ^ var.avgY ^ ")" }
+        M291 P{"WCS " ^ var.wcsNumber ^ " has existing Y origin.<b>Override</b> it or <b>Average</b> with the new value?"} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Override (" ^ var.pdY ^ ")","Average (" ^ var.avgY ^ ")" }
 
         if { input == 0 }
             G10 L2 P{var.wcsNumber} Y{param.Y}
@@ -54,7 +54,7 @@ if { exists(param.Y) }
 if { exists(param.Z) }
     if { var.pdZ != 0 }
         var avgZ = { (var.pdZ + param.Z) / 2 }
-        M291 P{"WCS " ^ var.wcsNumber ^ " has existing Z origin.<b>Override</b> it or <b>Average</b> with the new value?"} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Override (" ^ var.pdZ ^ )","Average (" ^ var.avgZ ^ ")" }
+        M291 P{"WCS " ^ var.wcsNumber ^ " has existing Z origin.<b>Override</b> it or <b>Average</b> with the new value?"} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Override (" ^ var.pdZ ^ ")","Average (" ^ var.avgZ ^ ")" }
 
         if { input == 0 }
             G10 L2 P{var.wcsNumber} Z{param.Z}
