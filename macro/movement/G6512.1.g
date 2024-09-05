@@ -18,7 +18,7 @@ if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
     abort { "G6512.1: Must provide a valid target position in one or more axes (X.. Y.. Z..)!" }
 
 ; Allow the number of retries to be overridden
-var retries = { (exists(param.R) && param.R != null) ? param.R : sensors.probes[param.I].maxProbeCount }
+var retries = { (exists(param.R) && param.R != null) ? param.R : (sensors.probes[param.I].maxProbeCount + 1) }
 
 ; Whether to throw an error if the probe is not activated
 ; when it reaches the target position.
@@ -112,8 +112,12 @@ while { iterations <= var.retries }
     ; Record current position into local variable
     set var.cP = { move.axes[0].machinePosition, move.axes[1].machinePosition, move.axes[2].machinePosition }
 
-    ; If this is the first probe, set the initial values
-    if { iterations == 0 }
+    ; Set the initial values for iterations 0 and 1.
+    ; Some calls to the probe macro only probe once, so
+    ; we need return values. In all other cases, the
+    ; first iteration, 0, is discarded as this is performed
+    ; at higher speed so will be less accurate.
+    if { iterations == 0 || iterations == 1 }
         set var.oM = var.cP
         set var.nM = var.cP
         set var.oS = { 0.0, 0.0, 0.0 }
@@ -138,9 +142,9 @@ while { iterations <= var.retries }
         ; TODO: Does this actually calculate per-probe variance accurately?
         ; Calculate per-probe variance on each axis
         if { iterations > 1 }
-            set var.pV[0] = { var.nS[0] / (iterations) }
-            set var.pV[1] = { var.nS[1] / (iterations) }
-            set var.pV[2] = { var.nS[2] / (iterations) }
+            set var.pV[0] = { var.nS[0] / (iterations-1) }
+            set var.pV[1] = { var.nS[1] / (iterations-1) }
+            set var.pV[2] = { var.nS[2] / (iterations-1) }
 
     ; Wait for all moves in the queue to finish
     M400
@@ -182,7 +186,7 @@ while { iterations <= var.retries }
     ; We can only abort early if we're within tolerance on all moved (probed) axes.
     ; If we're not performing error checking, then we can abort early if the current
     ; position is the same as the target position (i.e. the probe was not activated)
-    var tR = true
+    var tR = { iterations > 2 }
     if { var.tP[0] != var.sP[0] }
         set var.tR = { var.tR && (var.pV[0] <= sensors.probes[param.I].tolerance || (!var.errors && abs(var.cP[0] - var.tP[0]) <= sensors.probes[param.I].tolerance)) }
     if { var.tP[1] != var.sP[1] }
