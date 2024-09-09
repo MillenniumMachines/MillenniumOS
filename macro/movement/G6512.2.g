@@ -21,8 +21,11 @@ G94
 ; Make sure machine is stationary before checking machine positions
 M400
 
+; Get current machine position
+M5000 P0
+
 ; Assume current location is start point.
-var sP = { move.axes[0].machinePosition, move.axes[1].machinePosition, move.axes[2].machinePosition }
+var sP = { global.mosMI }
 
 ; Our target positions do not take probe tool radius
 ; into account on the X and Y axes. We need to account
@@ -118,13 +121,11 @@ while { true }
     ; Can this be done using G6550?
     G53 G1 X{ var.cP[0] - ((var.dC[0] / var.mag) * var.dI) } Y{ var.cP[1] - ((var.dC[1] / var.mag) * var.dI) } Z{ var.cP[2] - ((var.dC[2] / var.mag) * var.dI) } F{ var.moveSpeed }
 
-    ; Wait for all moves in the queue to finish
-    M400
+    ; Get current machine position
+    M5000 P0
 
     ; Update the current position
-    set var.cP[0] = { move.axes[0].machinePosition }
-    set var.cP[1] = { move.axes[1].machinePosition }
-    set var.cP[2] = { move.axes[2].machinePosition }
+    set var.cP = { global.mosMI }
 
 ; Set the probe coordinates to the current position
 set global.mosPCX = { var.cP[0] }

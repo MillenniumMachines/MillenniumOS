@@ -29,11 +29,11 @@ G90
 G21
 G94
 
-; Make sure machine is stationary before checking machine positions
-M400
+; Get current machine position
+M5000 P0
 
-; Assume current location is start point.
-var sP = { move.axes[0].machinePosition, move.axes[1].machinePosition, move.axes[2].machinePosition }
+; Set start position based on current position
+var sP = { global.mosMI }
 
 ; Set target positions - if not provided, use start positions.
 ; The machine will not move in one or more axes if the target
@@ -103,14 +103,11 @@ while { iterations <= var.retries }
         ; Disable errors by using G38.3
         G53 G38.3 K{ param.I } X{ var.tP[0] } Y{ var.tP[1] } Z{ var.tP[2] }
 
-    ; Wait for all moves in the queue to finish
-    M400
+    ; Get current machine position
+    M5000 P0
 
-    ; Drop to fine probing speed
-    M558 K{ param.I } F{ var.fineSpeed }
+    set var.cP = { global.mosMI }
 
-    ; Record current position into local variable
-    set var.cP = { move.axes[0].machinePosition, move.axes[1].machinePosition, move.axes[2].machinePosition }
 
     ; Set the initial values for iterations 0 and 1.
     ; Some calls to the probe macro only probe once, so
@@ -146,8 +143,8 @@ while { iterations <= var.retries }
             set var.pV[1] = { var.nS[1] / (iterations-1) }
             set var.pV[2] = { var.nS[2] / (iterations-1) }
 
-    ; Wait for all moves in the queue to finish
-    M400
+    ; Drop to fine probing speed
+    M558 K{ param.I } F{ var.fineSpeed }
 
     ; If we have not moved from the starting position, do not back off.
     ; bN will return NaN if the start and current positions are the same
@@ -170,6 +167,7 @@ while { iterations <= var.retries }
         ; If the backoff distance is higher than the normal from from the
         ; starting location, then we use the normal as the backoff distance.
         ; This is essentially the same as multiplying var.d{X,Y,Z} by 1.
+
 
         ; Calculate normalized direction and backoff per axis,
         ; and apply to current position.

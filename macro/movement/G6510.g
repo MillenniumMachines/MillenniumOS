@@ -87,5 +87,7 @@ if { global.mosTM }
         if { input != 0 }
             abort { "Single Surface probe aborted!" }
 
+; Get current machine position
+M5000 P0
 
-G6510.1 W{exists(param.W)? param.W : null} H{var.probeAxis} I{var.probeDist} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probeDepth}
+G6510.1 W{exists(param.W)? param.W : null} H{var.probeAxis} I{var.probeDist} O{var.overtravel} J{global.mosMI[0]} K{global.mosMI[1]} L{global.mosMI[2] - var.probeDepth}

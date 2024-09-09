@@ -82,4 +82,7 @@ if { global.mosTM }
     if { input != 0 }
         abort { "Bore probe aborted!" }
 
-G6500.1 W{var.workOffset} H{var.boreDiameter} O{var.overTravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
+; Get current machine position
+M5000 P0
+
+G6500.1 W{var.workOffset} H{var.boreDiameter} O{var.overTravel} J{global.mosMI[0]} K{global.mosMI[1]} L{global.mosMI[2] - var.probingDepth}
