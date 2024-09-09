@@ -14,11 +14,11 @@ set global.mosFeatTouchProbe = {!global.mosFeatTouchProbe}
 
 ; Switch probe tool name and configuration when toggling touch probe
 if { global.mosFeatTouchProbe }
-    M4000 P{global.mosPTID} S{"Touch Probe"} R{global.mosTPR}
+    M4000 P{global.mosPTID} S{"Touch Probe"} R{global.mosTPR} I{null}
 else
     ; Reset toolsetter activation point as this is used to store
     ; the datum tool Z position when touch probe is disabled.
     set global.mosTSAP = null
-    M4000 P{global.mosPTID} S{"Datum Tool"} R{global.mosDTR}
+    M4000 P{global.mosPTID} S{"Datum Tool"} R{global.mosDTR} I{null}
 
 echo {"MillenniumOS: Touch Probe " ^ (global.mosFeatTouchProbe ? "Enabled" : "Disabled")}

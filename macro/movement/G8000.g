@@ -411,7 +411,7 @@ if { var.wizFeatureToolSetter }
 
         ; Add a wizard datum tool using the provided radius
         ; Use a temporary spindle ID for the wizard spindle
-        M4000 S{"Wizard Datum Tool"} P{global.mosPTID} R{ var.wizDatumToolRadius } I{var.wizSpindleID}
+        M4000 S{"Wizard Datum Tool"} P{global.mosPTID} R{ var.wizDatumToolRadius } I{null}
 
         ; Switch to the datum tool but don't run any macros
         ; as we already know the datum tool is installed.
@@ -605,7 +605,7 @@ if { var.wizFeatureTouchProbe && (var.wizTouchProbeID == null || var.wizTouchPro
 
     ; Add a wizard touch probe using the provided radius
     ; Use a temporary spindle ID for the wizard spindle
-    M4000 S{"Wizard Touch Probe"} P{global.mosPTID} R{ var.wizTouchProbeRadius } I{var.wizSpindleID}
+    M4000 S{"Wizard Touch Probe"} P{global.mosPTID} R{ var.wizTouchProbeRadius } I{null}
 
     ; Switch to the probe tool.
     T{global.mosPTID} P0
