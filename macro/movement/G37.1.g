@@ -53,13 +53,17 @@ var overtravel = { input }
 if { var.overtravel < 0 }
     abort { "G37.1: Overtravel distance must not be negative!" }
 
-var tPZ = { move.axes[2].machinePosition - var.probeDist - var.overtravel }
+; Get current machine position in Z
+M5000 P1 I2
+
+; Target probe position in Z
+var tPZ = { global.mosMI - var.probeDist - var.overtravel }
 
 ; Check if the position is within machine limits
 M6515 Z{ var.tPZ }
 
 ; Run a manual probe to target Z location
-G6512 L{move.axes[2].machinePosition} Z{var.tPZ}
+G6512 L{global.mosMI} Z{var.tPZ}
 
 if { global.mosPCZ == null }
     abort { "G37.1: Surface probe failed!" }

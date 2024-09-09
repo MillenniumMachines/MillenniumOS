@@ -52,6 +52,9 @@ if { global.mosPTID != state.currentTool }
 ; Reset corner, dimensions and rotation
 M5010 W{var.workOffset} R50
 
+; Get current machine position on Z
+M5000 P1 I2
+
 ; Store our own safe Z position as the current position. We return to
 ; this position where necessary to make moves across the workpiece to
 ; the next probe point.
@@ -59,7 +62,7 @@ M5010 W{var.workOffset} R50
 ; original position may have been safe with a different tool installed,
 ; the touch probe may be longer. After a tool change the spindle
 ; will be parked, so essentially our safeZ is at the parking location.
-var safeZ = { move.axes[2].machinePosition }
+var safeZ = { global.mosMI }
 
 ; Above the corner to be probed
 ; J = start position X

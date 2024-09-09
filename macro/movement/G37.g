@@ -88,6 +88,7 @@ if { global.mosTT[state.currentTool][0] > global.mosTSR }
     ; Only probe once, this tells us the activation point at the center of the tool.
     ; Do _not_ return to the safe position. Back-off position is fine.
     G6512 D1 I{global.mosTSID} J{global.mosTSP[0]} K{global.mosTSP[1]} L{move.axes[2].max} Z{move.axes[2].min} R0
+
     set var.pZ[0] = global.mosPCZ
 
     while { iterations < var.points }
@@ -102,8 +103,11 @@ if { global.mosTT[state.currentTool][0] > global.mosTSR }
             echo {"Probe point " ^ iterations+1 ^ " is outside of machine limits. Skipping."}
             continue
 
+        ; Get current machine position in Z
+        M5000 P1 I2
+
         ; Probe the point to see if we're activated.
-        G6512 D1 E0 I{global.mosTSID} J{var.tX} K{var.tY} L{move.axes[2].machinePosition} Z{var.pZ[0]}
+        G6512 D1 E0 I{global.mosTSID} J{var.tX} K{var.tY} L{global.mosMI} Z{var.pZ[0]}
 
         ; Set the height to the probed point
         set var.pZ[iterations+1] = global.mosPCZ
