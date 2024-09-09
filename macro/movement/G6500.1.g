@@ -84,7 +84,10 @@ var dirXY = { { var.sX + var.bR, var.sY}, { var.sX + var.bR * cos(var.angle), va
 ; Bore edge co-ordinates for 3 probed points
 var pXY  = { null, null, null }
 
-var safeZ = { move.axes[2].machinePosition }
+; Get current machine position in Z
+M5000 P1 I2
+
+var safeZ = { global.mosMI }
 
 ; Probe each of the 3 points
 while { iterations < #var.dirXY }

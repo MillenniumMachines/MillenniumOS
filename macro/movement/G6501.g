@@ -84,4 +84,7 @@ if { global.mosTM }
     if { input != 0 }
         abort { "Boss probe aborted!" }
 
-G6501.1 W{var.workOffset} H{var.bossDiameter} T{var.clearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
+; Get current machine position
+M5000 P0
+
+G6501.1 W{var.workOffset} H{var.bossDiameter} T{var.clearance} O{var.overtravel} J{global.mosMI[0]} K{global.mosMI[1]} L{global.mosMI[2] - var.probingDepth}

@@ -143,4 +143,7 @@ if { global.mosTM }
     if { input != 0 }
         abort { "Vise corner probe aborted!" }
 
-G6520.1 W{var.workOffset} Q{var.mode} H{var.xSL} I{var.ySL} N{var.cnr} T{var.surfaceClearance} C{var.cornerClearance} O{var.overtravel} P{var.probeDepth} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition}
+; Get current machine position
+M5000 P0
+
+G6520.1 W{var.workOffset} Q{var.mode} H{var.xSL} I{var.ySL} N{var.cnr} T{var.surfaceClearance} C{var.cornerClearance} O{var.overtravel} P{var.probeDepth} J{global.mosMI[0]} K{global.mosMI[1]} L{global.mosMI[2]}

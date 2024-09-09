@@ -423,9 +423,12 @@ if { var.wizFeatureToolSetter }
         if { result != 0 }
             abort { "MillenniumOS: Operator aborted toolsetter calibration!" }
 
+        ; Get current machine position
+        M5000 P0
+
         ; Save X and Y position, Z is probed in the next step
-        set var.wizToolSetterPos[0] = { move.axes[0].machinePosition }
-        set var.wizToolSetterPos[1] = { move.axes[1].machinePosition }
+        set var.wizToolSetterPos[0] = { global.mosMI[0] }
+        set var.wizToolSetterPos[1] = { global.mosMI[1] }
 
     ; Write toolsetter X and Y position to the resume file
     echo >>{var.wizTVF} {"set global.mosTSP = " ^ var.wizToolSetterPos }
@@ -450,8 +453,11 @@ if { var.wizFeatureToolSetter }
         if { result != 0 }
             abort { "MillenniumOS: Operator aborted toolsetter calibration!" }
 
+        ; Get current machine position
+        M5000 P0
+
         ; Probe the toolsetter height
-        G6512 I{var.wizToolSetterID} L{move.axes[2].machinePosition} Z{move.axes[2].machinePosition - 10}
+        G6512 I{var.wizToolSetterID} L{global.mosMI[2]} Z{global.mosMI[2] - 10}
         if { result != 0 }
             M291 P"MillenniumOS: Toolsetter probe failed! If the toolsetter was not activated, you need to move the tool closer to the switch!" R"MillenniumOS: Configuration Wizard" S2 T0
             abort { "MillenniumOS: Toolsetter probe failed!" }
@@ -479,14 +485,17 @@ if { var.wizFeatureToolSetter }
         if { result != 0 }
             abort { "MillenniumOS: Operator aborted touch probe calibration!" }
 
+        ; Get current machine position
+        M5000 P0
+
         ; Store the reference surface position in X and Y
-        set var.wizTouchProbeReferencePos = { move.axes[0].machinePosition, move.axes[1].machinePosition, null }
+        set var.wizTouchProbeReferencePos = { global.mosMI[0], global.mosMI[1], null }
 
         if { var.wizTutorialMode }
             M291 P{"Using the following probing interface, please move the <b>Datum Tool</b> until it is just touching the reference surface, then press <b>Finish</b>."} R"MillenniumOS: Configuration Wizard" S2 T0
 
         ; Distance to move towards target is the lower of (min Z - current Z) or 20mm.
-        G6510.1 R0 W{null} H4 I{min(abs(move.axes[2].min - move.axes[2].machinePosition), 20)} O0 J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition}
+        G6510.1 R0 W{null} H4 I{min(abs(move.axes[2].min - global.mosMI[2]), 20)} O0 J{global.mosMI[0]} K{global.mosMI[1]} L{global.mosMI[2]}
 
         if { global.mosWPSfcPos[move.workplaceNumber] == null || global.mosWPSfcAxis[move.workplaceNumber] != "Z" }
             abort { "MillenniumOS: Failed to probe the reference surface!" }
@@ -610,7 +619,12 @@ if { var.wizFeatureTouchProbe && (var.wizTouchProbeID == null || var.wizTouchPro
     ; Switch to the probe tool.
     T{global.mosPTID} P0
 
-    G6503.1 W{null} H{var.measuredX} I{var.measuredY} T15 O5 J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
+    ; Get current machine position
+    M5000 P0
+
+    ; Probe the item to calculate deflection.
+    G6503.1 W{null} H{var.measuredX} I{var.measuredY} T15 O5 J{global.mosMI[0]} K{global.mosMI[1]} L{global.mosMI[2] - var.probingDepth}
+
     ; Reset after probing so we don't override wizard
     ; settings if it needs to run again.
     set global.mosFeatTouchProbe = null
