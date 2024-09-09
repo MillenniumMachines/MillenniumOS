@@ -227,6 +227,7 @@ global mosPS = { vector(limits.gpOutPorts, 0.0) }
 ; displayed during this session. The first 2 indexes
 ; are used by the G6600 macro, the others are used by
 ; G6500 to G6509, one each, in order. G6520 uses mosDD[11],
-; and G37.1 uses mosDD[12]. mosDD[13] is used during tool changes.
-global mosDD = { vector(14, false) }
+; G37.1 uses mosDD[12], mosDD[13] is used during tool changes,
+; and G37 uses mosDD[14] through mosDD[16]
+global mosDD = { vector(17, false) }
 
