@@ -54,7 +54,7 @@ set global.mosTSAP = null
 G6512 I{global.mosTPID} J{global.mosTPRP[0]} K{global.mosTPRP[1]} L{move.axes[2].max} Z{move.axes[2].min}
 
 ; Reference surface to toolsetter activation point distance
-set global.mosTSAP = { global.mosPCZ - (global.mosTPRP[2] - global.mosTSP[2]) }
+set global.mosTSAP = { global.mosMI[2] - (global.mosTPRP[2] - global.mosTSP[2]) }
 
 if { !global.mosEM }
-    echo { "MillenniumOS: Probed reference surface Z=" ^ global.mosPCZ ^ ", expected toolsetter activation point is Z=" ^ global.mosTSAP }
+    echo { "MillenniumOS: Probed reference surface Z=" ^ global.mosMI[2] ^ ", expected toolsetter activation point is Z=" ^ global.mosTSAP }

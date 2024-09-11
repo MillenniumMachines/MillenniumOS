@@ -98,7 +98,7 @@ while { iterations < #var.dirXY }
     G6512 D1 I{var.probeId} J{var.sX} K{var.sY} L{var.sZ} X{var.dirXY[iterations][0]} Y{var.dirXY[iterations][1]}
 
     ; Save the probed co-ordinates
-    set var.pXY[iterations] = { global.mosPCX, global.mosPCY }
+    set var.pXY[iterations] = { global.mosMI[0], global.mosMI[1] }
 
 ; Calculate the slopes, midpoints, and perpendicular bisectors
 var sM1 = { (var.pXY[1][1] - var.pXY[0][1]) / (var.pXY[1][0] - var.pXY[0][0]) }

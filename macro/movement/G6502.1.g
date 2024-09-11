@@ -139,7 +139,7 @@ G6550 I{var.probeId} X{(var.sX - var.hW + var.surfaceClearance)}
 ; First probe point - left edge, inwards from front face by clearance distance
 ; towards the face plus overtravel distance.
 G6512 I{var.probeId} D1 K{(var.sY - var.hL + var.cornerClearance)} L{param.L} X{(var.sX - var.hW - var.overtravel)}
-set var.pX[0] = { global.mosPCX }
+set var.pX[0] = { global.mosMI[0] }
 
 ; Return to our starting position
 G6550 I{var.probeId} X{(var.sX - var.hW + var.surfaceClearance)}
@@ -147,7 +147,7 @@ G6550 I{var.probeId} X{(var.sX - var.hW + var.surfaceClearance)}
 ; Second probe point - left edge, inwards from rear face by clearance distance
 ; towards the face minus overtravel distance.
 G6512 I{var.probeId} D1 K{(var.sY + var.hL - var.cornerClearance)} L{param.L} X{(var.sX - var.hW - var.overtravel)}
-set var.pX[1] = { global.mosPCX }
+set var.pX[1] = { global.mosMI[0] }
 
 ; Return to our starting position
 G6550 I{var.probeId} X{(var.sX - var.hW + var.surfaceClearance)}
@@ -163,7 +163,7 @@ G6550 I{var.probeId} X{(var.sX + var.hW - var.surfaceClearance)}
 ; Third probe point - right edge, inwards from rear face by clearance distance
 ; towards the face minus overtravel distance.
 G6512 I{var.probeId} D1 K{(var.sY + var.hL - var.cornerClearance)} L{param.L} X{(var.sX + var.hW + var.overtravel)}
-set var.pX[2] = { global.mosPCX }
+set var.pX[2] = { global.mosMI[0] }
 
 ; Return to our starting position
 G6550 I{var.probeId} X{(var.sX + var.hW - var.surfaceClearance)}
@@ -171,7 +171,7 @@ G6550 I{var.probeId} X{(var.sX + var.hW - var.surfaceClearance)}
 ; Fourth probe point - right edge, inwards from front face by clearance distance
 ; towards the face plus overtravel distance.
 G6512 I{var.probeId} D1 K{(var.sY - var.hL + var.cornerClearance)} L{param.L} X{(var.sX + var.hW + var.overtravel)}
-set var.pX[3] = { global.mosPCX }
+set var.pX[3] = { global.mosMI[0] }
 
 ; Return to our starting position.
 G6550 I{var.probeId} X{(var.sX + var.hW - var.surfaceClearance)}
@@ -237,7 +237,7 @@ G6550 I{var.probeId} X{(var.sX + var.hW - var.cornerClearance)}
 ; First probe point - front edge, inwards from right face by clearance distance
 ; towards the face minus overtravel distance.
 G6512 I{var.probeId} D1 K{(var.sY - var.hL + var.surfaceClearance)} L{param.L} Y{(var.sY - var.hL - var.overtravel)}
-set var.pY[0] = { global.mosPCY }
+set var.pY[0] = { global.mosMI[1] }
 
 ; Return to our starting position
 G6550 I{var.probeId} Y{(var.sY - var.hL + var.surfaceClearance)}
@@ -245,7 +245,7 @@ G6550 I{var.probeId} Y{(var.sY - var.hL + var.surfaceClearance)}
 ; Second probe point - front edge, inwards from left face by clearance distance
 ; towards the face plus overtravel distance.
 G6512 I{var.probeId} D1 J{(var.sX - var.hW + var.cornerClearance)} L{param.L} Y{(var.sY - var.hL - var.overtravel)}
-set var.pY[1] = { global.mosPCY }
+set var.pY[1] = { global.mosMI[1] }
 
 ; Return to our starting position.
 ; Again, no need to raise probe as we are in a pocket.
@@ -254,7 +254,7 @@ G6550 I{var.probeId} Y{(var.sY - var.hL + var.surfaceClearance)}
 ; Third probe point - rear edge, inwards from left face by clearance distance
 ; towards the face plus overtravel distance.
 G6512 I{var.probeId} D1 K{(var.sY + var.hL - var.surfaceClearance)} J{(var.sX - var.hW + var.cornerClearance)} L{param.L} Y{(var.sY + var.hL + var.overtravel)}
-set var.pY[2] = { global.mosPCY }
+set var.pY[2] = { global.mosMI[1] }
 
 ; Return to our starting position
 G6550 I{var.probeId} Y{(var.sY + var.hL - var.surfaceClearance)}
@@ -262,7 +262,7 @@ G6550 I{var.probeId} Y{(var.sY + var.hL - var.surfaceClearance)}
 ; Fourth probe point - rear edge, inwards from right face by clearance distance
 ; towards the face minus overtravel distance.
 G6512 I{var.probeId} D1 J{(var.sX + var.hW - var.cornerClearance)} L{param.L} Y{(var.sY + var.hL + var.overtravel)}
-set var.pY[3] = { global.mosPCY }
+set var.pY[3] = { global.mosMI[1] }
 
 ; Return to our starting position.
 G6550 I{var.probeId} Y{(var.sY + var.hL - var.surfaceClearance)}

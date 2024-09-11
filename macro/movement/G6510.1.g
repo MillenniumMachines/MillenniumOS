@@ -84,7 +84,7 @@ var sAxis = { (var.probeAxis <= 1)? "X" : (var.probeAxis <= 3)? "Y" : "Z" }
 set global.mosWPSfcAxis[var.workOffset] = { var.sAxis }
 
 ; Set surface position on relevant axis
-set global.mosWPSfcPos[var.workOffset] = { (var.probeAxis <= 1)? global.mosPCX : (var.probeAxis <= 3)? global.mosPCY : global.mosPCZ }
+set global.mosWPSfcPos[var.workOffset] = { (var.probeAxis <= 1)? global.mosMI[0] : (var.probeAxis <= 3)? global.mosMI[1] : global.mosMI[2] }
 
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }

@@ -24,12 +24,6 @@ echo { "=== MOS Probing:" }
 echo { "      global.mosPTID=" ^ global.mosPTID }
 echo { "      global.mosPD=" ^ global.mosPD }
 echo { "      global.mosDPID=" ^ global.mosDPID }
-echo { "      global.mosPCX=" ^ global.mosPCX }
-echo { "      global.mosPCY=" ^ global.mosPCY }
-echo { "      global.mosPCZ=" ^ global.mosPCZ }
-echo { "      global.mosPVX=" ^ global.mosPVX }
-echo { "      global.mosPVY=" ^ global.mosPVY }
-echo { "      global.mosPVZ=" ^ global.mosPVZ }
 echo { "      global.mosOT=" ^ global.mosOT }
 echo { "      global.mosCL=" ^ global.mosCL }
 echo { "      global.mosWPCtrPos=" ^ global.mosWPCtrPos }
