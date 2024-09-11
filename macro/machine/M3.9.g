@@ -53,7 +53,7 @@ if { spindles[var.sID].current == 0 }
             M25
         ; If operator picked cancel, then abort the job
         elif { input == 2 }
-            abort { "Operator paused spindle startup!" }
+            abort { "Operator aborted spindle startup!" }
 
     ; Otherwise just warn the operator and allow them to
     ; abort, if expert mode is turned off.
