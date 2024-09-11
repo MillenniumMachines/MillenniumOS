@@ -34,14 +34,14 @@ if { global.mosFeatTouchProbe }
 
     ; Add a touch probe tool at the last index in the tool table.
     ; Make sure to specify deflection values for compensation.
-    M4000 S{"Touch Probe"} P{global.mosPTID} R{global.mosTPR} X{global.mosTPD[0]} Y{global.mosTPD[1]} I{null}
+    M4000 S{"Touch Probe"} P{global.mosPTID} R{global.mosTPR} X{global.mosTPD[0]} Y{global.mosTPD[1]} I{-1}
 else
     if { !exists(global.mosDTR) || global.mosDTR == null }
         set global.mosErr = { "<b>global.mosDTR</b> is not set." }
         M99
 
     ; Add a datum tool at the last index in the tool table.
-    M4000 S{"Datum Tool"} P{global.mosPTID} R{global.mosDTR} I{null}
+    M4000 S{"Datum Tool"} P{global.mosPTID} R{global.mosDTR} I{-1}
 
 ; If we have a toolsetter, make sure the relevant variables are set
 if { global.mosFeatToolSetter }
