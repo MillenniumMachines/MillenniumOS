@@ -178,6 +178,11 @@ if { var.mag != 0 }
 
 ; We do not adjust by the tool radius in Z.
 
+; Now we can apply any probe offsets, if they exist.
+if { exists(param.I) }
+    set global.mosMI[0] = { global.mosMI[0] + sensors.probes[param.I].offsets[0] }
+    set global.mosMI[1] = { global.mosMI[1] + sensors.probes[param.I].offsets[1] }
+
 ; This does bring up an interesting conundrum though. If you're probing in 2 axes where
 ; one is Z, then you have no way of knowing whether the probe was triggered by the Z
 ; movement or the X/Y movement. If the probe is triggered by Z then we would end up
