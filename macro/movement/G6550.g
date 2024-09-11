@@ -143,11 +143,13 @@ M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
 ; Get current machine position
 M5000 P0
 
-if { global.mosMI[0] != var.tPX }
+var tolerance = { 0.005 }
+
+if { global.mosMI[0] < (var.tPX - var.tolerance) || global.mosMI[0] > (var.tPX + var.tolerance) }
     abort { "G6550: Machine position does not match expected position -  X=" ^ var.tPX ^ " != " ^ global.mosMI[0] }
 
-if { global.mosMI[1] != var.tPY }
+if { global.mosMI[1] < (var.tPY - var.tolerance) || global.mosMI[1] > (var.tPY + var.tolerance) }
     abort { "G6550: Machine position does not match expected position -  Y=" ^ var.tPY ^ " != " ^ global.mosMI[1] }
 
-if { global.mosMI[2] != var.tPZ }
+if { global.mosMI[2] < (var.tPZ - var.tolerance) || global.mosMI[2] > (var.tPZ + var.tolerance) }
     abort { "G6550: Machine position does not match expected position -  Z=" ^ var.tPZ ^ " != " ^ global.mosMI[2] }
