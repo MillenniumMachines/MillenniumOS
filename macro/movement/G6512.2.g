@@ -127,18 +127,11 @@ while { true }
     ; Update the current position
     set var.cP = { global.mosMI }
 
-; Set the probe coordinates to the current position
-set global.mosPCX = { var.cP[0] }
-set global.mosPCY = { var.cP[1] }
-set global.mosPCZ = { var.cP[2] }
+if { !exists(global.mosMI) }
+    global mosMI = { null }
 
-; Commented due to memory limitations
-; M7500 S{"Probe coordinate: X=" ^ var.cP[0] ^ " Y=" ^ var.cP[1] ^ " Z=" ^ var.cP[2]}
-
-; Probe variance makes no sense for manual probes that are done once
-set global.mosPVX = 0
-set global.mosPVY = 0
-set global.mosPVZ = 0
+; Save output variable
+set global.mosMI = { var.cP }
 
 ; If we have not moved from the starting position, do not back off.
 ; bN will return NaN if the start and current positions are the same

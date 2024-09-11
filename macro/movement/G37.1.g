@@ -65,11 +65,11 @@ M6515 Z{ var.tPZ }
 ; Run a manual probe to target Z location
 G6512 L{global.mosMI} Z{var.tPZ}
 
-if { global.mosPCZ == null }
+if { global.mosMI[2] == null }
     abort { "G37.1: Surface probe failed!" }
 
 ; Park in Z
 G27 Z1
 
 echo { "MillenniumOS: Setting WCS " ^ var.wPN ^ " Z origin to probed co-ordinate." }
-G10 L2 P{var.wPN} Z{global.mosPCZ}
+G10 L2 P{var.wPN} Z{global.mosMI[2]}

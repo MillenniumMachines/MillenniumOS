@@ -48,18 +48,6 @@ global mosTT = { vector(limits.tools, global.mosET) }
 ; null - tool change complete
 global mosTCS = null
 
-
-; Coordinates returned by the most recent probing operation.
-global mosPCX = null
-global mosPCY = null
-global mosPCZ = null
-
-; Variance of most recent probe
-global mosPVX = null
-global mosPVY = null
-global mosPVZ = null
-
-
 ; Clearance distance in mm. This is a static number that
 ; we add to operator-provided values to make sure we can
 ; move down to a probing location before starting the probing
