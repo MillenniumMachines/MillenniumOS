@@ -161,8 +161,6 @@ M400
 ; The tool radius we use here already includes a deflection value
 ; which is deemed to be the same for each X/Y axis.
 ; TODO: Is this a safe assumption?
-; Commented due to memory limitations
-; M7500 S{"Compensating for Tool # " ^ state.currentTool ^ " R=" ^ global.mosTT[state.currentTool][0] ^ " dX=" ^ global.mosTT[state.currentTool][1][0] ^ " dY=" ^ global.mosTT[state.currentTool][1][1]}
 
 ; Calculate the magnitude of the direction vector of probe movement
 ; Note: We use the target position to calculate the direction vector,
@@ -175,8 +173,8 @@ var mag = { sqrt(pow(var.tPX - var.sX, 2) + pow(var.tPY - var.sY, 2)) }
 if { var.mag != 0 }
     ; Adjust the final position along the direction of movement in X and Y
     ; by the tool radius, subtracting the deflection on each axis.
-    set global.mosPCX = { global.mosPCX + (global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][0]) * ((var.tPX - var.sX) / var.mag) }
-    set global.mosPCY = { global.mosPCY + (global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][1]) * ((var.tPY - var.sY) / var.mag) }
+    set global.mosMI[0] = { global.mosMI[0] + (global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][0]) * ((var.tPX - var.sX) / var.mag) }
+    set global.mosMI[1] = { global.mosMI[1] + (global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][1]) * ((var.tPY - var.sY) / var.mag) }
 
 ; We do not adjust by the tool radius in Z.
 
@@ -194,6 +192,6 @@ if { var.mag != 0 }
 var sDig = 1000
 
 ; Round the output variables to 3 decimal places
-set global.mosPCX = { ceil(global.mosPCX * var.sDig) / var.sDig }
-set global.mosPCY = { ceil(global.mosPCY * var.sDig) / var.sDig }
-set global.mosPCZ = { ceil(global.mosPCZ * var.sDig) / var.sDig }
+set global.mosMI[0] = { ceil(global.mosMI[0] * var.sDig) / var.sDig }
+set global.mosMI[1] = { ceil(global.mosMI[1] * var.sDig) / var.sDig }
+set global.mosMI[2] = { ceil(global.mosMI[2] * var.sDig) / var.sDig }

@@ -204,11 +204,8 @@ while { iterations <= var.retries }
 ; Reset probing speed limits
 M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
 
-; Save output variables. No compensation applied here!
-set global.mosPCX = { var.nM[0] }
-set global.mosPCY = { var.nM[1] }
-set global.mosPCZ = { var.nM[2] }
+if { !exists(global.mosMI) }
+    global mosMI = { null }
 
-set global.mosPVX = { var.pV[0] }
-set global.mosPVY = { var.pV[1] }
-set global.mosPVZ = { var.pV[2] }
+; Save output variable.
+set global.mosMI = { var.nM }

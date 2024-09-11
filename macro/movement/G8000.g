@@ -462,7 +462,7 @@ if { var.wizFeatureToolSetter }
             M291 P"MillenniumOS: Toolsetter probe failed! If the toolsetter was not activated, you need to move the tool closer to the switch!" R"MillenniumOS: Configuration Wizard" S2 T0
             abort { "MillenniumOS: Toolsetter probe failed!" }
 
-        set var.wizToolSetterPos[2] = { global.mosPCZ }
+        set var.wizToolSetterPos[2] = { global.mosMI[2] }
 
     ; Write toolsetter Z position to the resume file
     echo >>{var.wizTVF} {"set global.mosTSP[2] = " ^ var.wizToolSetterPos[2] }
