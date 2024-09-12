@@ -28,7 +28,7 @@ if { #tools < param.P || tools[param.P] == null }
 ; Reset RRF Tool
 M563 P{param.P} R-1 S"Unknown Tool"
 
-; Reset tool description in zero-indexed array
+; Reset tool details in zero-indexed array
 set global.mosTT[param.P] = { global.mosET }
 
 ; Commented due to memory limitations
