@@ -5,6 +5,10 @@
 ; position
 ; Return machine information
 
+; Make sure this file is not executed by the secondary motion system
+if { !inputs[state.thisInput].active }
+    M99
+
 if { !exists(param.P) }
     abort { "M5011: No machine information requested with P parameter." }
 
