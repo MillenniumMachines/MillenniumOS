@@ -140,6 +140,9 @@ if { var.manualProbe }
 else
     G6512.1 I{ param.I } X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } R{ exists(param.R) ? param.R : null } E{ exists(param.E) ? param.E : 1 }
 
+; Save probed position
+var pP = { global.mosMI }
+
 ; Move to safe height
 ; If probing move is called with D parameter,
 ; we stay at the same height.
@@ -173,15 +176,15 @@ var mag = { sqrt(pow(var.tPX - var.sX, 2) + pow(var.tPY - var.sY, 2)) }
 if { var.mag != 0 }
     ; Adjust the final position along the direction of movement in X and Y
     ; by the tool radius, subtracting the deflection on each axis.
-    set global.mosMI[0] = { global.mosMI[0] + (global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][0]) * ((var.tPX - var.sX) / var.mag) }
-    set global.mosMI[1] = { global.mosMI[1] + (global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][1]) * ((var.tPY - var.sY) / var.mag) }
+    set var.pP[0] = { var.pP[0] + (global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][0]) * ((var.tPX - var.sX) / var.mag) }
+    set var.pP[1] = { var.pP[1] + (global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][1]) * ((var.tPY - var.sY) / var.mag) }
 
 ; We do not adjust by the tool radius in Z.
 
 ; Now we can apply any probe offsets, if they exist.
 if { exists(param.I) }
-    set global.mosMI[0] = { global.mosMI[0] + sensors.probes[param.I].offsets[0] }
-    set global.mosMI[1] = { global.mosMI[1] + sensors.probes[param.I].offsets[1] }
+    set var.pP[0] = { var.pP[0] + sensors.probes[param.I].offsets[0] }
+    set var.pP[1] = { var.pP[1] + sensors.probes[param.I].offsets[1] }
 
 ; This does bring up an interesting conundrum though. If you're probing in 2 axes where
 ; one is Z, then you have no way of knowing whether the probe was triggered by the Z
@@ -197,6 +200,6 @@ if { exists(param.I) }
 var sDig = 1000
 
 ; Round the output variables to 3 decimal places
-set global.mosMI[0] = { ceil(global.mosMI[0] * var.sDig) / var.sDig }
-set global.mosMI[1] = { ceil(global.mosMI[1] * var.sDig) / var.sDig }
-set global.mosMI[2] = { ceil(global.mosMI[2] * var.sDig) / var.sDig }
+set global.mosMI[0] = { ceil(var.pP[0] * var.sDig) / var.sDig }
+set global.mosMI[1] = { ceil(var.pP[1] * var.sDig) / var.sDig }
+set global.mosMI[2] = { ceil(var.pP[2] * var.sDig) / var.sDig }

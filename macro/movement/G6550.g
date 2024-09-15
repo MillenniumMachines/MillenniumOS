@@ -39,7 +39,6 @@ var manualProbe = { !exists(param.I) || param.I == null }
 ; Get current machine position
 M5000 P0
 
-
 ; Generate target position and defaults
 var tPX = { (exists(param.X)? param.X : global.mosMI[0]) }
 var tPY = { (exists(param.Y)? param.Y : global.mosMI[1]) }
