@@ -181,11 +181,6 @@ if { var.mag != 0 }
 
 ; We do not adjust by the tool radius in Z.
 
-; Now we can apply any probe offsets, if they exist.
-if { exists(param.I) }
-    set var.pP[0] = { var.pP[0] + sensors.probes[param.I].offsets[0] }
-    set var.pP[1] = { var.pP[1] + sensors.probes[param.I].offsets[1] }
-
 ; This does bring up an interesting conundrum though. If you're probing in 2 axes where
 ; one is Z, then you have no way of knowing whether the probe was triggered by the Z
 ; movement or the X/Y movement. If the probe is triggered by Z then we would end up
@@ -194,6 +189,11 @@ if { exists(param.I) }
 ; For these purposes, we have to assume that it is most likely for probes to be run
 ; in X/Y, _or_ Z, and we have some control over this as we're writing the higher
 ; level macros.
+
+; For automated probes, apply any offsets defined.
+if { !var.manualProbe }
+    set var.pP[0] = { var.pP[0] + sensors.probes[param.I].offsets[0] }
+    set var.pP[1] = { var.pP[1] + sensors.probes[param.I].offsets[1] }
 
 ; Multiply, ceil then divide by this number
 ; to achieve 3 decimal places of accuracy.
