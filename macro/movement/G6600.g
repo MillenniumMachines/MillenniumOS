@@ -158,7 +158,7 @@ if { var.workOffset != null }
             ; This is a recursive call. Let the user break it :)
             G6600 W{var.workOffset}
 
-    elif { !global.mosEM }
+    else
         M291 P{"WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetCodes[var.workOffset] ^ ") origin is valid.<br/>Click <b>Continue</b> to proceed or <b>Re-Probe</b> to try again."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue", "Re-Probe", "Cancel"}
         if { input == 2 }
             abort { "Operator cancelled probe cycle!" }
