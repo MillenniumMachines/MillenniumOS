@@ -435,7 +435,7 @@ if { var.wizFeatureToolSetter }
 
 
     if { var.needsToolSetterZPos }
-        ; If resumed, spindle could won't necessarily be over the toolsetter
+        ; If resumed, spindle won't necessarily be over the toolsetter
         ; position, but it will be homed. Let's just park in Z before moving
         ; to that position just in case.
         if { var.wizResumed }
