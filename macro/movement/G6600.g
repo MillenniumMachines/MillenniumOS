@@ -15,12 +15,9 @@
 if { !inputs[state.thisInput].active }
     M99
 
-; This is just for safety. It is good practice to park the machine and
-; stop the spindle before calling any probing macro, and we should do
-; this in any post-processor that targets the MillenniumOS Gcode Dialect,
-; but we do this here just to make 100% certain that nobody is going to
-; end up jogging the spindle around while it is running.
-G27 Z1
+if { spindles[global.mosSID].current != 0 }
+    echo { "Spindle should be stopped before probing! Parking now..."}
+    G27 Z1
 
 if { !exists(global.mosLdd) || !global.mosLdd }
     abort {"MillenniumOS is not loaded! Please restart your mainboard and check for any startup errors!"}
