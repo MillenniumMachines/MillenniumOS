@@ -74,7 +74,6 @@ if { var.manualProbe }
 var roughSpeed   = { sensors.probes[param.I].speeds[0] }
 var fineSpeed    = { sensors.probes[param.I].speeds[1] }
 
-
 ; If the sensor is already triggered, we need to back-off slightly first
 ; before backing off the full distance while waiting for the sensor to
 ; trigger. When the sensor is _NOT_ triggered, it should read a value of
@@ -103,23 +102,27 @@ if { sensors.probes[param.I].value[0] != 0 }
     ; Commented due to memory limitations
     ; M7500 S{"Backoff Target position X=" ^ var.tDX ^ " Y=" ^ var.tDY ^ " Z=" ^ var.tDZ ^ " Distance to target: " ^ var.tN ^ " Back-off distance: " ^ var.tIN }
 
+    ; PMBO is the distance that the probe can move that
+    ; is safe - i.e. the probe will not be damaged by moving less
+    ; than this distance, even if it is triggered.
+    ; If the probe is triggered, and the target is less than the
+    ; back-off distance, we will just move to the target position.
+    ; The subsequent G38.3 will be a no-op as we will already be
+    ; at the target position.
     if { var.tIN >= var.tN }
-        abort {"G6550: Probe is triggered and global.mosPMBO=" ^ global.mosPMBO ^ " is greater than the distance to the target position! You will need to manually move the probe out of harms way!" }
-
-    ; Back off by the back-off distance
-    ; We do not use a G38.5 here because it will stop movement the
-    ; instant the probe is triggered. It is possible, although it
-    ; happens rarely, for the probe to deactivate and then re-activate
-    ; because it is still slightly in contact with the surface.
-    ; It is better to just move the backoff distance and assume that it
-    ; is short enough to not damage the probe.
-    G53 G1 X{ global.mosMI[0] + var.tDX} Y{ global.mosMI[1] + var.tDY } Z{ global.mosMI[2] + var.tDZ } F{ var.roughSpeed }
+        G53 G1 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } F{ var.travelSpeed }
+    else
+        ; Back off by the back-off distance
+        ; We do not use a G38.5 here because it will stop movement the
+        ; instant the probe is triggered. It is possible, although it
+        ; happens rarely, for the probe to deactivate and then re-activate
+        ; because it is still slightly in contact with the surface.
+        ; It is better to just move the backoff distance and assume that it
+        ; is short enough to not damage the probe.
+        G53 G1 X{ global.mosMI[0] + var.tDX } Y{ global.mosMI[1] + var.tDY } Z{ global.mosMI[2] + var.tDZ } F{ var.roughSpeed }
 
     ; Wait for moves to complete
     M400
-
-    ; Commented due to memory limitations
-    ; M7500 S{"Probe back-off deactivated at X=" ^ global.mosMI[0] ^ " Y=" ^ global.mosMI[1] ^ " Z=" ^ global.mosMI[2] }
 
     ; Check if probe is still triggered.
     if { sensors.probes[param.I].value[0] != 0 }
