@@ -18,6 +18,140 @@
  * - It is the responsibility of your macros and firmware to run any safety checks.
  */
 
+// Start of machine configuration logic
+var compensateToolLength = false; // add the tool length to the pivot distance for nonTCP rotary heads
+
+// internal variables, do not change
+var receivedMachineConfiguration;
+var operationSupportsTCP;
+var multiAxisFeedrate;
+
+function activateMachine() {
+  // disable unsupported rotary axes output
+  if (!machineConfiguration.isMachineCoordinate(0) && (typeof aOutput != "undefined")) {
+    aOutput.disable();
+  }
+  if (!machineConfiguration.isMachineCoordinate(1) && (typeof bOutput != "undefined")) {
+    bOutput.disable();
+  }
+  if (!machineConfiguration.isMachineCoordinate(2) && (typeof cOutput != "undefined")) {
+    cOutput.disable();
+  }
+
+  // setup usage of multiAxisFeatures
+  useMultiAxisFeatures = getProperty("useMultiAxisFeatures") != undefined ? getProperty("useMultiAxisFeatures") :
+    (typeof useMultiAxisFeatures != "undefined" ? useMultiAxisFeatures : false);
+  useABCPrepositioning = getProperty("useABCPrepositioning") != undefined ? getProperty("useABCPrepositioning") :
+    (typeof useABCPrepositioning != "undefined" ? useABCPrepositioning : false);
+
+
+  if (!machineConfiguration.isMultiAxisConfiguration()) {
+    return; // don't need to modify any settings for 3-axis machines
+  }
+
+  // save multi-axis feedrate settings from machine configuration
+  var mode = machineConfiguration.getMultiAxisFeedrateMode();
+  var type = mode == FEED_INVERSE_TIME ? machineConfiguration.getMultiAxisFeedrateInverseTimeUnits() :
+    (mode == FEED_DPM ? machineConfiguration.getMultiAxisFeedrateDPMType() : DPM_STANDARD);
+  multiAxisFeedrate = {
+    mode     : mode,
+    maximum  : machineConfiguration.getMultiAxisFeedrateMaximum(),
+    type     : type,
+    tolerance: mode == FEED_DPM ? machineConfiguration.getMultiAxisFeedrateOutputTolerance() : 0,
+    bpwRatio : mode == FEED_DPM ? machineConfiguration.getMultiAxisFeedrateBpwRatio() : 1
+  };
+
+  // setup of retract/reconfigure  TAG: Only needed until post kernel supports these machine config settings
+  if (receivedMachineConfiguration && machineConfiguration.performRewinds()) {
+    safeRetractDistance = machineConfiguration.getSafeRetractDistance();
+    safePlungeFeed = machineConfiguration.getSafePlungeFeedrate();
+    safeRetractFeed = machineConfiguration.getSafeRetractFeedrate();
+  }
+  if (typeof safeRetractDistance == "number" && getProperty("safeRetractDistance") != undefined && getProperty("safeRetractDistance") != 0) {
+    safeRetractDistance = getProperty("safeRetractDistance");
+  }
+
+  if (machineConfiguration.isHeadConfiguration()) {
+    compensateToolLength = typeof compensateToolLength == "undefined" ? false : compensateToolLength;
+  }
+
+  if (machineConfiguration.isHeadConfiguration() && compensateToolLength) {
+    for (var i = 0; i < getNumberOfSections(); ++i) {
+      var section = getSection(i);
+      if (section.isMultiAxis()) {
+        machineConfiguration.setToolLength(getBodyLength(section.getTool())); // define the tool length for head adjustments
+        section.optimizeMachineAnglesByMachine(machineConfiguration, OPTIMIZE_AXIS);
+      }
+    }
+  } else {
+    optimizeMachineAngles2(OPTIMIZE_AXIS);
+  }
+}
+
+function getBodyLength(tool) {
+  for (var i = 0; i < getNumberOfSections(); ++i) {
+    var section = getSection(i);
+    if (tool.number == section.getTool().number) {
+      return section.getParameter("operation:tool_overallLength", tool.bodyLength + tool.holderLength);
+    }
+  }
+  return tool.bodyLength + tool.holderLength;
+}
+
+function defineMachine() {
+  var useTCP = true;
+  if (false) { // note: setup your machine here
+    var aAxis = createAxis({coordinate:0, table:true, axis:[1, 0, 0], range:[-120, 120], preference:1, tcp:useTCP});
+    var cAxis = createAxis({coordinate:2, table:true, axis:[0, 0, 1], range:[-360, 360], preference:0, tcp:useTCP});
+    machineConfiguration = new MachineConfiguration(aAxis, cAxis);
+
+    setMachineConfiguration(machineConfiguration);
+    if (receivedMachineConfiguration) {
+      warning(localize("The provided CAM machine configuration is overwritten by the postprocessor."));
+      receivedMachineConfiguration = false; // CAM provided machine configuration is overwritten
+    }
+  }
+
+  if (!receivedMachineConfiguration) {
+    // multiaxis settings
+    if (machineConfiguration.isHeadConfiguration()) {
+      machineConfiguration.setVirtualTooltip(false); // translate the pivot point to the virtual tool tip for nonTCP rotary heads
+    }
+
+    // retract / reconfigure
+    var performRewinds = false; // set to true to enable the rewind/reconfigure logic
+    if (performRewinds) {
+      machineConfiguration.enableMachineRewinds(); // enables the retract/reconfigure logic
+      safeRetractDistance = (unit == IN) ? 1 : 25; // additional distance to retract out of stock, can be overridden with a property
+      safeRetractFeed = (unit == IN) ? 20 : 500; // retract feed rate
+      safePlungeFeed = (unit == IN) ? 10 : 250; // plunge feed rate
+      machineConfiguration.setSafeRetractDistance(safeRetractDistance);
+      machineConfiguration.setSafeRetractFeedrate(safeRetractFeed);
+      machineConfiguration.setSafePlungeFeedrate(safePlungeFeed);
+      var stockExpansion = new Vector(toPreciseUnit(0.1, IN), toPreciseUnit(0.1, IN), toPreciseUnit(0.1, IN)); // expand stock XYZ values
+      machineConfiguration.setRewindStockExpansion(stockExpansion);
+    }
+
+    // multi-axis feedrates
+    if (machineConfiguration.isMultiAxisConfiguration()) {
+      machineConfiguration.setMultiAxisFeedrate(
+        useTCP ? FEED_FPM : FEED_INVERSE_TIME,
+        9999.99, // maximum output value for inverse time feed rates
+        INVERSE_MINUTES, // INVERSE_MINUTES/INVERSE_SECONDS or DPM_COMBINATION/DPM_STANDARD
+        0.5, // tolerance to determine when the DPM feed has changed
+        1.0 // ratio of rotary accuracy to linear accuracy for DPM calculations
+      );
+      setMachineConfiguration(machineConfiguration);
+    }
+
+    /* home positions */
+    // machineConfiguration.setHomePositionX(toPreciseUnit(0, IN));
+    // machineConfiguration.setHomePositionY(toPreciseUnit(0, IN));
+    // machineConfiguration.setRetractPlane(toPreciseUnit(0, IN));
+  }
+}
+// End of machine configuration logic
+
 // Add some useful functions not available in Fusion360
 Object.values = Object.values || function(o){return Object.keys(o).map(function(k){return o[k]})};
 
@@ -61,7 +195,7 @@ extension = "gcode";
 setCodePage("ascii");
 
 // Machine capabilities
-capabilities = CAPABILITY_MILLING;
+capabilities = CAPABILITY_MILLING | CAPABILITY_MACHINE_SIMULATION;
 tolerance    = spatial(0.002, MM);
 
 // Postprocessor settings specific to machine capabilities
@@ -419,7 +553,11 @@ function writeBlock() {
 // Function onOpen. Called at start of each CAM operation
 function onOpen() {
   var seenWCS = [];
-
+    receivedMachineConfiguration = machineConfiguration.isReceived();
+  if (typeof defineMachine == "function") {
+    defineMachine(); // hardcoded machine configuration
+  }
+  activateMachine(); // enable the machine optimizations and settings
   // Don't allow use of WCS 0 (machine co-ordinates in RRF) as this probably
   // means no WCS Zero point is set and we'll end up crashing into things.
   if(getNumberOfSections() > 0) {
