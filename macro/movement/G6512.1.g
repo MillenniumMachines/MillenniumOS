@@ -184,13 +184,13 @@ while { iterations <= var.retries }
     ; We can only abort early if we're within tolerance on all moved (probed) axes.
     ; If we're not performing error checking, then we can abort early if the current
     ; position is the same as the target position (i.e. the probe was not activated)
-    var tR = { iterations > 2 }
+    var tR = { true }
     if { var.tP[0] != var.sP[0] }
-        set var.tR = { var.tR && (var.pV[0] <= sensors.probes[param.I].tolerance || (!var.errors && abs(var.cP[0] - var.tP[0]) <= sensors.probes[param.I].tolerance)) }
+        set var.tR = { var.tR && ((var.pV[0] <= sensors.probes[param.I].tolerance && iterations > 2) || (!var.errors && abs(var.cP[0] - var.tP[0]) <= sensors.probes[param.I].tolerance)) }
     if { var.tP[1] != var.sP[1] }
-        set var.tR = { var.tR && (var.pV[1] <= sensors.probes[param.I].tolerance || (!var.errors && abs(var.cP[1] - var.tP[1]) <= sensors.probes[param.I].tolerance)) }
+        set var.tR = { var.tR && ((var.pV[1] <= sensors.probes[param.I].tolerance && iterations > 2) || (!var.errors && abs(var.cP[1] - var.tP[1]) <= sensors.probes[param.I].tolerance)) }
     if { var.tP[2] != var.sP[2] }
-        set var.tR = { var.tR && (var.pV[2] <= sensors.probes[param.I].tolerance || (!var.errors && abs(var.cP[2] - var.tP[2]) <= sensors.probes[param.I].tolerance)) }
+        set var.tR = { var.tR && ((var.pV[2] <= sensors.probes[param.I].tolerance && iterations > 2) || (!var.errors && abs(var.cP[2] - var.tP[2]) <= sensors.probes[param.I].tolerance)) }
 
     ; If we're within tolerance on all axes, we can stop probing
     ; and report the result.
