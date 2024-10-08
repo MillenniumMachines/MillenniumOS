@@ -337,6 +337,10 @@ if { var.wizFeatureTouchProbe == null }
     M291 P"Would you like to enable the <b>Touch Probe</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F{ global.mosFeatTouchProbe ? 0 : 1 }
     set var.wizFeatureTouchProbe = { (input == 0) ? true : false }
 
+; The toolsetter Z position needs to be reset if the toolsetter
+; is reconfigured, or if the touch probe has been enabled.
+var wizToolSetterZPos = { (exists(global.mosTSP) && global.mosTSP[2] != null && !var.wizReset && !var.wizToolSetterReset && !(var.wizFeatureTouchProbe && !global.mosFeatTouchProbe)) ? global.mosTSP[2] : null }
+
 ; Write feature settings to the resume file
 echo >>{var.wizTVF} {"set global.mosFeatTouchProbe = " ^ var.wizFeatureTouchProbe}
 echo >>{var.wizTVF} {"set global.mosFeatToolSetter = " ^ var.wizFeatureToolSetter}
@@ -377,7 +381,7 @@ if { var.wizFeatureToolSetter }
     echo >>{var.wizTVF} {"set global.mosTSID = " ^ var.wizToolSetterID}
 
     var needsToolSetterXYPos = { var.wizToolSetterPos == null || var.wizToolSetterPos[0] == null || var.wizToolSetterPos[1] == null }
-    var needsToolSetterZPos = { var.wizToolSetterPos == null || var.wizToolSetterPos[2] == null }
+    var needsToolSetterZPos = { var.needsToolSetterXYPos || var.wizToolSetterZPos == null }
 
     ; Make sure toolsetter position is always initialised correctly.
     if { var.wizToolSetterPos == null }
@@ -385,7 +389,7 @@ if { var.wizFeatureToolSetter }
 
     ; If the toolsetter datum has been probed, then we need to re-calculate the
     ; reference surface offset because it is no longer accurate.
-    var needsRefMeasure = { var.wizFeatureTouchProbe && (var.wizToolSetterPos == null || var.wizTouchProbeReferencePos == null) }
+    var needsRefMeasure = { var.wizFeatureTouchProbe && (var.wizToolSetterPos == null || var.wizToolSetterZPos == null || var.wizTouchProbeReferencePos == null) }
 
     var needsMeasuring = { var.needsToolSetterXYPos || var.needsToolSetterZPos || var.needsRefMeasure }
 
@@ -438,7 +442,7 @@ if { var.wizFeatureToolSetter }
         ; If resumed, spindle won't necessarily be over the toolsetter
         ; position, but it will be homed. Let's just park in Z before moving
         ; to that position just in case.
-        if { var.wizResumed }
+        if { !var.needsToolSetterXYPos }
             M291 P{"Toolsetter position <b>X=" ^ var.wizToolSetterPos[0] ^ " Y=" ^ var.wizToolSetterPos[1] ^ "</b>.<br/>Press <b>OK</b> to move above this position."} R"MillenniumOS: Configuration Wizard" S4 K{"OK","Cancel"}
             if { input != 0 }
                 abort { "MillenniumOS: Operator aborted toolsetter calibration!" }
@@ -462,10 +466,11 @@ if { var.wizFeatureToolSetter }
             M291 P"MillenniumOS: Toolsetter probe failed! If the toolsetter was not activated, you need to move the tool closer to the switch!" R"MillenniumOS: Configuration Wizard" S2 T0
             abort { "MillenniumOS: Toolsetter probe failed!" }
 
-        set var.wizToolSetterPos[2] = { global.mosMI[2] }
+        set var.wizToolSetterZPos = { global.mosMI[2] }
+        set var.wizToolSetterPos[2] = { var.wizToolSetterZPos }
 
     ; Write toolsetter Z position to the resume file
-    echo >>{var.wizTVF} {"set global.mosTSP[2] = " ^ var.wizToolSetterPos[2] }
+    echo >>{var.wizTVF} {"set global.mosTSP[2] = " ^ var.wizToolSetterZPos }
 
     if { var.needsRefMeasure }
         if { var.wizTutorialMode }
