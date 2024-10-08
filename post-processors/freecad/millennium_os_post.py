@@ -155,14 +155,14 @@ parser.add_argument('--version-check', action=argparse.BooleanOptionalAction, de
     to make sure the post-processor version and MillenniumOS version installed
     in RRF match.
     """)
-probe_mode = parser.add_mutually_exclusive_group(required=False)
+probe_mode = parser.add_mutually_exclusive_group(required=False, default=PROBE.ON_CHANGE)
 probe_mode.add_argument('--probe-at-start', dest='probe_mode', action='store_const', const=PROBE.AT_START,
     help="When enabled, MillenniumOS will probe a work-piece in each used WCS prior to executing any operations.")
 
 probe_mode.add_argument('--probe-on-change', dest='probe_mode', action='store_const', const=PROBE.ON_CHANGE,
     help="When enabled, MillenniumOS will probe a work-piece just prior to switching into each used WCS.")
 
-probe_mode.add_argument('--no-probe', dest='probe_mode', action='store_const', default=PROBE.NONE)
+probe_mode.add_argument('--no-probe', dest='probe_mode', action='store_const', const=PROBE.NONE)
 
 parser.add_argument(
     "--vssc-period",
