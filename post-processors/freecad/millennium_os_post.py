@@ -956,7 +956,7 @@ class MillenniumOSPostProcessor(PostProcessor):
         return super().output()
 
 # Parse and export the CAM objects.
-def export(objectslist, filename, argstring):
+def export(objectslist, _, argstring):
     try:
         args = parser.parse_args(shlex.split(argstring))
     except Exception as e:
@@ -976,5 +976,4 @@ def export(objectslist, filename, argstring):
     if FreeCAD.GuiUp and args.show_editor:
         out = PostUtils.editor(out)
 
-    with open(filename, "w") as f:
-        f.write(out)
+    return out
