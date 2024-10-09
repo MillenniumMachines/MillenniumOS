@@ -69,6 +69,9 @@ if { !exists(global.mosSDS) || global.mosSDS == null }
     set global.mosErr = { "<b>global.mosSDS</b> is not set." }
     M99
 
+; Load settings saved with M500
+M501
+
 ; Allow MOS macros to run.
 set global.mosLdd = true
 
