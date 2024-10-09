@@ -154,6 +154,7 @@ if { var.workOffset != null }
         if { input == 0 }
             ; This is a recursive call. Let the user break it :)
             G6600 W{var.workOffset}
+            M99
 
     else
         M291 P{"WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetCodes[var.workOffset] ^ ") origin is valid.<br/>Click <b>Continue</b> to proceed or <b>Re-Probe</b> to try again."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue", "Re-Probe", "Cancel"}
@@ -162,3 +163,8 @@ if { var.workOffset != null }
         elif { input == 1 }
             ; This is a recursive call. Let the user break it :)
             G6600 W{var.workOffset}
+            M99
+
+    ; Save work offsets to config-override.g
+    M500
+    echo { "MillenniumOS: WCS Origins have been saved and will be restored on reboot."}
