@@ -211,7 +211,7 @@ properties = {
     group: "configuration",
     scope: "post",
     type: "boolean",
-    value: false
+    value: true
   }
 };
 

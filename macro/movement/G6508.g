@@ -100,7 +100,7 @@ var cornerClearance = null
 
 if { var.surfaceClearance >= var.mC }
     var defCC = { max(1, var.mC-1) }
-    M291 P"The <b>clearance</b> distance is more than half of the length of one of the corner surfaces.<br/>Please enter a <b>corner clearance</b> distance less than <b>" ^ var.mC ^ "</b>." R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{var.defCC}
+    M291 P{"The <b>clearance</b> distance is more than half of the length of one of the corner surfaces.<br/>Please enter a <b>corner clearance</b> distance less than <b>" ^ var.mC ^ "</b>."} R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{var.defCC}
     set var.cornerClearance = { input }
     if { var.cornerClearance >= var.mC }
         abort { "Corner clearance distance too high!" }
@@ -143,4 +143,4 @@ if { global.mosTM }
 ; Get current machine position
 M5000 P0
 
-G6508.1 W{var.workOffset} Q{var.mode} H{var.xSL} I{var.ySL} N{var.cnr} T{var.SurfaceClearance} C{var.cornerClearance} O{var.overtravel} J{global.mosMI[0]} K{global.mosMI[1]} L{global.mosMI[2] - var.probingDepth}
+G6508.1 W{var.workOffset} Q{var.mode} H{var.xSL} I{var.ySL} N{var.cnr} T{var.surfaceClearance} C{var.cornerClearance} O{var.overtravel} J{global.mosMI[0]} K{global.mosMI[1]} L{global.mosMI[2] - var.probingDepth}

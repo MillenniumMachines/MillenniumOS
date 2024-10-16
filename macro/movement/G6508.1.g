@@ -73,12 +73,10 @@ var sY   = { param.K }
 var sZ   = { param.L }
 
 ; Length of surfaces on X and Y forming the corner
+; These will be null when using quick mode so
+; _always_ check for var.pMO == 0 before using these.
 var fX   = { param.H }
 var fY   = { param.I }
-
-; Half of length of surfaces forming the corner
-var hX   = { var.fX/2 }
-var hY   = { var.fY/2 }
 
 ; Tool Radius is the first entry for each value in
 ; our extended tool table.
@@ -109,8 +107,9 @@ var overtravel = { (exists(param.O) ? param.O : global.mosOT) - ((state.currentT
 ; the expected corners, a clearance higher than
 ; the width or height would mean we would try to
 ; probe off the edge of the block.
-if { var.pMO == 0 && (var.cornerClearance >= var.hX || var.cornerClearance >= var.hY) }
-    abort { "Corner clearance distance is more than half of the length of one or more surfaces forming the corner! Cannot probe." }
+if { var.pMO == 0 }
+    if { (var.cornerClearance >= (var.fX/2) || var.cornerClearance >= (var.fY/2)) }
+        abort { "Corner clearance distance is more than half of the length of one or more surfaces forming the corner! Cannot probe." }
 
 ; The overtravel distance does not have the same
 ; requirement, as it is only used to adjust the

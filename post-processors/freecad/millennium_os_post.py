@@ -156,13 +156,13 @@ parser.add_argument('--version-check', action=argparse.BooleanOptionalAction, de
     in RRF match.
     """)
 probe_mode = parser.add_mutually_exclusive_group(required=False)
-probe_mode.add_argument('--probe-at-start', dest='probe_mode', action='store_const', const=PROBE.AT_START,
+probe_mode.add_argument('--probe-at-start', dest='probe_mode', action='store_const', const=PROBE.AT_START, default=PROBE.ON_CHANGE,
     help="When enabled, MillenniumOS will probe a work-piece in each used WCS prior to executing any operations.")
 
 probe_mode.add_argument('--probe-on-change', dest='probe_mode', action='store_const', const=PROBE.ON_CHANGE,
     help="When enabled, MillenniumOS will probe a work-piece just prior to switching into each used WCS.")
 
-probe_mode.add_argument('--no-probe', dest='probe_mode', action='store_const', default=PROBE.NONE)
+probe_mode.add_argument('--no-probe', dest='probe_mode', action='store_const', const=PROBE.NONE)
 
 parser.add_argument(
     "--vssc-period",
@@ -956,7 +956,7 @@ class MillenniumOSPostProcessor(PostProcessor):
         return super().output()
 
 # Parse and export the CAM objects.
-def export(objectslist, filename, argstring):
+def export(objectslist, _, argstring):
     try:
         args = parser.parse_args(shlex.split(argstring))
     except Exception as e:
@@ -976,5 +976,4 @@ def export(objectslist, filename, argstring):
     if FreeCAD.GuiUp and args.show_editor:
         out = PostUtils.editor(out)
 
-    with open(filename, "w") as f:
-        f.write(out)
+    return out

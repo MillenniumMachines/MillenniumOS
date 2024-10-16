@@ -24,7 +24,7 @@ if { param.P >= limits.tools || param.P < 0 }
 ; This is mainly used during the configuration wizard.
 M563 P{param.P} S{param.S} R{(exists(param.I)) ? param.I : global.mosSID}
 
-; Store tool description in zero-indexed array.
+; Store tool details in zero-indexed array.
 set global.mosTT[param.P] = { global.mosET }
 
 ; Set tool radius

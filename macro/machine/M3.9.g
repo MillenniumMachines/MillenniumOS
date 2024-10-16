@@ -43,26 +43,15 @@ M400
 var sStopping = { spindles[var.sID].current > 0 && param.S == 0 }
 
 ; Warning Message for Operator
+; Assigned as a separate variable because
+; otherwise the dialog box line is too long.
 var wM = {"<b>CAUTION</b>: Spindle <b>#" ^ var.sID ^ "</b> will now start!<br/>Check that workpiece and tool are secure, and all safety precautions have been taken before pressing <b>Continue</b>."}
 
 ; If the spindle is stationary
 if { spindles[var.sID].current == 0 }
-    ; If we're running a job, expert mode is turned off,
-    ; and we're not paused, pausing or resuming, then warn
-    ; the operator and allow them to pause or abort the job.
-    if { job.file.fileName != null && !global.mosEM && state.status != "resuming" && state.status != "pausing" && state.status != "paused" }
-        M291 P{var.wM} R"MillenniumOS: Warning" S4 K{"Continue", "Pause", "Cancel"} F0
-        ; If operator picked pause, then pause the machine
-        if { input == 1 }
-            M291 P{ "<b>CAUTION</b>: The job has been paused. Clicking <b>Resume Job</b> will start the spindle <b>INSTANTLY</b>, with no confirmation.<br/><b>BE CAREFUL!</b>" } R"MillenniumOS: Warning" S2 T0
-            M25
-        ; If operator picked cancel, then abort the job
-        elif { input == 2 }
-            abort { "Operator aborted spindle startup!" }
-
-    ; Otherwise just warn the operator and allow them to
-    ; abort, if expert mode is turned off.
-    elif { !global.mosEM }
+    ; If expert mode is turned off, warn the operator and
+    ; allow them to cancel the spindle start.
+    if { !global.mosEM }
         M291 P{var.wM} R"MillenniumOS: Warning" S4 K{"Continue", "Cancel"} F0
         ; If operator picked cancel, then abort the job
         if { input == 1 }

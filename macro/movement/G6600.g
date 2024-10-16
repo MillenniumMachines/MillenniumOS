@@ -15,12 +15,9 @@
 if { !inputs[state.thisInput].active }
     M99
 
-; This is just for safety. It is good practice to park the machine and
-; stop the spindle before calling any probing macro, and we should do
-; this in any post-processor that targets the MillenniumOS Gcode Dialect,
-; but we do this here just to make 100% certain that nobody is going to
-; end up jogging the spindle around while it is running.
-G27 Z1
+if { spindles[global.mosSID].current != 0 }
+    echo { "Spindle should be stopped before probing! Parking now..."}
+    G27 Z1
 
 if { !exists(global.mosLdd) || !global.mosLdd }
     abort {"MillenniumOS is not loaded! Please restart your mainboard and check for any startup errors!"}
@@ -157,11 +154,17 @@ if { var.workOffset != null }
         if { input == 0 }
             ; This is a recursive call. Let the user break it :)
             G6600 W{var.workOffset}
+            M99
 
-    elif { !global.mosEM }
+    else
         M291 P{"WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetCodes[var.workOffset] ^ ") origin is valid.<br/>Click <b>Continue</b> to proceed or <b>Re-Probe</b> to try again."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue", "Re-Probe", "Cancel"}
         if { input == 2 }
             abort { "Operator cancelled probe cycle!" }
         elif { input == 1 }
             ; This is a recursive call. Let the user break it :)
             G6600 W{var.workOffset}
+            M99
+
+    ; Save work offsets to config-override.g
+    M500
+    echo { "MillenniumOS: WCS Origins have been saved and will be restored on reboot."}

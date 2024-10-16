@@ -79,7 +79,7 @@ var cornerClearance = null
 
 if { var.surfaceClearance >= var.mC }
     var defCC = { max(1, var.mC-1) }
-    M291 P"The <b>clearance</b> distance is more than half of the length or width of the pocket.<br/>Please enter a <b>corner clearance</b> distance less than <b>" ^ var.mC ^ "</b>." R"MillenniumOS: Probe Rect. Pocket" J1 T0 S6 F{var.defCC}
+    M291 P{"The <b>clearance</b> distance is more than half of the length or width of the pocket.<br/>Please enter a <b>corner clearance</b> distance less than <b>" ^ var.mC ^ "</b>."} R"MillenniumOS: Probe Rect. Pocket" J1 T0 S6 F{var.defCC}
     set var.cornerClearance = { input }
     if { var.cornerClearance >= var.mC }
         abort { "Corner clearance distance too high!" }
