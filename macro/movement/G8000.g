@@ -339,7 +339,7 @@ if { var.wizFeatureTouchProbe == null }
 
 ; The toolsetter Z position needs to be reset if the toolsetter
 ; is reconfigured, or if the touch probe has been enabled.
-var wizToolSetterZPos = { (exists(global.mosTSP) && global.mosTSP[2] != null && !var.wizReset && !var.wizToolSetterReset && !(var.wizFeatureTouchProbe && !global.mosFeatTouchProbe)) ? global.mosTSP[2] : null }
+var wizToolSetterZPos = { (exists(global.mosTSP) && global.mosTSP != null && global.mosTSP[2] != null && !var.wizReset && !var.wizToolSetterReset && !(var.wizFeatureTouchProbe && !global.mosFeatTouchProbe)) ? global.mosTSP[2] : null }
 
 ; Write feature settings to the resume file
 echo >>{var.wizTVF} {"set global.mosFeatTouchProbe = " ^ var.wizFeatureTouchProbe}
