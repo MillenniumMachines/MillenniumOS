@@ -331,7 +331,7 @@ class Output:
             if k in self.varFormats:
                 for o in self.varFormats[k]:
                     argOut, _ = o(v)
-                    if argOut is not None:
+                    if argOut is not None and len(argOut) > 0:
                         outCmd.append(''.join(argOut[0]))
                         # Store index in cmd list of changed key
                         # Necessary because we don't always output
