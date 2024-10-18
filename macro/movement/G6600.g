@@ -165,17 +165,7 @@ if { var.workOffset != null }
             G6600 W{var.workOffset}
             M99
 
-    ; Save work and tool offsets to config-override.g
-    M500 P10
+    ; Save restore details to config-override.g
+    M500.1
 
-    ; Save toolsetter activation point so that tool changes
-    ; after reboot will continue to work with the previously
-    ; saved activation point.
-    ; NOTE: Since this is not WCS specific, it will only work
-    ; for the _last_ toolsetter activation point / WCS that
-    ; was probed. This should be good enough to resume a
-    ; job in the previous WCS that was probed, but not to
-    ; use a pre-existing WCS that was not the last one probed.
-    echo >>{ "config-override.g" } { "set global.mosTSAP = " ^ global.mosTSAP }
-
-    echo { "MillenniumOS: WCS Origins have been saved and will be restored on reboot."}
+    echo { "MillenniumOS: WCS Origins have been saved and can be restored on reboot."}

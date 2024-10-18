@@ -157,3 +157,6 @@ if { var.toolOffset != 0 }
 G27 Z1
 
 G10 P{state.currentTool} X0 Y0 Z{var.toolOffset}
+
+; Save restore details to config-override.g
+M500.1
