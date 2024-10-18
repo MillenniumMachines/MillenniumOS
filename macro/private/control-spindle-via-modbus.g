@@ -64,7 +64,11 @@ set global.mosSIF = { var.spindleState[1] }
 set global.mosSOF = { var.spindleState[2] }
 set global.mosSOC = { var.spindleState[3] }
 set global.mosSOV = { var.spindleState[4] }
-set global.mosSOP = { var.spindlePower[0] * 0.75 * 10 }
+if { var.spindlePower == null }
+    set global.mosSOP = 0
+else
+    set global.mosSOP = { var.spindlePower[0] * 0.75 * 10 }
+
 ; set global.mosSOP = { (global.mosSOC * 0.01) * (global.mosSOV * 0.01) * 0.75 }
 
 ; If spindle should not run but is running, stop it,
