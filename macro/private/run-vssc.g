@@ -15,7 +15,7 @@ if { !exists(global.mosLdd) || !global.mosLdd }
 ; if the correct time has passed.
 
 ; If spindle is not active or speed is zero, return
-if { spindles[global.mosSID].state != "forward" || spindles[global.mosSID].active == 0 }
+if { (spindles[global.mosSID].state != "forward" && spindles[global.mosSID].state != "reverse") || spindles[global.mosSID].active == 0 }
     M99 ; Return, spindle is not active or stationary
 
 ; Use uptime to get millisecond precision
