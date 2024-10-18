@@ -69,11 +69,11 @@ if { !exists(global.mosSDS) || global.mosSDS == null }
     set global.mosErr = { "<b>global.mosSDS</b> is not set." }
     M99
 
-; Load settings saved with M500
-M501
-
 ; Allow MOS macros to run.
 set global.mosLdd = true
+
+; Conditionally load saved WCS details and tool offsets
+M501.1
 
 if { global.mosEM }
     echo { "WARNING: Expert mode is enabled! You will not be asked to confirm any actions. Be careful!" }
