@@ -165,6 +165,7 @@ if { var.workOffset != null }
             G6600 W{var.workOffset}
             M99
 
-    ; Save work offsets to config-override.g
-    M500
-    echo { "MillenniumOS: WCS Origins have been saved and will be restored on reboot."}
+    ; Save restore details to config-override.g
+    M500.1
+
+    echo { "MillenniumOS: WCS Origins have been saved and can be restored on reboot."}
