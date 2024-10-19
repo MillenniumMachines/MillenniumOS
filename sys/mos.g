@@ -44,7 +44,13 @@ if { fileexists("0:/sys/daemon.install") }
     M471 S"/sys/daemon.install" T"/sys/daemon.g"
 
 ; Load user vars
-M98 P"mos-user-vars.g"
+if { fileexists("0:/sys/mos-user-vars.g") }
+    M98 P"mos-user-vars.g"
+
+; Load override vars
+if { fileexists("0:/sys/mos-override-vars.g") }
+    M98 P"mos-override-vars.g"
 
 ; Run sanity checks and confirm boot
 M98 P"mos-boot.g"
+
