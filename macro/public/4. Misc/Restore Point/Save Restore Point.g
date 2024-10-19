@@ -1,5 +1,4 @@
 ; Save Restore Point.g
 ;
-; Save work offsets to config-override.g
+; Save restore point to file
 M500.1
-echo { "MillenniumOS: Restore point saved."}
