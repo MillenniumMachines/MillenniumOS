@@ -26,7 +26,6 @@ if { global.mosFeatTouchProbe && global.mosTSAP != null }
     echo >>{var.restoreFile} { "set global.mosTSAP = " ^ global.mosTSAP }
     echo >>{var.restoreFile} ""
 
-
 ; Save all tools except the probe tool
 echo >>{var.restoreFile} { "; Restore Tools" }
 while { iterations < limits.tools-1 }
