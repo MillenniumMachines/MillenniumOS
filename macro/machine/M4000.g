@@ -19,6 +19,22 @@ if { !exists(param.P) || !exists(param.R) || !exists(param.S) }
 if { param.P >= limits.tools || param.P < 0 }
     abort { "Tool index must be between 0 and " ^ limits.tools-1 ^ "!" }
 
+; Check if tool is already defined and matches. If so, skip adding it.
+; This allows us to re-run a file that defines the tool that is currently
+; loaded, without unloading the tool.
+; This has to be split over multiple lines due to length of the condition.
+var toolSame = { global.mosTT[param.P][0] == param.R && tools[param.P].spindle == ((exists(param.I)) ? param.I : global.mosSID) }
+
+set var.toolSame = { var.toolSame && tools[param.P].name == param.S }
+
+if { exists(param.X) }
+    set var.toolSame = { var.toolSame && global.mosTT[param.P][1][0] == param.X }
+if { exists(param.Y) }
+    set var.toolSame = { var.toolSame && global.mosTT[param.P][1][1] == param.Y }
+
+if { var.toolSame }
+    M99
+
 ; Define RRF tool against spindle.
 ; Allow spindle ID to be overridden where necessary using I parameter.
 ; This is mainly used during the configuration wizard.
