@@ -465,14 +465,11 @@ function onOpen() {
     writeComment("Pass tool details to firmware");
     for(var i = 0; i < nTools; i++) {
       var tool = tools.getTool(i);
-      writeBlock('{cmd} P{index} R{radius} S"{desc} F={f} L={l} CR={cr}"'.supplant({
+      writeBlock('{cmd} P{index} R{radius} S"{desc}"'.supplant({
         cmd: mCodes.format(M.ADD_TOOL),
         index: intFmt.format(tool.number),
         radius: axesFmt.format(tool.diameter/2),
-        desc: tool.description,
-        l: axesFmt.format(tool.fluteLength),
-        cr: axesFmt.format(tool.cornerRadius),
-        f: intFmt.format(tool.numberOfFlutes)
+        desc: tool.description.substring(0, 32),
       }));
     }
     writeln("");
