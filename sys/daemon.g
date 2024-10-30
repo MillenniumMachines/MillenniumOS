@@ -13,8 +13,11 @@ while { exists(global.mosDAE) && global.mosDAE }
     G4 P{global.mosDAEUR} ; Minimum interval between daemon runs
 
     ; Only run VSSC when feature is enabled and VSSC has been activated
-    if { exists(global.mosFeatVSSC) && global.mosFeatVSSC == true && global.mosVSEnabled && global.mosVSOE }
+    if { exists(global.mosFeatVSSC) && global.mosFeatVSSC && global.mosVSEnabled && global.mosVSOE }
         M98 P"mos/run-vssc.g" ; Update active spindle speed based on timings
+
+    if { exists(global.mosFeatCoolantControl) && global.mosFeatCoolantControl && exists(global.mosCPDE) && global.mosCPDE }
+        M98 P"mos/pulsed-coolant.g"
 
     if { fileexists("0:/sys/user-daemon.g") }
         M98 P"user-daemon.g"

@@ -4,7 +4,7 @@
 ; Turn on the blast air first, then turn on the coolant.
 
 if { !global.mosFeatCoolantControl || global.mosCMID == null }
-    echo { "MillenniumOS: Coolant Control feature is disabled or not configured, cannot enable Mist Coolant." }
+    echo { "MillenniumOS: Coolant Control feature is disabled or Mist Coolant not configured, cannot enable." }
     M99
 
 ; Wait for all movement to stop before continuing.

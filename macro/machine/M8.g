@@ -3,7 +3,7 @@
 ; Flood enables pressurised coolant flow over the cutting tool.
 
 if { !global.mosFeatCoolantControl || global.mosCFID == null }
-    echo { "MillenniumOS: Coolant Control feature is disabled or not configured, cannot enable Flood Coolant." }
+    echo { "MillenniumOS: Coolant Control feature is disabled or Flood Coolant not configured, cannot enable." }
     M99
 
 ; Wait for all movement to stop before continuing.

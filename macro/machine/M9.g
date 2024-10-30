@@ -25,3 +25,10 @@ if { global.mosCMID != null }
 ; Configure air blast
 if { global.mosCAID != null }
     M42 P{global.mosCAID} S{ var.restore ? global.mosPS[global.mosCAID] : 0 }
+
+; Configure pulsed coolant
+if { global.mosCPID != null }
+    if { global.mosCPI > 1000 }
+        set global.mosCPDE = { var.restore ? global.mosPS[global.mosCPID] : false }
+    else
+        M42 P{global.mosCPID} S{ var.restore ? global.mosPS[global.mosCPID] : 0 }

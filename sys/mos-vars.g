@@ -164,9 +164,14 @@ global mosTPRP = null ; Touch Probe Reference Point
 global mosDTR = null ; Datum Tool Radius
 
 ; Coolant configuration
-global mosCAID = null ; Coolant Air ID
-global mosCMID = null ; Coolant Mist ID
-global mosCFID = null ; Coolant Flood ID
+global mosCAID = null  ; Coolant Air ID
+global mosCMID = null  ; Coolant Mist ID
+global mosCFID = null  ; Coolant Flood ID
+global mosCPID = null  ; Coolant Pulse ID
+global mosCPDE = false ; Coolant Pulse Daemon Enabled
+global mosCPI  = null  ; Coolant Pulse Interval (ms, 1000 / frequency)
+global mosCPD  = null  ; Coolant Pulse Duration
+global mosCPLT = null  ; Coolant Last Pulse Time
 
 ; Protected move configuration
 global mosPMBO = null ; Protected Move Back Off
