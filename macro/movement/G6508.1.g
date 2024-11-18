@@ -240,7 +240,8 @@ if { var.pMO == 0 }
     ; and var.pY[0] -> var.pY[1], and the Y surface is defined
     ; by the line var.pX[2] -> var.pX[3] and var.pY[2] -> var.pY[3].
 
-    ; Calculate normals for both lines
+    ; Calculate normals (gradient) for both lines
+    ; Using the formula m = (y2 - y1) / (x2 - x1)
     var mX = { (var.pY[1] - var.pY[0]) / (var.pX[1] - var.pX[0]) }
     var mY = { (var.pY[3] - var.pY[2]) / (var.pX[3] - var.pX[2]) }
 
