@@ -36,6 +36,16 @@ if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
 
 var manualProbe = { !exists(param.I) || param.I == null }
 
+; Use absolute positions in mm and feeds in mm/min
+G90
+G21
+G94
+
+; Cancel rotation compensation as we use G53 on the probe move.
+; Leaving rotation compensation active causes us to fail position
+; checks.
+G69
+
 ; Get current machine position
 M5000 P0
 
@@ -51,11 +61,6 @@ if { var.tPX == global.mosMI[0] && var.tPY == global.mosMI[1] && var.tPZ == glob
 
 ; Check if the positions are within machine limits
 M6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
-
-; Use absolute positions in mm and feeds in mm/min
-G90
-G21
-G94
 
 ; If we're using "manual" probing, we can't
 ; protect any moves as we have no inputs to check.
@@ -133,17 +138,14 @@ M558 K{ param.I } F{ sensors.probes[param.I].travelSpeed }
 ; Move to position while checking probe for activation
 G53 G38.3 K{ param.I } X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
-; Wait for moves to complete
-M400
-
-; Reset probe speed
-M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
+; Get current machine position
+M5000 P0
 
 ; Probing move either complete or stopped due to collision, we need to
 ; check the location of the machine to determine if the move was completed.
 
-; Get current machine position
-M5000 P0
+; Reset probe speed
+M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
 
 var tolerance = { 0.005 }
 
