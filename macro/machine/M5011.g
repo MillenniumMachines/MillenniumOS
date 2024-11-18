@@ -14,19 +14,25 @@ if { var.workOffset < 0 || var.workOffset >= limits.workplaces }
     abort { "Work Offset (W..) must be between 0 and " ^ limits.workplaces-1 ^ "!" }
 
 
-if { global.mosWPDeg[var.workOffset] != global.mosDfltWPDeg }
+if { global.mosWPDeg[var.workOffset] != global.mosDfltWPDeg && global.mosWPCtrPos[var.workOffset] != global.mosDfltWPCtrPos }
+
+    var cX = { global.mosWPCtrPos[var.workOffset][0] }
+    var cY = { global.mosWPCtrPos[var.workOffset][1] }
+
     if { !global.mosEM }
-        M291 P{"Workpiece in WCS " ^ var.wcsNumber ^ " is rotated by " ^ global.mosWPDeg[var.workOffset] ^ " degrees. Apply compensation?"} R{"MillenniumOS: Workpiece Rotation Compensation"} S4 K{"Yes","No"} F0
+        M291 P{"Workpiece in WCS " ^ var.wcsNumber ^ " is rotated by " ^ global.mosWPDeg[var.workOffset] ^ " degrees around X=" ^ var.cX ^ " Y=" ^ var.cY ^ ". Apply compensation?"} R{"MillenniumOS: Workpiece Rotation Compensation"} S4 K{"Yes","No"} F0
         if { input != 0 }
             echo { "MillenniumOS: Rotation compensation not applied."}
             ; Cancel any existing rotation applied
             G69
             M99
 
+    ; Calculate center position relative to WCS origin.
+    ; For a rectangle block probe this should produce X=0 Y=0.
     ; Rotate the workpiece around the origin.
-    G68 X0 Y0 R{global.mosWPDeg[var.workOffset]}
+    G68 X{ var.cX - move.axes[0].workplaceOffsets[var.workOffset] } Y{ var.cY - move.axes[1].workplaceOffsets[var.workOffset] } R{ global.mosWPDeg[var.workOffset] }
 
-    echo { "MillenniumOS: Rotation compensation of " ^ -global.mosWPDeg[var.workOffset] ^ " degrees applied around origin" }
+    echo { "MillenniumOS: Rotation compensation of " ^ -global.mosWPDeg[var.workOffset] ^ " degrees applied around X=" ^ var.cX ^ " Y=" ^ var.cY }
 else
     ; Cancel any existing rotation applied
     G69
