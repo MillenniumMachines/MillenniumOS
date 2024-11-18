@@ -42,8 +42,8 @@ if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
 
 ; Reset stored values that we're going to overwrite -
-; center and radius
-M5010 W{var.workOffset} R5
+; center position, rotation and radius
+M5010 W{var.workOffset} R37
 
 ; Get current machine position on Z
 M5000 P1 I2

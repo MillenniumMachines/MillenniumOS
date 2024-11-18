@@ -36,8 +36,8 @@ if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
 
 ; Reset stored values that we're going to overwrite -
-; surface
-M5010 W{var.workOffset} R8
+; surface and rotation
+M5010 W{var.workOffset} R40
 
 ; Get current machine position on Z
 M5000 P1 I2
