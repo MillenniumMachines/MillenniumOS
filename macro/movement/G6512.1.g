@@ -29,6 +29,11 @@ G90
 G21
 G94
 
+; Cancel rotation compensation as we use G53 on the probe move.
+; Leaving rotation compensation active causes us to fail position
+; checks.
+G69
+
 ; Get current machine position
 M5000 P0
 

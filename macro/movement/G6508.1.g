@@ -240,7 +240,8 @@ if { var.pMO == 0 }
     ; and var.pY[0] -> var.pY[1], and the Y surface is defined
     ; by the line var.pX[2] -> var.pX[3] and var.pY[2] -> var.pY[3].
 
-    ; Calculate normals for both lines
+    ; Calculate normals (gradient) for both lines
+    ; Using the formula m = (y2 - y1) / (x2 - x1)
     var mX = { (var.pY[1] - var.pY[0]) / (var.pX[1] - var.pX[0]) }
     var mY = { (var.pY[3] - var.pY[2]) / (var.pX[3] - var.pX[2]) }
 
@@ -311,16 +312,12 @@ if { var.pMO == 0 }
     var cDistX = { (var.fX/2) * cos(radians(var.aR)) - (var.fY/2) * sin(radians(var.aR)) }
     var cDistY = { (var.fX/2) * sin(radians(var.aR)) + (var.fY/2) * cos(radians(var.aR)) }
 
-    var ctrX = { var.cX }
-    var ctrY = { var.cY }
+    if { param.N == 1 || param.N == 2 }
+        set var.cDistX = { -(var.cDistX) }
+    if { param.N == 2 || param.N == 3 }
+        set var.cDistY = { -(var.cDistY) }
 
-    var deltaX = { (param.N == 0 || param.N == 3) ? var.cDistX : -var.cDistX }
-    var deltaY = { (param.N == 0 || param.N == 1) ? var.cDistY : -var.cDistY }
-
-    set var.ctrX = { var.ctrX + deltaX }
-    set var.ctrY = { var.ctrY + deltaY }
-
-    set global.mosWPCtrPos[var.workOffset] = { var.ctrX, var.ctrY }
+    set global.mosWPCtrPos[var.workOffset] = { var.cX + var.cDistX, var.cY + var.cDistY }
 
     ; If running in full mode, operator provided approximate width and
     ; height values of the workpiece. Assign these to the global

@@ -105,6 +105,9 @@ if { var.pdX != 0 && var.pdY != 0 && var.pdZ != 0 }
         ; Reset the WCS origin so that all axes must be re-probed.
         G10 L2 P{var.wcsNumber} X0 Y0 Z0
 
+        ; Clear all stored WCS details
+        M5010 W{var.workOffset}
+
 ; Switch to touchprobe if not already connected
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
@@ -113,6 +116,9 @@ if { global.mosPTID != state.currentTool }
 M291 P"Please select a probe cycle type." R"MillenniumOS: Probe Workpiece" T0 S4 F0 K{var.probeCycleNames}
 if { result != 0 }
     abort { "Operator cancelled probe cycle!" }
+
+; Cancel rotation compensation as we use G53 on the probe moves.
+G69
 
 ; Run the selected probing operation.
 ; We cannot lookup G command numbers to run dynamically so these must be
