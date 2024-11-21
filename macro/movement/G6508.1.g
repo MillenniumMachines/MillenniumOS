@@ -299,11 +299,28 @@ if { var.pMO == 0 }
     elif { var.aR < -45 }
         set var.aR = { var.aR + 90 }
 
-    set global.mosWPDeg[var.workOffset] = { var.aR }
+    set global.mosWPDeg[var.workOffset] = { -var.aR }
 
     ; Calculate the center of the workpiece based on the corner position,
     ; the width and height of the workpiece and the rotation.
-    set global.mosWPCtrPos[var.workOffset] = { var.cX + ((var.fX/2) * cos(radians(var.aR)) - (var.fY/2) * sin(radians(var.aR))), var.cY + ((var.fX/2) * sin(radians(var.aR)) + (var.fY/2) * cos(radians(var.aR))) }
+    ; FL = Add width and height
+    ; FR = Subtract width and add height
+    ; BL = Add width and subtract height
+    ; BR = Subtract width and height
+
+    var cDistX = { (var.fX/2) * cos(radians(var.aR)) - (var.fY/2) * sin(radians(var.aR)) }
+    var cDistY = { (var.fX/2) * sin(radians(var.aR)) + (var.fY/2) * cos(radians(var.aR)) }
+
+    var ctrX = { var.cX }
+    var ctrY = { var.cY }
+
+    var deltaX = { (param.N == 0 || param.N == 3) ? var.cDistX : -var.cDistX }
+    var deltaY = { (param.N == 0 || param.N == 1) ? var.cDistY : -var.cDistY }
+
+    set var.ctrX = { var.ctrX + deltaX }
+    set var.ctrY = { var.ctrY + deltaY }
+
+    set global.mosWPCtrPos[var.workOffset] = { var.ctrX, var.ctrY }
 
     ; If running in full mode, operator provided approximate width and
     ; height values of the workpiece. Assign these to the global
