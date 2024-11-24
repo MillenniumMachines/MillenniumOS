@@ -30,13 +30,12 @@ if { !exists(param.H) }
 ; with the W parameter.
 var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
 
-
 ; WCS Numbers and Offsets are confusing. Work Offset indicates the offset
 ; from the first work co-ordinate system, so is 0-indexed. WCS number indicates
 ; the number of the work co-ordinate system, so is 1-indexed.
 var wcsNumber = { var.workOffset + 1 }
 
-var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
+var pID = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
 ; TODO: Validate minimum bore diameter we can probe based on
 ; dive height and back-off distance.
@@ -48,6 +47,18 @@ if { global.mosPTID != state.currentTool }
 ; Reset stored values that we're going to overwrite
 ; Reset center position, rotation and radius
 M5010 W{var.workOffset} R37
+
+; Get current machine position on Z
+M5000 P1 I2
+
+; Store our own safe Z position as the current position. We return to
+; this position where necessary to make moves across the workpiece to
+; the next probe point.
+; We do this _after_ any switch to the touch probe, because while the
+; original position may have been safe with a different tool installed,
+; the touch probe may be longer. After a tool change the spindle
+; will be parked, so essentially our safeZ is at the parking location.
+var safeZ = { global.mosMI }
 
 ; Apply tool radius to overtravel. We want to allow
 ; less movement past the expected point of contact
@@ -66,81 +77,55 @@ var overtravel = { (exists(param.O) ? param.O : global.mosOT) - ((state.currentT
 ; will fail.
 var bR = { (param.H / 2) + var.overtravel }
 
-; J = start position X
-; K = start position Y
-; L = start position Z - our probe height
-
-; Start position is operator chosen center of the bore
-var sX   = { param.J }
-var sY   = { param.K }
-var sZ   = { param.L }
-
 ; Calculate probing directions using approximate bore radius
 ; Angle is in degrees
-var angle = { radians(120) }
+var angle = { 2*pi / 3 }
 
-var dirXY = { { var.sX + var.bR, var.sY}, { var.sX + var.bR * cos(var.angle), var.sY + var.bR * sin(var.angle) }, { var.sX + var.bR * cos(2 * var.angle), var.sY + var.bR * sin(2 * var.angle) } }
+var startPos = { param.J, param.K, param.L }
 
-; Bore edge co-ordinates for 3 probed points
-var pXY  = { null, null, null }
+var surfaces = { vector(3, {{var.startPos, null},}) }
 
-; Get current machine position in Z
-M5000 P1 I2
+set var.surfaces[0][0][1] = { var.startPos[0] + var.bR, var.startPos[1], var.startPos[2] }
+set var.surfaces[1][0][1] = { var.startPos[0] + var.bR * cos(var.angle), var.startPos[1] + var.bR * sin(var.angle), var.startPos[2] }
+set var.surfaces[2][0][1] = { var.startPos[0] + var.bR * cos(2 * var.angle), var.startPos[1] + var.bR * sin(2 * var.angle), var.startPos[2] }
 
-var safeZ = { global.mosMI }
+; Probe the bore surface
+; Do not retract between probe points
+G6513 I{var.pID} D1 H1 P{var.surfaces} S{var.safeZ}
 
-; Probe each of the 3 points
-while { iterations < #var.dirXY }
-    ; Perform a probe operation
-    ; D1 causes the probe macro to not return to the safe position after probing.
-    ; Since we're probing multiple times from the same starting point, there's no
-    ; need to raise and lower the probe between each probe point.
-    G6512 D1 I{var.probeId} J{var.sX} K{var.sY} L{var.sZ} X{var.dirXY[iterations][0]} Y{var.dirXY[iterations][1]}
+var pSfc = { global.mosMI }
 
-    ; Save the probed co-ordinates
-    set var.pXY[iterations] = { global.mosMI[0], global.mosMI[1] }
+; Extract the coordinates of the three probe points
+var x1 = { var.pSfc[0][0][0][0] }
+var y1 = { var.pSfc[0][0][0][1] }
 
-; Calculate the slopes, midpoints, and perpendicular bisectors
-var sM1 = { (var.pXY[1][1] - var.pXY[0][1]) / (var.pXY[1][0] - var.pXY[0][0]) }
-var sM2 = { (var.pXY[2][1] - var.pXY[1][1]) / (var.pXY[2][0] - var.pXY[1][0]) }
+var x2 = { var.pSfc[1][0][0][0] }
+var y2 = { var.pSfc[1][0][0][1] }
 
-; Validate the slopes. These should never be NaN but if they are,
-; we can't calculate the bore center position and we must abort.
-if { isnan(var.sM1) || isnan(var.sM2) }
-    abort { "Could not calculate bore center position!" }
+var x3 = { var.pSfc[2][0][0][0] }
+var y3 = { var.pSfc[2][0][0][1] }
 
-var m1X = { (var.pXY[1][0] + var.pXY[0][0]) / 2 }
-var m1Y = { (var.pXY[1][1] + var.pXY[0][1]) / 2 }
-var m2X = { (var.pXY[2][0] + var.pXY[1][0]) / 2 }
-var m2Y = { (var.pXY[2][1] + var.pXY[1][1]) / 2 }
+; Calculate the center of the circle passing through the three points
+var A = { var.x1 * (var.y2 - var.y3) + var.x2 * (var.y3 - var.y1) + var.x3 * (var.y1 - var.y2) }
+var B = { (var.x1 * var.x1 + var.y1 * var.y1) * (var.y3 - var.y2) + (var.x2 * var.x2 + var.y2 * var.y2) * (var.y1 - var.y3) + (var.x3 * var.x3 + var.y3 * var.y3) * (var.y2 - var.y1) }
+var C = { (var.x1 * var.x1 + var.y1 * var.y1) * (var.x2 - var.x3) + (var.x2 * var.x2 + var.y2 * var.y2) * (var.x3 - var.x1) + (var.x3 * var.x3 + var.y3 * var.y3) * (var.x1 - var.x2) }
+var D = { 2 * (var.x1 * (var.y2 - var.y3) + var.x2 * (var.y3 - var.y1) + var.x3 * (var.y1 - var.y2)) }
 
-var pM1 = { -1 / var.sM1 }
-var pM2 = { -1 / var.sM2 }
+var cX = { -var.B / var.D }
+var cY = { -var.C / var.D }
 
-if { var.pM1 == var.pM2 }
-    abort { "Could not calculate bore center position!" }
-
-; Solve the equations of the lines formed by the perpendicular bisectors to find the circumcenter X,Y
-var cX = { (var.pM2 * var.m2X - var.pM1 * var.m1X + var.m1Y - var.m2Y) / (var.pM2 - var.pM1) }
-var cY = { var.pM1 * (var.cX - var.m1X) + var.m1Y }
-
-; Calculate the radii from the circumcenter to each of the probed points
-var r1 = { sqrt(pow((var.pXY[0][0] - var.cX), 2) + pow((var.pXY[0][1] - var.cY), 2)) }
-var r2 = { sqrt(pow((var.pXY[1][0] - var.cX), 2) + pow((var.pXY[1][1] - var.cY), 2)) }
-var r3 = { sqrt(pow((var.pXY[2][0] - var.cX), 2) + pow((var.pXY[2][1] - var.cY), 2)) }
-
-; Calculate the average radius
-var avgR = { (var.r1 + var.r2 + var.r3) / 3 }
+; Calculate the radius of the bore
+var radius = { sqrt((var.cX - var.x1) * (var.cX - var.x1) + (var.cY - var.y1) * (var.cY - var.y1)) }
 
 ; Update global vars for correct workplace
 set global.mosWPCtrPos[var.workOffset]   = { var.cX, var.cY }
-set global.mosWPRad[var.workOffset]      = { var.avgR }
-
-; Move to the calculated center of the bore
-G6550 I{var.probeId} X{var.cX} Y{var.cY}
+set global.mosWPRad[var.workOffset]      = { var.radius }
 
 ; Move back to safe Z height
-G6550 I{var.probeId} Z{var.safeZ}
+G6550 I{var.pID} Z{var.safeZ}
+
+; Move to the calculated center of the bore
+G6550 I{var.pID} X{var.centerX} Y{var.centerY}
 
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
@@ -148,4 +133,4 @@ if { !exists(param.R) || param.R != 0 }
 
 ; Set WCS origin to the probed center
 echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to center of bore." }
-G10 L2 P{var.wcsNumber} X{var.cX} Y{var.cY}
+G10 L2 P{var.wcsNumber} X{var.centerX} Y{var.centerY}
