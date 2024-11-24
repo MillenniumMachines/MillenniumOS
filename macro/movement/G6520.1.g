@@ -58,30 +58,16 @@ var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
 
-; Above the corner to be probed
-; J = start position X
-; K = start position Y
-; L = start position Z - our probe height
-var sX   = { param.J }
-var sY   = { param.K }
-var sZ   = { param.L }
-
 ; Specify R0 so that the underlying macros dont report their own
 ; debug info.
 
-; Get current machine position
-M5000 P0
-
 ; Probe the top surface of the workpiece from the current Z position
-G6510.1 R0 W{var.workOffset} H4 I{param.T} O{param.O} J{global.mosMI[0]} K{global.mosMI[1]} L{global.mosMI[2]}
+G6510.1 R0 W{var.workOffset} H4 I{param.T} O{param.O} J{param.J} K{param.K} L{param.L}
 if { global.mosWPSfcPos[var.workOffset] == global.mosDfltWPSfcPos || global.mosWPSfcAxis[var.workOffset] != "Z" }
     abort { "G6520: Failed to probe the top surface of the workpiece!" }
 
-; Get current machine position
-M5000 P0
-
 ; Probe the corner surface
-G6508.1 R0 W{var.workOffset} Q{param.Q} H{param.H} I{param.I} N{param.N} T{param.T} C{param.C} O{param.O} J{global.mosMI[0]} K{global.mosMI[1]} L{ global.mosWPSfcPos[var.workOffset] - param.P }
+G6508.1 R0 W{var.workOffset} Q{param.Q} H{param.H} I{param.I} N{param.N} T{param.T} C{param.C} O{param.O} J{param.J} K{param.K} L{ global.mosWPSfcPos[var.workOffset] - param.P }
 if { global.mosWPCnrNum[var.workOffset] == null }
     abort { "G6520: Failed to probe the corner surface of the workpiece!" }
 
