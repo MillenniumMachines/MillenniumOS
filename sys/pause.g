@@ -3,7 +3,8 @@
 ; Save pre-pause state of all general purpose
 ; output pins.
 while { iterations < #state.gpOut }
-    set global.mosPS[iterations] = state.gpOut[iterations].pwm
+    if { state.gpOut[iterations] != null }
+        set global.mosPS[iterations] = state.gpOut[iterations].pwm
 
 ; Raise the spindle to the top of the Z axis and
 ; then stop it, but do not move the table.
