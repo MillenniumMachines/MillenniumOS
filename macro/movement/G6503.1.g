@@ -204,10 +204,6 @@ set var.surface2[1][1][0] = { var.sX + var.hW - var.cornerClearance }
 set var.surface2[1][0][1] = { var.sY + var.hL + var.surfaceClearance }
 set var.surface2[1][1][1] = { var.sY + var.hL - var.overtravel }
 
-; Move outwards on Y first
-; Any movement on X here will crash the probe, DO NOT.
-G6550 I{var.pID} Y{(var.sY - var.hL - var.surfaceClearance)}
-
 ; Probe the 2 Y surfaces
 G6513 I{var.pID} D1 H0 P{var.surface1, var.surface2} S{var.safeZ}
 

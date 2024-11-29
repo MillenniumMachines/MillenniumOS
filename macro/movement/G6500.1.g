@@ -35,10 +35,8 @@ var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workpla
 ; the number of the work co-ordinate system, so is 1-indexed.
 var wcsNumber = { var.workOffset + 1 }
 
+; Probe ID
 var pID = { global.mosFeatTouchProbe ? global.mosTPID : null }
-
-; TODO: Validate minimum bore diameter we can probe based on
-; dive height and back-off distance.
 
 ; Make sure probe tool is selected
 if { global.mosPTID != state.currentTool }
@@ -68,8 +66,8 @@ var safeZ = { global.mosMI }
 ; as the configured tool radius is accurate.
 var overtravel = { (exists(param.O) ? param.O : global.mosOT) - ((state.currentTool <= limits.tools-1 && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
 
-; Commented due to memory limitations
-; M7500 S{"Distance Modifiers adjusted for Tool Radius - Overtravel=" ^ var.overtravel }
+; TODO: Validate minimum bore diameter we can probe based on
+; dive height and back-off distance.
 
 ; We add the overtravel to the bore radius to give the user
 ; some leeway. If their estimate of the bore diameter is too
@@ -77,14 +75,19 @@ var overtravel = { (exists(param.O) ? param.O : global.mosOT) - ((state.currentT
 ; will fail.
 var bR = { (param.H / 2) + var.overtravel }
 
-; Calculate probing directions using approximate bore radius
-; Angle is in degrees
+; Probe equally at 3 points around the bore, starting at 0
+; degrees (3 o'clock) and moving anticlockwise.
 var angle = { 2*pi / 3 }
 
 var startPos = { param.J, param.K, param.L }
 
+; Bore probes all use the same start position (operator-
+; chosen center of the bore). These must be defined as 3
+; separate surfaces, because surface angle makes no sense
+; for a single circular surface.
 var surfaces = { vector(3, {{var.startPos, null},}) }
 
+; Set the target positions for each of the probe points
 set var.surfaces[0][0][1] = { var.startPos[0] + var.bR, var.startPos[1], var.startPos[2] }
 set var.surfaces[1][0][1] = { var.startPos[0] + var.bR * cos(var.angle), var.startPos[1] + var.bR * sin(var.angle), var.startPos[2] }
 set var.surfaces[2][0][1] = { var.startPos[0] + var.bR * cos(2 * var.angle), var.startPos[1] + var.bR * sin(2 * var.angle), var.startPos[2] }
@@ -106,19 +109,22 @@ var x3 = { var.pSfc[2][0][0][0] }
 var y3 = { var.pSfc[2][0][0][1] }
 
 ; Calculate the center of the circle passing through the three points
+; This is essentially calculating 3 lines running through the midpoints
+; of the chords between the points, and finding the intersection of those
+; lines.
 var A = { var.x1 * (var.y2 - var.y3) + var.x2 * (var.y3 - var.y1) + var.x3 * (var.y1 - var.y2) }
 var B = { (var.x1 * var.x1 + var.y1 * var.y1) * (var.y3 - var.y2) + (var.x2 * var.x2 + var.y2 * var.y2) * (var.y1 - var.y3) + (var.x3 * var.x3 + var.y3 * var.y3) * (var.y2 - var.y1) }
 var C = { (var.x1 * var.x1 + var.y1 * var.y1) * (var.x2 - var.x3) + (var.x2 * var.x2 + var.y2 * var.y2) * (var.x3 - var.x1) + (var.x3 * var.x3 + var.y3 * var.y3) * (var.x1 - var.x2) }
 var D = { 2 * (var.x1 * (var.y2 - var.y3) + var.x2 * (var.y3 - var.y1) + var.x3 * (var.y1 - var.y2)) }
 
-var cX = { -var.B / var.D }
-var cY = { -var.C / var.D }
+var centerX = { -var.B / var.D }
+var centerY = { -var.C / var.D }
 
 ; Calculate the radius of the bore
-var radius = { sqrt((var.cX - var.x1) * (var.cX - var.x1) + (var.cY - var.y1) * (var.cY - var.y1)) }
+var radius = { sqrt((var.centerX - var.x1) * (var.centerX - var.x1) + (var.centerY - var.y1) * (var.centerY - var.y1)) }
 
 ; Update global vars for correct workplace
-set global.mosWPCtrPos[var.workOffset]   = { var.cX, var.cY }
+set global.mosWPCtrPos[var.workOffset]   = { var.centerX, var.centerY }
 set global.mosWPRad[var.workOffset]      = { var.radius }
 
 ; Move back to safe Z height

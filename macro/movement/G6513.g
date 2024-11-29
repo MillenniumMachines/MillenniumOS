@@ -235,19 +235,19 @@ while { iterations < #var.pSfc }
 
         ; Select cos or sin compensation based on 45-degree quadrants
         if { var.rApproach > -3*pi/4 && var.rApproach < -pi/4 }
-            ; echo { "Right surface" }
+            ; Right surface
             set var.dX = { -abs(var.dcosX) }
             set var.dY = { var.rSurface > 0 ? abs(var.dsinY) : -abs(var.dsinY) }
         elif { var.rApproach > pi/4 && var.rApproach < 3*pi/4 }
-            ; echo { "Left surface" }
+            ; Left surface
             set var.dX = { abs(var.dcosX) }
             set var.dY = { var.rSurface > 0 ? abs(var.dsinY) : -abs(var.dsinY) }
         elif { var.rApproach > -pi/4 && var.rApproach < pi/4 }
-            ; echo { "Front surface" }
+            ; Front surface
             set var.dX = { var.rSurface > 0 ? -abs(var.dsinX) : abs(var.dsinX) }
             set var.dY = { abs(var.dcosY) }
         elif { (var.rApproach > 3*pi/4 && var.rApproach < pi) || (var.rApproach > -pi && var.rApproach < -3*pi/4) }
-            ; echo { "Back surface" }
+            ; Back surface
             set var.dX = { var.rSurface > 0 ? abs(var.dsinX) : -abs(var.dsinX) }
             set var.dY = { -abs(var.dcosY) }
 
