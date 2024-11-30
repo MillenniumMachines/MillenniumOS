@@ -29,12 +29,12 @@ if { !exists(param.H) }
 ; with the W parameter.
 var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
 
+
 ; WCS Numbers and Offsets are confusing. Work Offset indicates the offset
 ; from the first work co-ordinate system, so is 0-indexed. WCS number indicates
 ; the number of the work co-ordinate system, so is 1-indexed.
 var wcsNumber = { var.workOffset + 1 }
 
-; Probe ID
 var pID = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
 ; Make sure probe tool is selected
@@ -73,72 +73,107 @@ var clearance = { (exists(param.T) ? param.T : global.mosCL) + ((state.currentTo
 ; as the configured tool radius is accurate.
 var overtravel = { (exists(param.O) ? param.O : global.mosOT) - ((state.currentTool <= limits.tools-1 && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
 
+; Commented due to memory limitations
+; M7500 S{"Distance Modifiers adjusted for Tool Radius - Clearance=" ^ var.clearance ^ " Overtravel=" ^ var.overtravel }
+
 ; We add the clearance distance to the boss
 ; radius to ensure we move clear of the boss
 ; before dropping to probe height.
-var cR = { (param.H / 2) + var.clearance }
+var cR = { (param.H / 2) }
 
-; Probe equally at 3 points around the boss, starting at 0
-; degrees (3 o'clock) and moving anticlockwise.
-var angle = { 2*pi / 3 }
+; J = start position X
+; K = start position Y
+; L = start position Z - our probe height
 
-var startPos = { param.J, param.K, param.L }
+; Start position is operator chosen center of the boss
+var sX   = { param.J }
+var sY   = { param.K }
+var sZ   = { param.L }
 
-; Bore probes all use the same target position (operator-
-; chosen center of the boss). These must be defined as 3
-; separate surfaces, because surface angle makes no sense
-; for a single circular surface.
-var surfaces = { vector(3, {{null, var.startPos},}) }
+; Calculate probing directions using approximate boss radius
+; Angle is in degrees
+var angle = { radians(120) }
 
-; Set the start positions for each of the probe points
-set var.surfaces[0][0][0] = { var.startPos[0] + var.cR, var.startPos[1], var.startPos[2] }
-set var.surfaces[1][0][0] = { var.startPos[0] + var.cR * cos(var.angle), var.startPos[1] + var.cR * sin(var.angle), var.startPos[2] }
-set var.surfaces[2][0][0] = { var.startPos[0] + var.cR * cos(2 * var.angle), var.startPos[1] + var.cR * sin(2 * var.angle), var.startPos[2] }
+; For each probe point: {start x, start y}, {target x, target y}
+var dirXY = { vector(3, {{null, null}, {null, null}}) }
 
-; Probe the boss surface
-; Retract between probe points
-G6513 I{var.pID} D0 H0 P{var.surfaces} S{var.safeZ}
+; The start position is the approximate radius of the boss plus
+; the clearance at 3 points around the center of the boss, at
+; 120 degree intervals.
+; The target position is the approximate radius of the boss minus
+; the overtravel distance, at the same 3 points around the center
+; of the boss, at 120 degree intervals.
 
-var pSfc = { global.mosMI }
+; Start position probe 1
+set var.dirXY[0][0] = { var.sX + var.cR + var.clearance, var.sY }
 
-; Extract the coordinates of the three probe points
-var x1 = { var.pSfc[0][0][0][0] }
-var y1 = { var.pSfc[0][0][0][1] }
+; Target position probe 1
+set var.dirXY[0][1] = { var.sX + var.cR - var.overtravel, var.sY }
 
-var x2 = { var.pSfc[1][0][0][0] }
-var y2 = { var.pSfc[1][0][0][1] }
+; Start position probe 2 (120 degrees)
+set var.dirXY[1][0] = { var.sX + (var.cR + var.clearance)*cos(var.angle), var.sY + (var.cR + var.clearance)*sin(var.angle) }
 
-var x3 = { var.pSfc[2][0][0][0] }
-var y3 = { var.pSfc[2][0][0][1] }
+; Target position probe 2 (120 degrees)
+set var.dirXY[1][1] = { var.sX + (var.cR - var.overtravel)*cos(var.angle), var.sY + (var.cR - var.overtravel)*sin(var.angle) }
 
-; Calculate the center of the circle passing through the three points
-; This is essentially calculating 3 lines running through the midpoints
-; of the chords between the points, and finding the intersection of those
-; lines.
-var A = { var.x1 * (var.y2 - var.y3) + var.x2 * (var.y3 - var.y1) + var.x3 * (var.y1 - var.y2) }
-var B = { (var.x1 * var.x1 + var.y1 * var.y1) * (var.y3 - var.y2) + (var.x2 * var.x2 + var.y2 * var.y2) * (var.y1 - var.y3) + (var.x3 * var.x3 + var.y3 * var.y3) * (var.y2 - var.y1) }
-var C = { (var.x1 * var.x1 + var.y1 * var.y1) * (var.x2 - var.x3) + (var.x2 * var.x2 + var.y2 * var.y2) * (var.x3 - var.x1) + (var.x3 * var.x3 + var.y3 * var.y3) * (var.x1 - var.x2) }
-var D = { 2 * (var.x1 * (var.y2 - var.y3) + var.x2 * (var.y3 - var.y1) + var.x3 * (var.y1 - var.y2)) }
+; Start position probe 3 (240 degrees)
+set var.dirXY[2][0] = { var.sX + (var.cR + var.clearance)*cos(var.angle*2), var.sY + (var.cR + var.clearance)*sin(var.angle*2) }
 
-var cX = { -var.B / var.D }
-var cY = { -var.C / var.D }
+; Target position probe 3 (240 degrees)
+set var.dirXY[2][1] = { var.sX + (var.cR - var.overtravel)*cos(var.angle*2), var.sY + (var.cR - var.overtravel)*sin(var.angle*2) }
 
-; Calculate the radius of the boss
-var radius = { sqrt((var.centerX - var.x1) * (var.centerX - var.x1) + (var.centerY - var.y1) * (var.centerY - var.y1)) }
+; Boss edge co-ordinates for 3 probed points
+var pXY  = { null, null, null }
+
+; Probe each of the 3 points
+while { iterations < #var.dirXY }
+    ; Perform a probe operation towards the center of the boss
+    G6512 I{var.pID} J{var.dirXY[iterations][0][0]} K{var.dirXY[iterations][0][1]} L{var.sZ} X{var.dirXY[iterations][1][0]} Y{var.dirXY[iterations][1][1]}
+
+    ; Save the probed co-ordinates
+    set var.pXY[iterations] = { global.mosMI[0], global.mosMI[1] }
+
+; Calculate the slopes, midpoints, and perpendicular bisectors
+var sM1 = { (var.pXY[1][1] - var.pXY[0][1]) / (var.pXY[1][0] - var.pXY[0][0]) }
+var sM2 = { (var.pXY[2][1] - var.pXY[1][1]) / (var.pXY[2][0] - var.pXY[1][0]) }
+
+; Validate the slopes. These should never be NaN but if they are,
+; we can't calculate the bore center position and we must abort.
+if { isnan(var.sM1) || isnan(var.sM2) }
+    abort { "Could not calculate boss center position!" }
+
+var m1X = { (var.pXY[1][0] + var.pXY[0][0]) / 2 }
+var m1Y = { (var.pXY[1][1] + var.pXY[0][1]) / 2 }
+var m2X = { (var.pXY[2][0] + var.pXY[1][0]) / 2 }
+var m2Y = { (var.pXY[2][1] + var.pXY[1][1]) / 2 }
+
+var pM1 = { -1 / var.sM1 }
+var pM2 = { -1 / var.sM2 }
+
+if { var.pM1 == var.pM2 }
+    abort { "Could not calculate boss center position!" }
+
+; Solve the equations of the lines formed by the perpendicular bisectors to find the circumcenter X,Y
+var cX = { (var.pM2 * var.m2X - var.pM1 * var.m1X + var.m1Y - var.m2Y) / (var.pM2 - var.pM1) }
+var cY = { var.pM1 * (var.cX - var.m1X) + var.m1Y }
+
+; Calculate the radii from the circumcenter to each of the probed points
+var r1 = { sqrt(pow((var.pXY[0][0] - var.cX), 2) + pow((var.pXY[0][1] - var.cY), 2)) }
+var r2 = { sqrt(pow((var.pXY[1][0] - var.cX), 2) + pow((var.pXY[1][1] - var.cY), 2)) }
+var r3 = { sqrt(pow((var.pXY[2][0] - var.cX), 2) + pow((var.pXY[2][1] - var.cY), 2)) }
+
+; Calculate the average radius
+var avgR = { (var.r1 + var.r2 + var.r3) / 3 }
 
 ; Update global vars for correct workplace
-set global.mosWPCtrPos[var.workOffset]   = { var.centerX, var.centerY }
-set global.mosWPRad[var.workOffset]      = { var.radius }
+set global.mosWPCtrPos[var.workOffset]   = { var.cX, var.cY }
+set global.mosWPRad[var.workOffset]      = { var.avgR }
 
-; Move back to safe Z height
+; Confirm we are at the safe Z height
 G6550 I{var.pID} Z{var.safeZ}
 
 ; Move to the calculated center of the boss
-G6550 I{var.pID} X{var.centerX} Y{var.centerY}
-
-; Update global vars for correct workplace
-set global.mosWPCtrPos[var.workOffset]   = { var.centerX, var.centerY }
-set global.mosWPRad[var.workOffset]      = { var.radius }
+G6550 I{var.pID} X{var.cX} Y{var.cY}
 
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
@@ -146,4 +181,4 @@ if { !exists(param.R) || param.R != 0 }
 
 ; Set WCS origin to the probed center
 echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to the center of the boss." }
-G10 L2 P{var.wcsNumber} X{var.centerX} Y{var.centerY}
+G10 L2 P{var.wcsNumber} X{var.cX} Y{var.cY}

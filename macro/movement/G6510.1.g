@@ -59,26 +59,24 @@ var tPZ = { param.L }
 var probeAxis = { param.H }
 var probeDist = { param.I }
 
-var surface = {{ param.J, param.K, param.L }, { param.J, param.K, param.L }}
-
 if { var.probeAxis == 0 }
-    set var.surface[1][0] = { param.J + var.probeDist + var.overtravel - var.tR }
+    set var.tPX = { var.tPX + var.probeDist + var.overtravel - var.tR }
 elif { var.probeAxis == 1 }
-    set var.surface[1][0] = { param.J - var.probeDist - var.overtravel + var.tR }
+    set var.tPX = { var.tPX - var.probeDist - var.overtravel + var.tR }
 elif { var.probeAxis == 2 }
-    set var.surface[1][1] = { param.K + var.probeDist + var.overtravel - var.tR }
+    set var.tPY = { var.tPY + var.probeDist + var.overtravel - var.tR }
 elif { var.probeAxis == 3 }
-    set var.surface[1][1] = { param.K - var.probeDist - var.overtravel + var.tR }
+    set var.tPY = { var.tPY - var.probeDist - var.overtravel + var.tR }
 elif { var.probeAxis == 4 }
-    set var.surface[1][2] = { param.L - var.probeDist - var.overtravel }
+    set var.tPZ = { var.tPZ - var.probeDist - var.overtravel }
 else
     abort { "Invalid probe axis!" }
 
-; Run probing operation
-G6513 I{var.pID} P{var.surface,}
+; Check if the positions are within machine limits
+M6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
-; Get first probe result on first surface
-var pP = { global.mosMI[0][0][0] }
+; Run probing operation
+G6512 I{var.pID} J{param.J} K{param.K} L{param.L} X{var.tPX} Y{var.tPY} Z{var.tPZ}
 
 var sAxis = { (var.probeAxis <= 1)? "X" : (var.probeAxis <= 3)? "Y" : "Z" }
 
@@ -86,7 +84,7 @@ var sAxis = { (var.probeAxis <= 1)? "X" : (var.probeAxis <= 3)? "Y" : "Z" }
 set global.mosWPSfcAxis[var.workOffset] = { var.sAxis }
 
 ; Set surface position on relevant axis
-set global.mosWPSfcPos[var.workOffset] = { (var.probeAxis <= 1)? var.pP[0] : (var.probeAxis <= 3)? var.pP[1] : var.pP[2] }
+set global.mosWPSfcPos[var.workOffset] = { (var.probeAxis <= 1)? global.mosMI[0] : (var.probeAxis <= 3)? global.mosMI[1] : global.mosMI[2] }
 
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
