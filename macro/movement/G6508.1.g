@@ -306,21 +306,27 @@ if { var.pFull }
 
     ; Calculate the center of the workpiece based on the corner position,
     ; the width and height of the workpiece and the rotation.
-    ; FL = Add width and height
-    ; FR = Subtract width and add height
-    ; BL = Add width and subtract height
-    ; BR = Subtract width and height
 
-    var cDistX = { (var.fX/2) * cos(var.aR) - (var.fY/2) * sin(var.aR) }
-    var cDistY = { (var.fX/2) * sin(var.aR) + (var.fY/2) * cos(var.aR) }
+    var cDistX = { (var.fX/2) * cos(-var.aR) - (var.fY/2) * sin(-var.aR) }
+    var cDistY = { (var.fX/2) * sin(-var.aR) + (var.fY/2) * cos(-var.aR) }
 
-    ; Negate corner distances based on the corner number
-    if { param.N == 1 || param.N == 2 }
-        set var.cDistX = { -(var.cDistX) }
-    if { param.N == 2 || param.N == 3 }
-        set var.cDistY = { -(var.cDistY) }
+    var ctrX = { var.cX }
+    var ctrY = { var.cY }
 
-    set global.mosWPCtrPos[var.workOffset] = { var.cX + var.cDistX, var.cY + var.cDistY }
+    if { param.N == 0 }
+        set var.ctrX = { var.ctrX + var.cDistX }
+        set var.ctrY = { var.ctrY + var.cDistY }
+    elif { param.N == 1 }
+        set var.ctrX = { var.ctrX - var.cDistX }
+        set var.ctrY = { var.ctrY + var.cDistY }
+    elif { param.N == 2 }
+        set var.ctrX = { var.ctrX - var.cDistX }
+        set var.ctrY = { var.ctrY - var.cDistY }
+    elif { param.N == 3 }
+        set var.ctrX = { var.ctrX + var.cDistX }
+        set var.ctrY = { var.ctrY - var.cDistY }
+
+    set global.mosWPCtrPos[var.workOffset] = { var.ctrX, var.ctrY }
 
     ; If running in full mode, operator provided approximate width and
     ; height values of the workpiece. Assign these to the global
