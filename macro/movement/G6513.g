@@ -1,8 +1,9 @@
-; G6513.g: SURFACE PROBE - MANUAL OR AUTOMATED - ONE OR MULTIPLE POINTS
+; G6513.g: SURFACE PROBE - MANUAL OR AUTOMATED - MULTIPLE POINTS
 ;
-; Replacement for G6512, thae uses the concept of surfaces rather than
-; individual probe points. When given multiple points for a surface,
-; these will be probed sequentially and if possible, further details
+; Using the underlying G6512.1 and G6512.2, this uses the concept
+; of surfaces rather than individual probe points. A surface consists
+; of two points, each point having a start and target position.
+; These will be probed sequentially and if possible, further details
 ; and compensations will be applied based on the information we have.
 ;
 ; Example to probe 2 flat surfaces.
@@ -102,6 +103,9 @@ var safeZ = { exists(param.S) ? param.S : global.mosMI[2] }
 if { !exists(param.P) }
     abort { "G6513: Must provide a list of surfaces to probe (P..)!" }
 
+if { mod(#param.P,2) != 0 }
+    abort { "G6513: Must provide an even number of start and target positions for each surface!" }
+
 if { state.currentTool >= #tools || state.currentTool < 0 }
     abort { "G6513: No tool selected! Select a tool before probing."}
 
@@ -122,7 +126,7 @@ while { iterations < #param.P }
     var lastPos = { null }
 
     if { #var.curSurface > 2 }
-        abort { "G6513: Only 1 or 2 points per surface are supported!" }
+        abort { "G6513: Only 2 points per surface are supported!" }
 
     ; Iterate over probe points
     while { iterations < #var.curSurface }
@@ -155,8 +159,7 @@ while { iterations < #param.P }
             ; Pass through E and R parameters if they exist
             G6512.1 I{ param.I } X{ var.targetPos[0] } Y{ var.targetPos[1] } Z{ var.targetPos[2] } R{ exists(param.R) ? param.R : null } E{ exists(param.E) ? param.E : 1 }
 
-        ; Save probed point {X,Y,Z} into surface
-        ; with the approach vector alongside it.
+        ; Retrieve the probed point
         var probedPos = { global.mosMI }
 
         ; Calculate the approach angle in radians based on the start and probed position
@@ -168,12 +171,8 @@ while { iterations < #param.P }
         ; Store the probed position
         set var.pSfc[var.surfaceNo][0][var.pointNo] = { var.probedPos }
 
-        ; Only calculate a surface angle with 2 points.
-        ; With 1 point, the surface angle is
-        ; perpendicular to the approach vector.
-        if { #var.curSurface == 1 }
-            set var.pSfc[var.surfaceNo][2] = { var.rApproachCur + pi/2 }
-        elif { var.lastPos != null }
+        ; Calculate a surface angle once we have two points
+        if { var.lastPos != null }
             ; Calculate the surface angle from the raw points
             var rSurfaceCur = { atan2(var.probedPos[0] - var.lastPos[0], var.probedPos[1] - var.lastPos[1]) }
             set var.pSfc[var.surfaceNo][2] = { var.pSfc[var.surfaceNo][2] + var.rSurfaceCur }
@@ -207,49 +206,42 @@ while { iterations < #var.pSfc }
     var dX = 0
     var dY = 0
 
-    ; If we only have one point, compensate for the tool radius
-    ; and deflection on the approach vector
-    if { #var.surfacePoints == 1 }
-        set var.dX = { var.trX * cos(var.rApproach) }
-        set var.dY = { var.trY * sin(var.rApproach) }
-    else
+    ; Calculate the difference between the approach and perpendicular-to-surface angles.
+    ; Adjust rActual to be in the same direction as rApproach
+    var rActual = { (var.rSurface + pi/2) }
 
-        ; Calculate the difference between the approach and perpendicular-to-surface angles.
-        ; Adjust rActual to be in the same direction as rApproach
-        var rActual = { (var.rSurface + pi/2) }
+    if { (var.rApproach - var.rActual) < -pi/2 }
+        set var.rActual = { var.rActual + pi }
+    elif { (var.rApproach - var.rActual) > pi/2 }
+        set var.rActual = { var.rActual - pi }
 
-        if { (var.rApproach - var.rActual) < -pi/2 }
-            set var.rActual = { var.rActual + pi }
-        elif { (var.rApproach - var.rActual) > pi/2 }
-            set var.rActual = { var.rActual - pi }
+    var rDiff = { var.rApproach - var.rActual }
 
-        var rDiff = { var.rApproach - var.rActual }
+    echo { "Surface #" ^ (iterations+1) ^ " surface angle: " ^ degrees(var.rSurface) ^ ", approach angle: " ^ degrees(var.rApproach) ^ " difference: " ^ degrees(var.rDiff) }
 
-        echo { "Surface #" ^ (iterations+1) ^ " surface angle: " ^ degrees(var.rSurface) ^ ", approach angle: " ^ degrees(var.rApproach) ^ " difference: " ^ degrees(var.rDiff) }
+    ; Calculate the compensation to apply
+    var dcosX = { var.trX * cos(var.rDiff) }
+    var dsinX = { var.trX * sin(var.rDiff) }
+    var dcosY = { var.trY * cos(var.rDiff) }
+    var dsinY = { var.trY * sin(var.rDiff) }
 
-        ; Calculate the compensation to apply
-        var dcosX = { var.trX * cos(var.rDiff) }
-        var dsinX = { var.trX * sin(var.rDiff) }
-        var dcosY = { var.trY * cos(var.rDiff) }
-        var dsinY = { var.trY * sin(var.rDiff) }
-
-        ; Select cos or sin compensation based on 45-degree quadrants
-        if { var.rApproach > -3*pi/4 && var.rApproach < -pi/4 }
-            ; Right surface
-            set var.dX = { -abs(var.dcosX) }
-            set var.dY = { var.rSurface > 0 ? abs(var.dsinY) : -abs(var.dsinY) }
-        elif { var.rApproach > pi/4 && var.rApproach < 3*pi/4 }
-            ; Left surface
-            set var.dX = { abs(var.dcosX) }
-            set var.dY = { var.rSurface > 0 ? abs(var.dsinY) : -abs(var.dsinY) }
-        elif { var.rApproach > -pi/4 && var.rApproach < pi/4 }
-            ; Front surface
-            set var.dX = { var.rSurface > 0 ? -abs(var.dsinX) : abs(var.dsinX) }
-            set var.dY = { abs(var.dcosY) }
-        elif { (var.rApproach > 3*pi/4 && var.rApproach < pi) || (var.rApproach > -pi && var.rApproach < -3*pi/4) }
-            ; Back surface
-            set var.dX = { var.rSurface > 0 ? abs(var.dsinX) : -abs(var.dsinX) }
-            set var.dY = { -abs(var.dcosY) }
+    ; Select cos or sin compensation based on 45-degree quadrants
+    if { var.rApproach > -3*pi/4 && var.rApproach < -pi/4 }
+        ; Right surface
+        set var.dX = { -abs(var.dcosX) }
+        set var.dY = { var.rSurface > 0 ? abs(var.dsinY) : -abs(var.dsinY) }
+    elif { var.rApproach > pi/4 && var.rApproach < 3*pi/4 }
+        ; Left surface
+        set var.dX = { abs(var.dcosX) }
+        set var.dY = { var.rSurface > 0 ? abs(var.dsinY) : -abs(var.dsinY) }
+    elif { var.rApproach > -pi/4 && var.rApproach < pi/4 }
+        ; Front surface
+        set var.dX = { var.rSurface > 0 ? -abs(var.dsinX) : abs(var.dsinX) }
+        set var.dY = { abs(var.dcosY) }
+    elif { (var.rApproach > 3*pi/4 && var.rApproach < pi) || (var.rApproach > -pi && var.rApproach < -3*pi/4) }
+        ; Back surface
+        set var.dX = { var.rSurface > 0 ? abs(var.dsinX) : -abs(var.dsinX) }
+        set var.dY = { -abs(var.dcosY) }
 
     ; Adjust each of the points
     while { iterations < #var.surfacePoints }
