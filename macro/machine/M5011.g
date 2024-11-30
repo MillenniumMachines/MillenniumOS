@@ -14,12 +14,8 @@ if { var.workOffset < 0 || var.workOffset >= limits.workplaces }
     abort { "Work Offset (W..) must be between 0 and " ^ limits.workplaces-1 ^ "!" }
 
 var hasRotation = { global.mosWPDeg[var.workOffset] != global.mosDfltWPDeg }
-var hasCentre   = { global.mosWPCtrPos[var.workOffset][0] != global.mosDfltWPCtrPos[0] && global.mosWPCtrPos[var.workOffset][1] != global.mosDfltWPCtrPos[1] }
 
-if { var.hasRotation && var.hasCentre }
-
-    var cX = { global.mosWPCtrPos[var.workOffset][0] }
-    var cY = { global.mosWPCtrPos[var.workOffset][1] }
+if { var.hasRotation }
 
     M291 P{"Workpiece in WCS " ^ var.wcsNumber ^ " is rotated by " ^ global.mosWPDeg[var.workOffset] ^ " degrees. Apply compensation?"} R{"MillenniumOS: Workpiece Rotation Compensation"} S4 K{"Yes","No"} F0
     if { input != 0 }

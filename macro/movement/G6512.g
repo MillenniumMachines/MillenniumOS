@@ -60,6 +60,9 @@
 if { !inputs[state.thisInput].active }
     M99
 
+if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
+    abort { "All axes must be homed before probing!" }
+
 if { exists(param.I) && param.I != null && (sensors.probes[param.I].type < 5 || sensors.probes[param.I].type > 8) }
     abort { "G6512: Invalid probe ID (I..), probe must be of type 5 or 8, or unset for manual probing." }
 
@@ -161,6 +164,11 @@ M400
 ; as we can achieve, given well calibrated values of
 ; tool radius and deflection.
 
+; For automated probes, apply any offsets defined.
+if { !var.manualProbe }
+    set var.pP[0] = { var.pP[0] + sensors.probes[param.I].offsets[0] }
+    set var.pP[1] = { var.pP[1] + sensors.probes[param.I].offsets[1] }
+
 ; The tool radius we use here already includes a deflection value
 ; which is deemed to be the same for each X/Y axis.
 ; TODO: Is this a safe assumption?
@@ -190,16 +198,4 @@ if { var.mag != 0 }
 ; in X/Y, _or_ Z, and we have some control over this as we're writing the higher
 ; level macros.
 
-; For automated probes, apply any offsets defined.
-if { !var.manualProbe }
-    set var.pP[0] = { var.pP[0] + sensors.probes[param.I].offsets[0] }
-    set var.pP[1] = { var.pP[1] + sensors.probes[param.I].offsets[1] }
-
-; Multiply, ceil then divide by this number
-; to achieve 3 decimal places of accuracy.
-var sDig = 1000
-
-; Round the output variables to 3 decimal places
-set global.mosMI[0] = { ceil(var.pP[0] * var.sDig) / var.sDig }
-set global.mosMI[1] = { ceil(var.pP[1] * var.sDig) / var.sDig }
-set global.mosMI[2] = { ceil(var.pP[2] * var.sDig) / var.sDig }
+set global.mosMI = { var.pP }
