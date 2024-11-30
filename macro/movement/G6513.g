@@ -68,6 +68,9 @@
 if { !inputs[state.thisInput].active }
     M99
 
+if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
+    abort { "All axes must be homed before probing!" }
+
 if { exists(param.I) && param.I != null && (sensors.probes[param.I].type < 5 || sensors.probes[param.I].type > 8) }
     abort { "G6513: Invalid probe ID (I..), probe must be of type 5 or 8, or unset for manual probing." }
 
@@ -217,7 +220,7 @@ while { iterations < #var.pSfc }
 
     var rDiff = { var.rApproach - var.rActual }
 
-    echo { "Surface #" ^ (iterations+1) ^ " surface angle: " ^ degrees(var.rSurface) ^ ", approach angle: " ^ degrees(var.rApproach) ^ " difference: " ^ degrees(var.rDiff) }
+    ; echo { "Surface #" ^ (iterations+1) ^ " surface angle: " ^ degrees(var.rSurface) ^ ", approach angle: " ^ degrees(var.rApproach) ^ " difference: " ^ degrees(var.rDiff) }
 
     ; Calculate the compensation to apply
     var dcosX = { var.trX * cos(var.rDiff) }

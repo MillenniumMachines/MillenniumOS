@@ -248,6 +248,12 @@ if { (var.cornerAngleError > global.mosAngleTol) }
 ; Calculate Y centerpoint
 set var.sY = { (var.pSfcY[0][0][0][1] + var.pSfcY[0][0][1][1] + var.pSfcY[1][0][0][1] + var.pSfcY[1][0][1][1]) / 4 }
 
+; TODO: These are the center points between the locations we probed, but
+; that doesn't mean they're the center of the block, as our probe
+; points are not necessarily centred on the block.
+; We need to calculate a block corner and then find the center point
+; from that.
+
 ; Set the centre of the block
 set global.mosWPCtrPos[var.workOffset] = { var.sX, var.sY }
 
@@ -255,8 +261,8 @@ set global.mosWPCtrPos[var.workOffset] = { var.sX, var.sY }
 ; We can now calculate the actual dimensions of the block.
 ; The dimensions are the difference between the average of each
 ; pair of points of each line.
-set global.mosWPDims[var.workOffset][0] = { ((var.pSfcX[0][0][0][0] + var.pSfcX[0][0][1][0]) / 2) - ((var.pSfcX[1][0][0][0] + var.pSfcX[1][0][1][0]) / 2) }
-set global.mosWPDims[var.workOffset][1] = { ((var.pSfcY[0][0][0][1] + var.pSfcY[0][0][1][1]) / 2) - ((var.pSfcY[1][0][0][1] + var.pSfcY[1][0][1][1]) / 2) }
+set global.mosWPDims[var.workOffset][0] = { abs(((var.pSfcX[0][0][0][0] + var.pSfcX[0][0][1][0]) / 2) - ((var.pSfcX[1][0][0][0] + var.pSfcX[1][0][1][0]) / 2)) }
+set global.mosWPDims[var.workOffset][1] = { abs(((var.pSfcY[0][0][0][1] + var.pSfcY[0][0][1][1]) / 2) - ((var.pSfcY[1][0][0][1] + var.pSfcY[1][0][1][1]) / 2)) }
 
 ; Set the global error in dimensions
 ; This can be used by other macros to configure the touch probe deflection.

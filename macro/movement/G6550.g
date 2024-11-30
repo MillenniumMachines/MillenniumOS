@@ -70,6 +70,13 @@ if { var.manualProbe }
     G53 G1 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } F{ global.mosMPS[0] }
     M99
 
+; If we're only moving in the positive Z direction,
+; just move to the target position - the probe should
+; never be obstructed vertically.
+if { var.tPX == global.mosMI[0] && var.tPY == global.mosMI[1] && var.tPZ > global.mosMI[2] }
+    G53 G1 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } F{ sensors.probes[param.I].travelSpeed }
+    M99
+
 ; Commented due to memory limitations
 ; M7500 S{"Protected move to X=" ^ var.tPX ^ " Y=" ^ var.tPY ^ " Z=" ^ var.tPZ ^ " from X=" ^ global.mosMI[0] ^ " Y=" ^ global.mosMI[1] ^ " Z=" ^ global.mosMI[2] }
 
