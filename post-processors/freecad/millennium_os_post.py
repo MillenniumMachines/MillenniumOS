@@ -23,7 +23,15 @@ import sys
 import argparse
 import shlex
 import re
-from enum import StrEnum, Flag, auto
+from enum import Flag, auto
+
+if sys.version_info < (3, 11):
+    from enum import Enum
+    class StrEnum(str, Enum):
+        pass
+else:
+    from enum import StrEnum, auto
+
 from contextlib import contextmanager
 import FreeCAD
 from FreeCAD import Units
