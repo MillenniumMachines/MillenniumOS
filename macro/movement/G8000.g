@@ -180,6 +180,10 @@ echo >>{var.wizTVF} { "set global.mosSID = " ^ var.wizSpindleID }
 
 ; Spindle Feedback Feature Enable / Disable
 if { var.wizFeatureSpindleFeedback == null }
+    if { var.wizTutorialMode }
+        M291 P"The <b>Spindle Feedback</b> feature can be used to detect when a spindle has reached a target speed, has stopped, or both, based on the state of a general purpose input in RRF." R"MillenniumOS: Configuration Wizard" S2 T0
+        M291 P"You must make additional configuration  changes in your VFD and wire an extra VFD output to a free general purpose input before enabling." R"MillenniumOS: Configuration Wizard" S2 T0
+        M291 P"You can <a target=""_blank"" href=""https://mos.diycnc.xyz/usage/spindle-feedback"">View the Spindle Feedback Documentation</a> for more details." R"MillenniumOS: Configuration Wizard" S2 T0
     M291 P"Would you like to enable the <b>Spindle Feedback</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F{ global.mosFeatSpindleFeedback ? 0 : 1}
     set var.wizFeatureSpindleFeedback = { (input == 0) ? true : false }
 
@@ -189,10 +193,9 @@ echo >>{var.wizTVF} {"set global.mosFeatSpindleFeedback = " ^ var.wizFeatureSpin
 if { var.wizSpindleAccelSec == null || var.wizSpindleDecelSec == null }
     if { var.wizTutorialMode }
         if { var.wizFeatureSpindleFeedback }
-            M291 P"The Spindle Feedback feature can be used to detect when a spindle has reached a target speed, has stopped, or both. How you use this will depend on your VFD configuration." R"MillenniumOS: Configuration Wizard" S2 T0
-            M291 P"We will start the spindle so we can measure the time it takes to accelerate and decelerate - these values will be used if you disable the Spindle Feedback feature later." R"MillenniumOS: Configuration Wizard" S2 T0
-            M291 P"While doing this, we will monitor the state of any configured general purpose inputs and ask you to confirm if these should be used for spindle feedback." R"MillenniumOS: Configuration Wizard" S2 T0
-
+            M291 P"Spindle Feedback is enabled. We will shortly start and stop the spindle, monitoring for changes in any configured general purpose inputs." R"MillenniumOS: Configuration Wizard" S2 T0
+            M291 P"You will be asked to assign any changed pins to spindle feedback after the spindle stops." R"MillenniumOS: Configuration Wizard" S2 T0
+            M291 P"We will also measure the time taken to accelerate and decelerate in case Spindle Feedback is disabled in future." R"MillenniumOS: Configuration Wizard" S2 T0
         else
             M291 P"Spindle Feedback is disabled. We need to measure the time it takes for your spindle to accelerate to maximum speed and then decelerate to a stop." R"MillenniumOS: Configuration Wizard" S2 T0
 
@@ -278,7 +281,12 @@ echo >>{var.wizTVF} {"set global.mosSFSID = " ^ var.wizSpindleStopPinID}
 
 ; Coolant Control Feature Enable / Disable
 if { var.wizFeatureCoolantControl == null }
-    M291 P"Would you like to enable the <b>Coolant Control</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F{ global.mosFeatToolSetter ? 0 : 1 }
+    if { var.wizTutorialMode }
+        M291 P"The <b>Coolant Control</b> feature can be used to enable and disable general purpose outputs in response to M7, M7.1, M8 and M9 commands." R"MillenniumOS: Configuration Wizard" S2 T0
+        M291 P"<b>M7.1</b> activates an air pin only, <b>M7</b> activates air and a second pin for misting, <b>M8</b> activates a third pin for flood coolant. <b>M9</b> deactivates all coolant outputs." R"MillenniumOS: Configuration Wizard" S2 T0
+        M291 P"You must wire in and configure at least one general purpose output before enabling this feature." R"MillenniumOS: Configuration Wizard" S2 T0
+        M291 P"You can <a target=""_blank"" href=""https://mos.diycnc.xyz/usage/coolant-control"">View the Coolant Control Documentation</a> for more details." R"MillenniumOS: Configuration Wizard" S2 T0
+    M291 P"Would you like to enable the <b>Coolant Control</b> feature?" R"MillenniumOS: Configuration Wizard" S4 T0 K{"Yes","No"} F{ global.mosFeatCoolantControl ? 0 : 1 }
     set var.wizFeatureCoolantControl = { (input == 0) ? true : false }
 
 ; Write feature setting to the resume file
