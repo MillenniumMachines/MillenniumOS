@@ -300,6 +300,7 @@ var M = {
   VSSC_ENABLE: 7000,
   VSSC_DISABLE: 7001,
   SPINDLE_ON_CW: 3.9,
+  SPINDLE_ON_CCW: 4.9,
   SPINDLE_OFF: 5.9,
   CALL_MACRO: 98,
   COOLANT_MIST: 7,
@@ -537,6 +538,7 @@ var curTool = {
   number: -1,
   desc: "unknown",
   rpm: 0,
+  run_cmd: M.SPINDLE_OFF, // Default to not turning on the spindle
   flutes: 0,
   type: -1,
   length: 0,
@@ -589,13 +591,11 @@ function onParameter(param, value) {
     case 'operation:tool_spindleSpeed':
       curTool['rpm'] = value;
     break;
+    case 'operation:tool_clockwise':
+      curTool['run_cmd'] = (value === 1) ? M.SPINDLE_ON_CW : M.SPINDLE_ON_CCW;
+    break;
 
     // Generate errors on unsupported parameter values
-    case 'operation:tool_clockwise':
-      if(value !== 1) {
-        error("Anti-clockwise spindle rotation is not supported by MillenniumOS!");
-      }
-    break;
     case 'operation:isMultiAxisStrategy':
       if(value === 1) {
         error("Multi-axis strategies are not supported by MillenniumOS!");
@@ -704,7 +704,7 @@ function onSection() {
     // because modal groups do not correctly handle
     // decimals.
 
-    writeBlock(mFmt.format(M.SPINDLE_ON_CW), s);
+    writeBlock(mFmt.format(curTool['run_cmd']), s);
     writeln("");
 
     if(!(curTool.coolant in COOLANT)) {
