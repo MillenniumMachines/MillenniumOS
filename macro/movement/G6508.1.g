@@ -217,8 +217,8 @@ var pSfc = { global.mosMI }
 
 
 ; Corner position in quick mode
-var cX = { var.pSfc[0][0][0] }
-var cY = { var.pSfc[1][0][1] }
+var cX = { var.pSfc[0][0][0][0] }
+var cY = { var.pSfc[1][0][0][1] }
 
 ; Full mode (P=0) or unset
 if { var.pFull }
