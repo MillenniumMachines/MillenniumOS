@@ -106,8 +106,8 @@ var safeZ = { exists(param.S) ? param.S : global.mosMI[2] }
 if { !exists(param.P) }
     abort { "G6513: Must provide a list of surfaces to probe (P..)!" }
 
-if { mod(#param.P,2) != 0 }
-    abort { "G6513: Must provide an even number of start and target positions for each surface!" }
+if { #param.P < 1 }
+    abort { "G6513: Must provide at least one surface to probe!" }
 
 if { state.currentTool >= #tools || state.currentTool < 0 }
     abort { "G6513: No tool selected! Select a tool before probing."}
@@ -124,18 +124,17 @@ while { iterations < #param.P }
     var curSurface = { param.P[var.surfaceNo] }
 
     ; Create vector to store start points, probed points, approach angle and surface angle
-    set var.pSfc[var.surfaceNo] = { vector(#var.curSurface, {{null, null, null}, {null, null, null}}), 0, 0}
+    set var.pSfc[var.surfaceNo] = { vector(#var.curSurface, {{null, null, null}, {null, null, null}}), 0, null}
 
     var lastPos = { null }
 
     if { #var.curSurface > 2 }
-        abort { "G6513: Only 2 points per surface are supported!" }
+        abort { "G6513: A maximum of 2 points per surface are supported!" }
 
     ; Iterate over probe points
     while { iterations < #var.curSurface }
         var pointNo = { iterations }
         var curPoint = { var.curSurface[var.pointNo] }
-
         var startPos = { var.curPoint[0] }
         var targetPos = { var.curPoint[1] }
 
@@ -174,11 +173,15 @@ while { iterations < #param.P }
         ; Store the probed position
         set var.pSfc[var.surfaceNo][0][var.pointNo] = { var.probedPos }
 
-        ; Calculate a surface angle once we have two points
+        ; Set our surface angle perpendicular to the approach angle
+        ; if we don't have a previous surface angle
+        if { var.pSfc[var.surfaceNo][2] == null }
+            set var.pSfc[var.surfaceNo][2] = { var.pSfc[var.surfaceNo][1] + pi/2 }
+
+        ; Calculate a surface angle from the probe point once we have two points
         if { var.lastPos != null }
             ; Calculate the surface angle from the raw points
-            var rSurfaceCur = { atan2(var.probedPos[0] - var.lastPos[0], var.probedPos[1] - var.lastPos[1]) }
-            set var.pSfc[var.surfaceNo][2] = { var.pSfc[var.surfaceNo][2] + var.rSurfaceCur }
+            set var.pSfc[var.surfaceNo][2] = { atan2(var.probedPos[0] - var.lastPos[0], var.probedPos[1] - var.lastPos[1]) }
 
         ; Move back to starting position before moving to next probe point
         G6550 I{ param.I } X{ var.startPos[0] } Y{ var.startPos[1] }
@@ -245,6 +248,8 @@ while { iterations < #var.pSfc }
         ; Back surface
         set var.dX = { var.rSurface > 0 ? abs(var.dsinX) : -abs(var.dsinX) }
         set var.dY = { -abs(var.dcosY) }
+
+    ; echo { "Compensation: " ^ var.dX ^ ", " ^ var.dY }
 
     ; Adjust each of the points
     while { iterations < #var.surfacePoints }
