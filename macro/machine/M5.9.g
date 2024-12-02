@@ -27,6 +27,11 @@ M400
 ; for this first and only trigger a wait if any spindles are
 ; activated.
 var sID = { global.mosSID }
+
+; Validate Spindle ID
+if { var.sID < 0 || var.sID > #spindles-1 || spindles[var.sID] == null }
+    abort { "Spindle ID " ^ var.sID ^ " is not valid!" }
+
 var doWait = false
 
 while { (iterations < #spindles) && !var.doWait }

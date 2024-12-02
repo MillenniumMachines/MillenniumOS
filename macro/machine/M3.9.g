@@ -19,6 +19,10 @@ if { exists(param.P) && param.P < 0 }
 ; Allocate Spindle ID
 var sID = { (exists(param.P) ? param.P : global.mosSID) }
 
+; Validate Spindle ID
+if { var.sID < 0 || var.sID > #spindles-1 || spindles[var.sID] == null }
+    abort { "Spindle ID " ^ var.sID ^ " is not valid!" }
+
 ; Validate Spindle Speed parameter
 if { exists(param.S) }
     if { param.S < 0 }
@@ -45,7 +49,7 @@ var sStopping = { spindles[var.sID].current > 0 && param.S == 0 }
 ; Warning Message for Operator
 ; Assigned as a separate variable because
 ; otherwise the dialog box line is too long.
-var wM = {"<b>CAUTION</b>: Spindle <b>#" ^ var.sID ^ "</b> will now start!<br/>Check that workpiece and tool are secure, and all safety precautions have been taken before pressing <b>Continue</b>."}
+var wM = {"<b>CAUTION</b>: Spindle <b>#" ^ var.sID ^ "</b> will now start <b>clockwise</b>!<br/>Check that workpiece and tool are secure, and all safety precautions have been taken before pressing <b>Continue</b>."}
 
 ; If the spindle is stationary
 if { spindles[var.sID].current == 0 }
