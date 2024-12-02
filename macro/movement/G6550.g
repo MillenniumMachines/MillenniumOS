@@ -49,6 +49,8 @@ G69
 ; Get current machine position
 M5000 P0
 
+var cPZ = { global.mosMI[2] }
+
 ; Generate target position and defaults
 var tPX = { (exists(param.X)? param.X : global.mosMI[0]) }
 var tPY = { (exists(param.Y)? param.Y : global.mosMI[1]) }
@@ -73,12 +75,9 @@ if { var.manualProbe }
 ; If we're only moving in the positive Z direction,
 ; just move to the target position - the probe should
 ; never be obstructed vertically.
-if { var.tPX == global.mosMI[0] && var.tPY == global.mosMI[1] && var.tPZ > global.mosMI[2] }
+if { var.tPX == global.mosMI[0] && var.tPY == global.mosMI[1] && var.tPZ > var.cPZ }
     G53 G1 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } F{ sensors.probes[param.I].travelSpeed }
     M99
-
-; Commented due to memory limitations
-; M7500 S{"Protected move to X=" ^ var.tPX ^ " Y=" ^ var.tPY ^ " Z=" ^ var.tPZ ^ " from X=" ^ global.mosMI[0] ^ " Y=" ^ global.mosMI[1] ^ " Z=" ^ global.mosMI[2] }
 
 ; Note: these must be set as variables as we override the
 ; probe speed below. We need to reset the probe speed
