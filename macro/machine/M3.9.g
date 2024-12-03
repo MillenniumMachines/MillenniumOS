@@ -19,6 +19,10 @@ if { exists(param.P) && param.P < 0 }
 ; Allocate Spindle ID
 var sID = { (exists(param.P) ? param.P : global.mosSID) }
 
+; Validate Spindle ID
+if { var.sID < 0 || var.sID > #spindles-1 || spindles[var.sID] == null || spindles[var.sID].state == "unconfigured" }
+    abort { "Spindle ID " ^ var.sID ^ " is not valid!" }
+
 ; Validate Spindle Speed parameter
 if { exists(param.S) }
     if { param.S < 0 }
