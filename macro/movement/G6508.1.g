@@ -13,6 +13,9 @@ if { exists(param.W) && param.W != null && (param.W < 0 || param.W >= limits.wor
 if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
     abort { "Must provide a start position to probe from using J, K and L parameters!" }
 
+if { !exists(param.Z) }
+    abort { "Must provide a probe position using the Z parameter!" }
+
 if { (!exists(param.Q) || param.Q == 0) && !exists(param.H) || !exists(param.I) }
     abort { "Must provide an approximate X length and Y length using H and I parameters when using full probe, Q0!" }
 
@@ -44,6 +47,9 @@ var pID = { global.mosFeatTouchProbe ? global.mosTPID : null }
 ; Probe mode defaults to (0=Full)
 var pFull = { exists(param.Q) ? param.Q == 0: false }
 
+set global.mosPRST = { global.mosPRST + (var.pFull ? 2 : 1) }
+set global.mosPRPT = { global.mosPRPT + (var.pFull ? 4 : 2) }
+
 ; Make sure probe tool is selected
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
@@ -52,9 +58,6 @@ if { global.mosPTID != state.currentTool }
 ; Reset corner, dimensions and rotation
 M5010 W{var.workOffset} R50
 
-; Get current machine position on Z
-M5000 P1 I2
-
 ; Store our own safe Z position as the current position. We return to
 ; this position where necessary to make moves across the workpiece to
 ; the next probe point.
@@ -62,15 +65,17 @@ M5000 P1 I2
 ; original position may have been safe with a different tool installed,
 ; the touch probe may be longer. After a tool change the spindle
 ; will be parked, so essentially our safeZ is at the parking location.
-var safeZ = { global.mosMI }
+var safeZ = { param.L }
 
 ; Above the corner to be probed
 ; J = start position X
 ; K = start position Y
-; L = start position Z - our probe height
+; L = start position Z
+; Z = our probe height (absolute)
+
 var sX   = { param.J }
 var sY   = { param.K }
-var sZ   = { param.L }
+
 
 ; Length of surfaces on X and Y forming the corner
 ; These will be null when using quick mode so
@@ -126,7 +131,7 @@ if { var.pFull }
 ; the Y start location to get the second probe location.
 ; For each probe point: {start x, start y, start z}, {target x, target y, target z}
 ; In full mode we have 2 points per surface, otherwise 1.
-var points = { vector(2 - (var.pFull ? 0 : 1), {{null, null, var.sZ}, {null, null, var.sZ}}) }
+var points = { vector(2 - (var.pFull ? 0 : 1), {{null, null, param.Z}, {null, null, param.Z}}) }
 
 var surface1 = { var.points }
 var surface2 = { var.points }

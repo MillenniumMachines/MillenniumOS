@@ -118,7 +118,8 @@ var pSfc = { vector(#param.P, null) }
 var trX = { global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][0] }
 var trY = { global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][1] }
 
-; Iterate over surfaces
+; Iterate over surfaces and run probes
+; Track total number of points probed to calculate progress
 while { iterations < #param.P }
     var surfaceNo = { iterations }
     var curSurface = { param.P[var.surfaceNo] }
@@ -134,9 +135,8 @@ while { iterations < #param.P }
     ; Iterate over probe points
     while { iterations < #var.curSurface }
         var pointNo = { iterations }
-        var curPoint = { var.curSurface[var.pointNo] }
-        var startPos = { var.curPoint[0] }
-        var targetPos = { var.curPoint[1] }
+        var startPos = { var.curSurface[var.pointNo][0] }
+        var targetPos = { var.curSurface[var.pointNo][1] }
 
         ; Check if the positions are within machine limits
         M6515 X{ var.startPos[0] } Y{ var.startPos[1] } Z{ var.startPos[2] }
@@ -194,8 +194,14 @@ while { iterations < #param.P }
 
         set var.lastPos = { var.probedPos }
 
+        ; Update the number of points probed
+        set global.mosPRPS = { global.mosPRPS + 1 }
+
     if { var.retractAfterSurface }
         G6550 I{ param.I } Z{ var.safeZ }
+
+    ; Update the number of surfaces probed
+    set global.mosPRSS = { global.mosPRSS + 1 }
 
 ; Okay, now we've probed all points and performed precalculations.
 ; We use the calculated approach and surface angles to adjust the
