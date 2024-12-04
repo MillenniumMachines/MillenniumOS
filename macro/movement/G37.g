@@ -72,7 +72,6 @@ echo {"Probing tool #" ^ state.currentTool ^ " length at X=" ^ global.mosTSP[0] 
 ; will plunge the tool into the table.
 var aP = 0
 
-
 ; If radius of tool is greater than radius of the toolsetter, then we use a
 ; modified probing mechanism to identify the longest (lowest) point of the tool
 if { global.mosTT[state.currentTool][0] > global.mosTSR }
@@ -89,10 +88,10 @@ if { global.mosTT[state.currentTool][0] > global.mosTSR }
     ; Do _not_ return to the safe position. Back-off position is fine.
     G6512 D1 I{global.mosTSID} J{global.mosTSP[0]} K{global.mosTSP[1]} L{move.axes[2].max} Z{move.axes[2].min} R0
 
-    set var.pZ[0] = global.mosMI[2]
+    set var.pZ[0] = { global.mosMI[2] }
 
     while { iterations < var.points }
-        var angle = { radians(360 / var.points) * iterations }
+        var angle = { (2 * pi) / var.points * iterations }
         var tX = { global.mosTSP[0] + global.mosTT[state.currentTool][0] * cos(var.angle) }
         var tY = { global.mosTSP[1] + global.mosTT[state.currentTool][0] * sin(var.angle) }
 
@@ -110,14 +109,14 @@ if { global.mosTT[state.currentTool][0] > global.mosTSR }
         G6512 D1 E0 I{global.mosTSID} J{var.tX} K{var.tY} L{global.mosMI} Z{var.pZ[0]}
 
         ; Set the height to the probed point
-        set var.pZ[iterations+1] = global.mosMI[2]
+        set var.pZ[iterations+1] = { global.mosMI[2] }
 
     set var.aP = { max(var.pZ) }
 
 else
     ; Probe towards axis minimum until toolsetter is activated
     G6512 I{global.mosTSID} J{global.mosTSP[0]} K{global.mosTSP[1]} L{move.axes[2].max} Z{move.axes[2].min}
-    set var.aP = global.mosMI[2]
+    set var.aP = { global.mosMI[2] }
 
 ; If touch probe is configured, then our position in Z is relative to
 ; the installed height of the touch probe, which we don't know. What we

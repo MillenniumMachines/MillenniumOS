@@ -20,6 +20,9 @@ if { !exists(param.H) }
 if { !exists(param.I) }
     abort { "Must provide a distance to probe towards the target surface (I...)" }
 
+set global.mosPRST = { global.mosPRST + 1 }
+set global.mosPRPT = { global.mosPRPT + 1 }
+
 ; Default workOffset to the current workplace number if not specified
 ; with the W parameter.
 var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }

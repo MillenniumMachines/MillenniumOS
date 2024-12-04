@@ -23,6 +23,9 @@ if { exists(param.W) && param.W != null && (param.W < 0 || param.W >= limits.wor
 if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
     abort { "Must provide a start position to probe from using J, K and L parameters!" }
 
+if { !exists(param.Z) }
+    abort { "Must provide a probe position using the Z parameter!" }
+
 if { !exists(param.H) }
     abort { "Must provide an approximate bore diameter using the H parameter!" }
 
@@ -36,7 +39,10 @@ var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workpla
 ; the number of the work co-ordinate system, so is 1-indexed.
 var wcsNumber = { var.workOffset + 1 }
 
-var pID = { global.mosFeatTouchProbe ? global.mosTPID : null }
+set global.mosPRST = { global.mosPRST + 1 }
+set global.mosPRPT = { global.mosPRPT + 3 }
+
+var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
 ; TODO: Validate minimum bore diameter we can probe based on
 ; dive height and back-off distance.
@@ -68,12 +74,14 @@ var bR = { (param.H / 2) + var.overtravel }
 
 ; J = start position X
 ; K = start position Y
-; L = start position Z - our probe height
+; L = start position Z
+; Z = our probe height (absolute)
+
+var safeZ = { param.L }
 
 ; Start position is operator chosen center of the bore
 var sX   = { param.J }
 var sY   = { param.K }
-var sZ   = { param.L }
 
 ; Calculate probing directions using approximate bore radius
 ; Angle is in degrees
@@ -84,18 +92,13 @@ var dirXY = { { var.sX + var.bR, var.sY}, { var.sX + var.bR * cos(var.angle), va
 ; Bore edge co-ordinates for 3 probed points
 var pXY  = { null, null, null }
 
-; Get current machine position in Z
-M5000 P1 I2
-
-var safeZ = { global.mosMI }
-
 ; Probe each of the 3 points
 while { iterations < #var.dirXY }
     ; Perform a probe operation
     ; D1 causes the probe macro to not return to the safe position after probing.
     ; Since we're probing multiple times from the same starting point, there's no
     ; need to raise and lower the probe between each probe point.
-    G6512 D1 I{var.pID} J{var.sX} K{var.sY} L{var.sZ} X{var.dirXY[iterations][0]} Y{var.dirXY[iterations][1]}
+    G6512 D1 I{var.probeId} J{var.sX} K{var.sY} L{param.Z} X{var.dirXY[iterations][0]} Y{var.dirXY[iterations][1]}
 
     ; Save the probed co-ordinates
     set var.pXY[iterations] = { global.mosMI[0], global.mosMI[1] }
@@ -137,10 +140,10 @@ set global.mosWPCtrPos[var.workOffset]   = { var.cX, var.cY }
 set global.mosWPRad[var.workOffset]      = { var.avgR }
 
 ; Move to the calculated center of the bore
-G6550 I{var.pID} X{var.cX} Y{var.cY}
+G6550 I{var.probeId} X{var.cX} Y{var.cY}
 
 ; Move back to safe Z height
-G6550 I{var.pID} Z{var.safeZ}
+G6550 I{var.probeId} Z{var.safeZ}
 
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }

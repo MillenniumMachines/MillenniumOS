@@ -116,4 +116,4 @@ if { global.mosTM }
 ; Get current machine position
 M5000 P0
 
-G6502.1 W{var.workOffset} H{var.pocketWidth} I{var.pocketLength} T{var.surfaceClearance} C{var.cornerClearance} O{var.overtravel} J{global.mosMI[0]} K{global.mosMI[1]} L{global.mosMI[2] - var.probingDepth}
+G6502.1 W{var.workOffset} H{var.pocketWidth} I{var.pocketLength} T{var.surfaceClearance} C{var.cornerClearance} O{var.overtravel} J{global.mosMI[0]} K{global.mosMI[1]} L{global.mosMI[2]} Z{global.mosMI[2] - var.probingDepth}
