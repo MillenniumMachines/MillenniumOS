@@ -92,9 +92,9 @@ set global.mosWPSfcPos[var.workOffset] = { (var.probeAxis <= 1)? global.mosMI[0]
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
     M7601 W{var.workOffset}
+    echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " " ^ var.sAxis ^ " origin to probed co-ordinate." }
 
 ; Set WCS if required
-echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " " ^ var.sAxis ^ " origin to probed co-ordinate." }
 if { var.probeAxis <= 1 }
     G10 L2 P{var.wcsNumber} X{global.mosWPSfcPos[var.workOffset]}
 elif { var.probeAxis <= 3 }

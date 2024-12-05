@@ -148,7 +148,7 @@ G6550 I{var.probeId} Z{var.safeZ}
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
     M7601 W{var.workOffset}
+    echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to center of bore." }
 
 ; Set WCS origin to the probed center
-echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to center of bore." }
 G10 L2 P{var.wcsNumber} X{var.cX} Y{var.cY}
