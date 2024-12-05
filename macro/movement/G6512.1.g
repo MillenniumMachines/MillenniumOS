@@ -34,6 +34,9 @@ G94
 ; checks.
 G69
 
+set global.mosPRRT = { var.retries }
+set global.mosPRRS = 0
+
 ; Get current machine position
 M5000 P0
 
@@ -192,6 +195,8 @@ while { iterations <= var.retries }
         set var.tR = { var.tR && ((var.pV[1] <= sensors.probes[param.I].tolerance && iterations > 2) || (!var.errors && abs(var.cP[1] - var.tP[1]) <= sensors.probes[param.I].tolerance)) }
     if { var.tP[2] != var.sP[2] }
         set var.tR = { var.tR && ((var.pV[2] <= sensors.probes[param.I].tolerance && iterations > 2) || (!var.errors && abs(var.cP[2] - var.tP[2]) <= sensors.probes[param.I].tolerance)) }
+
+    set global.mosPRRS = { iterations + 1 }
 
     ; If we're within tolerance on all axes, we can stop probing
     ; and report the result.
