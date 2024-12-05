@@ -220,6 +220,8 @@ global mosDD = { vector(14, false) }
 
 
 ; Tracks the progress of current probing operations.
+global mosPRRS = 0 ; Probe retry number
+global mosPRRT = 0 ; Probe retry total
 global mosPRPS = 0 ; Probe point number
 global mosPRSS = 0 ; Probe surface number
 global mosPRPT = 0 ; Probe point total
