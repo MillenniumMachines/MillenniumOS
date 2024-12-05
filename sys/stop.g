@@ -4,3 +4,6 @@
 ; Apparently also triggered when pausing.
 ; Park the spindle.
 G27
+
+; Disable Coolant 
+M9
