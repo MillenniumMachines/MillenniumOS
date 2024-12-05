@@ -288,7 +288,7 @@ set global.mosWPDeg[var.workOffset] = { degrees(var.pSfcX[0][2]) }
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
     M7601 W{var.workOffset}
+    echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to the center of the rectangle block." }
 
 ; Set WCS origin to the probed center
-echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to the center of the rectangle block." }
 G10 L2 P{var.wcsNumber} X{var.sX} Y{var.sY}

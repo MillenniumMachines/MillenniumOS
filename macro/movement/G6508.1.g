@@ -359,7 +359,7 @@ G6550 I{var.pID} X{var.cX} Y{var.cY}
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
     M7601 W{var.workOffset}
+    echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to " ^ global.mosCornerNames[param.N] ^ " corner." }
 
 ; Set WCS origin to the probed corner
-echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to " ^ global.mosCornerNames[param.N] ^ " corner." }
 G10 L2 P{var.wcsNumber} X{var.cX} Y{var.cY}
