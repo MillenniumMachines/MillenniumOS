@@ -62,13 +62,28 @@ if { var.pocketLength < 1 }
     abort { "Pocket length too low!" }
 
 ; Prompt for clearance distance
-M291 P"Please enter <b>clearance</b> distance in mm.<br/>This is how far away from the expected surfaces we start probing from, to account for any innaccuracy in the center location." R"MillenniumOS: Probe Rect. Pocket" J1 T0 S6 F{global.mosCL}
+M291 P"Please enter <b>clearance</b> distance in mm.<br/>This is how far away from the expected surfaces and corners we probe from, to account for any innaccuracy in the start position." R"MillenniumOS: Probe Rect. Pocket" J1 T0 S6 F{global.mosCL}
 if { result != 0 }
     abort { "Rectangle pocket probe aborted!" }
 
-var clearance = { input }
-if { var.clearance < 1 }
+var surfaceClearance = { input }
+
+if { var.surfaceClearance <= 0.1 }
     abort { "Clearance distance too low!" }
+
+; Calculate the maximum clearance distance we can use before
+; the probe points will be flipped
+var mC = { min(var.pocketWidth, var.pocketLength) / 2 }
+
+var cornerClearance = null
+
+if { var.surfaceClearance >= var.mC }
+    var defCC = { max(1, var.mC-1) }
+    M291 P{"The <b>clearance</b> distance is more than half of the length or width of the pocket.<br/>Please enter a <b>corner clearance</b> distance less than <b>" ^ var.mC ^ "</b>."} R"MillenniumOS: Probe Rect. Pocket" J1 T0 S6 F{var.defCC}
+    set var.cornerClearance = { input }
+    if { var.cornerClearance >= var.mC }
+        abort { "Corner clearance distance too high!" }
+
 
 ; Prompt for overtravel distance
 M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far we move past the expected surfaces to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Rect. Pocket" J1 T0 S6 F{global.mosOT}
@@ -98,4 +113,7 @@ if { global.mosTM }
     if { input != 0 }
         abort { "Rectangle pocket probe aborted!" }
 
-G6502.1 W{var.workOffset} H{var.pocketWidth} I{var.pocketLength} T{var.clearance} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probingDepth}
+; Get current machine position
+M5000 P0
+
+G6502.1 W{var.workOffset} H{var.pocketWidth} I{var.pocketLength} T{var.surfaceClearance} C{var.cornerClearance} O{var.overtravel} J{global.mosMI[0]} K{global.mosMI[1]} L{global.mosMI[2] - var.probingDepth}

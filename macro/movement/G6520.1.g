@@ -34,6 +34,15 @@ if { (!exists(param.Q) || param.Q == 0) && !exists(param.H) || !exists(param.I) 
 if { !exists(param.N) || param.N < 0 || param.N >= (#global.mosCornerNames) }
     abort { "Must provide a valid corner index using the N parameter!" }
 
+if { exists(param.T) && param.T != null && param.T <= 0 }
+    abort { "Surface clearance distance must be greater than 0!" }
+
+if { exists(param.C) && param.C != null && param.C <= 0 }
+    abort { "Corner clearance distance must be greater than 0!" }
+
+if { exists(param.O) && param.O != null && param.O <= 0 }
+    abort { "Overtravel distance must be greater than 0!" }
+
 ; Default workOffset to the current workplace number if not specified
 ; with the W parameter.
 var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
@@ -49,33 +58,16 @@ var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
 
-; Store our own safe Z position as the current position. We return to
-; this position where necessary to make moves across the workpiece to
-; the next probe point.
-; We do this _after_ any switch to the touch probe, because while the
-; original position may have been safe with a different tool installed,
-; the touch probe may be longer. After a tool change the spindle
-; will be parked, so essentially our safeZ is at the parking location.
-var safeZ = { move.axes[2].machinePosition }
-
-; Above the corner to be probed
-; J = start position X
-; K = start position Y
-; L = start position Z - our probe height
-var sX   = { param.J }
-var sY   = { param.K }
-var sZ   = { param.L }
-
 ; Specify R0 so that the underlying macros dont report their own
 ; debug info.
 
 ; Probe the top surface of the workpiece from the current Z position
-G6510.1 R0 W{var.workOffset} H4 I{param.T} O{param.O} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{var.safeZ}
+G6510.1 R0 W{var.workOffset} H4 I{param.T} O{param.O} J{param.J} K{param.K} L{param.L}
 if { global.mosWPSfcPos[var.workOffset] == global.mosDfltWPSfcPos || global.mosWPSfcAxis[var.workOffset] != "Z" }
     abort { "G6520: Failed to probe the top surface of the workpiece!" }
 
 ; Probe the corner surface
-G6508.1 R0 W{var.workOffset} Q{param.Q} H{param.H} I{param.I} N{param.N} T{param.T} O{param.O} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{ global.mosWPSfcPos[var.workOffset] - param.P }
+G6508.1 R0 W{var.workOffset} Q{param.Q} H{param.H} I{param.I} N{param.N} T{param.T} C{param.C} O{param.O} J{param.J} K{param.K} L{ global.mosWPSfcPos[var.workOffset] - param.P }
 if { global.mosWPCnrNum[var.workOffset] == null }
     abort { "G6520: Failed to probe the corner surface of the workpiece!" }
 

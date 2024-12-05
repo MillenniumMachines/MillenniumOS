@@ -88,7 +88,8 @@ if { global.mosTT[state.currentTool][0] > global.mosTSR }
     ; Only probe once, this tells us the activation point at the center of the tool.
     ; Do _not_ return to the safe position. Back-off position is fine.
     G6512 D1 I{global.mosTSID} J{global.mosTSP[0]} K{global.mosTSP[1]} L{move.axes[2].max} Z{move.axes[2].min} R0
-    set var.pZ[0] = global.mosPCZ
+
+    set var.pZ[0] = global.mosMI[2]
 
     while { iterations < var.points }
         var angle = { radians(360 / var.points) * iterations }
@@ -102,18 +103,21 @@ if { global.mosTT[state.currentTool][0] > global.mosTSR }
             echo {"Probe point " ^ iterations+1 ^ " is outside of machine limits. Skipping."}
             continue
 
+        ; Get current machine position in Z
+        M5000 P1 I2
+
         ; Probe the point to see if we're activated.
-        G6512 D1 E0 I{global.mosTSID} J{var.tX} K{var.tY} L{move.axes[2].machinePosition} Z{var.pZ[0]}
+        G6512 D1 E0 I{global.mosTSID} J{var.tX} K{var.tY} L{global.mosMI} Z{var.pZ[0]}
 
         ; Set the height to the probed point
-        set var.pZ[iterations+1] = global.mosPCZ
+        set var.pZ[iterations+1] = global.mosMI[2]
 
     set var.aP = { max(var.pZ) }
 
 else
     ; Probe towards axis minimum until toolsetter is activated
     G6512 I{global.mosTSID} J{global.mosTSP[0]} K{global.mosTSP[1]} L{move.axes[2].max} Z{move.axes[2].min}
-    set var.aP = global.mosPCZ
+    set var.aP = global.mosMI[2]
 
 ; If touch probe is configured, then our position in Z is relative to
 ; the installed height of the touch probe, which we don't know. What we
@@ -126,14 +130,33 @@ else
 ; offset from there instead.
 
 var toolOffset = 0
+
+; If touch probe is configured, then our offset is relative to the activation
+; point distance from the reference surface.
 if { global.mosFeatTouchProbe }
     set var.toolOffset = { -(var.aP - global.mosTSAP) }
-else
-    set var.toolOffset = { -(abs(global.mosTSP[2]) - abs(var.aP)) }
 
-echo {"Tool #" ^ state.currentTool ^ " Offset=" ^ var.toolOffset ^ "mm"}
+elif { global.mosPTID == state.currentTool }
+    ; Otherwise, if we're probing the probe tool (datum tool in this case since
+    ; the touch probe is disabled), then we store the activation point against
+    ; which subsequent tools will be offset - but we do not set an offset for
+    ; the datum tool itself.
+    set global.mosTSAP = { var.aP }
+    echo {"Toolsetter Activation Point =" ^ global.mosTSAP ^ "mm"}
+elif { global.mosTSAP != null }
+    ; If we're probing a normal cutting tool, then we calculate the offset
+    ; based on the previously probed datum tool activation point.
+    set var.toolOffset = { -(abs(global.mosTSAP) - abs(var.aP)) }
+else
+    abort { "No Datum Tool Activation Point found. You must set the Z origin with the datum tool (T" ^ global.mosPTID ^ ") before probing tool lengths!" }
+
+if { var.toolOffset != 0 }
+    echo {"Tool #" ^ state.currentTool ^ " Offset=" ^ var.toolOffset ^ "mm"}
 
 ; Park spindle in Z ready for next operation
 G27 Z1
 
 G10 P{state.currentTool} X0 Y0 Z{var.toolOffset}
+
+; Save restore details to config-override.g
+M500.1

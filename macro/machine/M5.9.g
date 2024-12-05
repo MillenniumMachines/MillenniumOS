@@ -27,9 +27,14 @@ M400
 ; for this first and only trigger a wait if any spindles are
 ; activated.
 var sID = { global.mosSID }
+
 var doWait = false
 
 while { (iterations < #spindles) && !var.doWait }
+    ; Ignore unconfigured spindles
+    if { spindles[iterations].state == "unconfigured" }
+        continue
+
     set var.doWait = { spindles[iterations].current != 0 }
     ; In case M5.9 should stop a spindle that _isnt_ the one
     ; configured in MOS. We'll calculate the delay time based
@@ -53,7 +58,13 @@ elif { var.doWait }
     ; by that percentage with 5% extra leeway.
     ; Ceil this so we always wait a round second, no point waiting
     ; less than 1 anyway.
-    set var.dwellTime = { ceil(var.dwellTime * (abs(spindles[var.sID].current) / spindles[var.sID].max) * 1.05) }
+
+    ; We want to run M5 regardless of if var.sID is valid or not, so we check
+    ; for nulls on the individual values before doing the dwellTime calculation.
+    ; If the current spindle is not valid then M5 will be called but we wont
+    ; wait for it to stop.
+    if { spindles[var.sID].current != null && spindles[var.sID].max != null }
+        set var.dwellTime = { ceil(var.dwellTime * (abs(spindles[var.sID].current) / spindles[var.sID].max) * 1.05) }
 
 ; We run M5 unconditionally for safety purposes. If
 ; the object model is not up to date for whatever

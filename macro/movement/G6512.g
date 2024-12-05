@@ -60,17 +60,20 @@
 if { !inputs[state.thisInput].active }
     M99
 
+if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
+    abort { "All axes must be homed before probing!" }
+
 if { exists(param.I) && param.I != null && (sensors.probes[param.I].type < 5 || sensors.probes[param.I].type > 8) }
     abort { "G6512: Invalid probe ID (I..), probe must be of type 5 or 8, or unset for manual probing." }
 
 var manualProbe = { !exists(param.I) || param.I == null }
 
-; Make sure machine is stationary before checking machine positions
-M400
+; Get current machine position
+M5000 P0
 
 ; Default to current machine position for unset X/Y starting locations
-var sX = { (exists(param.J)) ? param.J : move.axes[0].machinePosition }
-var sY = { (exists(param.K)) ? param.K : move.axes[1].machinePosition }
+var sX = { (exists(param.J)) ? param.J : global.mosMI[0] }
+var sY = { (exists(param.K)) ? param.K : global.mosMI[1] }
 
 ; Note: We allow a safe-Z to be provided as a parameter, but default to
 ; the current Z position. The reason for this is that we cannot always
@@ -86,7 +89,7 @@ var sY = { (exists(param.K)) ? param.K : move.axes[1].machinePosition }
 ; a block), but we need to return to the safe height after the last
 ; probe to perform probing on the other surfaces.
 
-var safeZ = { exists(param.S) ? param.S : move.axes[2].machinePosition }
+var safeZ = { exists(param.S) ? param.S : global.mosMI[2] }
 
 if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
     abort { "G6512: Must provide a valid target position in one or more axes (X.. Y.. Z..)!" }
@@ -140,6 +143,9 @@ if { var.manualProbe }
 else
     G6512.1 I{ param.I } X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } R{ exists(param.R) ? param.R : null } E{ exists(param.E) ? param.E : 1 }
 
+; Save probed position
+var pP = { global.mosMI }
+
 ; Move to safe height
 ; If probing move is called with D parameter,
 ; we stay at the same height.
@@ -158,11 +164,14 @@ M400
 ; as we can achieve, given well calibrated values of
 ; tool radius and deflection.
 
+; For automated probes, apply any offsets defined.
+if { !var.manualProbe }
+    set var.pP[0] = { var.pP[0] + sensors.probes[param.I].offsets[0] }
+    set var.pP[1] = { var.pP[1] + sensors.probes[param.I].offsets[1] }
+
 ; The tool radius we use here already includes a deflection value
 ; which is deemed to be the same for each X/Y axis.
 ; TODO: Is this a safe assumption?
-; Commented due to memory limitations
-; M7500 S{"Compensating for Tool # " ^ state.currentTool ^ " R=" ^ global.mosTT[state.currentTool][0] ^ " dX=" ^ global.mosTT[state.currentTool][1][0] ^ " dY=" ^ global.mosTT[state.currentTool][1][1]}
 
 ; Calculate the magnitude of the direction vector of probe movement
 ; Note: We use the target position to calculate the direction vector,
@@ -175,8 +184,8 @@ var mag = { sqrt(pow(var.tPX - var.sX, 2) + pow(var.tPY - var.sY, 2)) }
 if { var.mag != 0 }
     ; Adjust the final position along the direction of movement in X and Y
     ; by the tool radius, subtracting the deflection on each axis.
-    set global.mosPCX = { global.mosPCX + (global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][0]) * ((var.tPX - var.sX) / var.mag) }
-    set global.mosPCY = { global.mosPCY + (global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][1]) * ((var.tPY - var.sY) / var.mag) }
+    set var.pP[0] = { var.pP[0] + (global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][0]) * ((var.tPX - var.sX) / var.mag) }
+    set var.pP[1] = { var.pP[1] + (global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][1]) * ((var.tPY - var.sY) / var.mag) }
 
 ; We do not adjust by the tool radius in Z.
 
@@ -189,11 +198,4 @@ if { var.mag != 0 }
 ; in X/Y, _or_ Z, and we have some control over this as we're writing the higher
 ; level macros.
 
-; Multiply, ceil then divide by this number
-; to achieve 3 decimal places of accuracy.
-var sDig = 1000
-
-; Round the output variables to 3 decimal places
-set global.mosPCX = { ceil(global.mosPCX * var.sDig) / var.sDig }
-set global.mosPCY = { ceil(global.mosPCY * var.sDig) / var.sDig }
-set global.mosPCZ = { ceil(global.mosPCZ * var.sDig) / var.sDig }
+set global.mosMI = { var.pP }

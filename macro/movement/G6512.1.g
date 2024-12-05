@@ -18,7 +18,7 @@ if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
     abort { "G6512.1: Must provide a valid target position in one or more axes (X.. Y.. Z..)!" }
 
 ; Allow the number of retries to be overridden
-var retries = { (exists(param.R) && param.R != null) ? param.R : sensors.probes[param.I].maxProbeCount }
+var retries = { (exists(param.R) && param.R != null) ? param.R : (sensors.probes[param.I].maxProbeCount + 1) }
 
 ; Whether to throw an error if the probe is not activated
 ; when it reaches the target position.
@@ -29,11 +29,16 @@ G90
 G21
 G94
 
-; Make sure machine is stationary before checking machine positions
-M400
+; Cancel rotation compensation as we use G53 on the probe move.
+; Leaving rotation compensation active causes us to fail position
+; checks.
+G69
 
-; Assume current location is start point.
-var sP = { move.axes[0].machinePosition, move.axes[1].machinePosition, move.axes[2].machinePosition }
+; Get current machine position
+M5000 P0
+
+; Set start position based on current position
+var sP = { global.mosMI }
 
 ; Set target positions - if not provided, use start positions.
 ; The machine will not move in one or more axes if the target
@@ -103,17 +108,18 @@ while { iterations <= var.retries }
         ; Disable errors by using G38.3
         G53 G38.3 K{ param.I } X{ var.tP[0] } Y{ var.tP[1] } Z{ var.tP[2] }
 
-    ; Wait for all moves in the queue to finish
-    M400
+    ; Get current machine position
+    M5000 P0
 
-    ; Drop to fine probing speed
-    M558 K{ param.I } F{ var.fineSpeed }
+    set var.cP = { global.mosMI }
 
-    ; Record current position into local variable
-    set var.cP = { move.axes[0].machinePosition, move.axes[1].machinePosition, move.axes[2].machinePosition }
 
-    ; If this is the first probe, set the initial values
-    if { iterations == 0 }
+    ; Set the initial values for iterations 0 and 1.
+    ; Some calls to the probe macro only probe once, so
+    ; we need return values. In all other cases, the
+    ; first iteration, 0, is discarded as this is performed
+    ; at higher speed so will be less accurate.
+    if { iterations == 0 || iterations == 1 }
         set var.oM = var.cP
         set var.nM = var.cP
         set var.oS = { 0.0, 0.0, 0.0 }
@@ -138,12 +144,12 @@ while { iterations <= var.retries }
         ; TODO: Does this actually calculate per-probe variance accurately?
         ; Calculate per-probe variance on each axis
         if { iterations > 1 }
-            set var.pV[0] = { var.nS[0] / (iterations) }
-            set var.pV[1] = { var.nS[1] / (iterations) }
-            set var.pV[2] = { var.nS[2] / (iterations) }
+            set var.pV[0] = { var.nS[0] / (iterations-1) }
+            set var.pV[1] = { var.nS[1] / (iterations-1) }
+            set var.pV[2] = { var.nS[2] / (iterations-1) }
 
-    ; Wait for all moves in the queue to finish
-    M400
+    ; Drop to fine probing speed
+    M558 K{ param.I } F{ var.fineSpeed }
 
     ; If we have not moved from the starting position, do not back off.
     ; bN will return NaN if the start and current positions are the same
@@ -167,6 +173,7 @@ while { iterations <= var.retries }
         ; starting location, then we use the normal as the backoff distance.
         ; This is essentially the same as multiplying var.d{X,Y,Z} by 1.
 
+
         ; Calculate normalized direction and backoff per axis,
         ; and apply to current position.
         var bPX = { var.cP[0] + ((var.sP[0] - var.cP[0]) / var.bN * ((var.backoff > var.bN) ? var.bN : var.backoff)) }
@@ -182,13 +189,13 @@ while { iterations <= var.retries }
     ; We can only abort early if we're within tolerance on all moved (probed) axes.
     ; If we're not performing error checking, then we can abort early if the current
     ; position is the same as the target position (i.e. the probe was not activated)
-    var tR = true
+    var tR = { true }
     if { var.tP[0] != var.sP[0] }
-        set var.tR = { var.tR && (var.pV[0] <= sensors.probes[param.I].tolerance || (!var.errors && abs(var.cP[0] - var.tP[0]) <= sensors.probes[param.I].tolerance)) }
+        set var.tR = { var.tR && ((var.pV[0] <= sensors.probes[param.I].tolerance && iterations > 2) || (!var.errors && abs(var.cP[0] - var.tP[0]) <= sensors.probes[param.I].tolerance)) }
     if { var.tP[1] != var.sP[1] }
-        set var.tR = { var.tR && (var.pV[1] <= sensors.probes[param.I].tolerance || (!var.errors && abs(var.cP[1] - var.tP[1]) <= sensors.probes[param.I].tolerance)) }
+        set var.tR = { var.tR && ((var.pV[1] <= sensors.probes[param.I].tolerance && iterations > 2) || (!var.errors && abs(var.cP[1] - var.tP[1]) <= sensors.probes[param.I].tolerance)) }
     if { var.tP[2] != var.sP[2] }
-        set var.tR = { var.tR && (var.pV[2] <= sensors.probes[param.I].tolerance || (!var.errors && abs(var.cP[2] - var.tP[2]) <= sensors.probes[param.I].tolerance)) }
+        set var.tR = { var.tR && ((var.pV[2] <= sensors.probes[param.I].tolerance && iterations > 2) || (!var.errors && abs(var.cP[2] - var.tP[2]) <= sensors.probes[param.I].tolerance)) }
 
     ; If we're within tolerance on all axes, we can stop probing
     ; and report the result.
@@ -202,11 +209,8 @@ while { iterations <= var.retries }
 ; Reset probing speed limits
 M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
 
-; Save output variables. No compensation applied here!
-set global.mosPCX = { var.nM[0] }
-set global.mosPCY = { var.nM[1] }
-set global.mosPCZ = { var.nM[2] }
+if { !exists(global.mosMI) }
+    global mosMI = { null }
 
-set global.mosPVX = { var.pV[0] }
-set global.mosPVY = { var.pV[1] }
-set global.mosPVZ = { var.pV[2] }
+; Save output variable.
+set global.mosMI = { var.nM }

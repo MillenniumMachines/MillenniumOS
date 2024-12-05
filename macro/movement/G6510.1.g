@@ -24,23 +24,25 @@ if { !exists(param.I) }
 ; with the W parameter.
 var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
 
-
 ; WCS Numbers and Offsets are confusing. Work Offset indicates the offset
 ; from the first work co-ordinate system, so is 0-indexed. WCS number indicates
 ; the number of the work co-ordinate system, so is 1-indexed.
 var wcsNumber = { var.workOffset + 1 }
 
-var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
+var pID = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
 ; Make sure probe tool is selected
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
 
 ; Reset stored values that we're going to overwrite -
-; surface
-M5010 W{var.workOffset} R8
+; surface and rotation
+M5010 W{var.workOffset} R40
 
-var safeZ = { move.axes[2].machinePosition }
+; Get current machine position on Z
+M5000 P1 I2
+
+var safeZ = { global.mosMI }
 
 ; We do not apply tool radius to overtravel, because we need overtravel for
 ; Z probes as well as X/Y. Tool radius only applies for X/Y probes.
@@ -74,7 +76,7 @@ else
 M6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
 ; Run probing operation
-G6512 I{var.probeId} J{param.J} K{param.K} L{param.L} X{var.tPX} Y{var.tPY} Z{var.tPZ}
+G6512 I{var.pID} J{param.J} K{param.K} L{param.L} X{var.tPX} Y{var.tPY} Z{var.tPZ}
 
 var sAxis = { (var.probeAxis <= 1)? "X" : (var.probeAxis <= 3)? "Y" : "Z" }
 
@@ -82,7 +84,7 @@ var sAxis = { (var.probeAxis <= 1)? "X" : (var.probeAxis <= 3)? "Y" : "Z" }
 set global.mosWPSfcAxis[var.workOffset] = { var.sAxis }
 
 ; Set surface position on relevant axis
-set global.mosWPSfcPos[var.workOffset] = { (var.probeAxis <= 1)? global.mosPCX : (var.probeAxis <= 3)? global.mosPCY : global.mosPCZ }
+set global.mosWPSfcPos[var.workOffset] = { (var.probeAxis <= 1)? global.mosMI[0] : (var.probeAxis <= 3)? global.mosMI[1] : global.mosMI[2] }
 
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }

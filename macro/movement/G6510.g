@@ -1,7 +1,7 @@
 ; G6510.g: SINGLE SURFACE PROBE
 ;
 ; Meta macro to gather operator input before executing a
-; single surface probe (G6512). The macro will explain to
+; single surface probe (G6510). The macro will explain to
 ; the operator what is about to happen and ask on which axis
 ; the user would like to run a probe cycle. The macro will ask
 ; the operator to jog to the starting location, then enter a
@@ -87,5 +87,7 @@ if { global.mosTM }
         if { input != 0 }
             abort { "Single Surface probe aborted!" }
 
+; Get current machine position
+M5000 P0
 
-G6510.1 W{exists(param.W)? param.W : null} H{var.probeAxis} I{var.probeDist} O{var.overtravel} J{move.axes[0].machinePosition} K{move.axes[1].machinePosition} L{move.axes[2].machinePosition - var.probeDepth}
+G6510.1 W{exists(param.W)? param.W : null} H{var.probeAxis} I{var.probeDist} O{var.overtravel} J{global.mosMI[0]} K{global.mosMI[1]} L{global.mosMI[2] - var.probeDepth}

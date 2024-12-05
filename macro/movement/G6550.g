@@ -36,26 +36,33 @@ if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
 
 var manualProbe = { !exists(param.I) || param.I == null }
 
-; Make sure machine is stationary before checking machine positions
-M400
+; Use absolute positions in mm and feeds in mm/min
+G90
+G21
+G94
+
+; Cancel rotation compensation as we use G53 on the probe move.
+; Leaving rotation compensation active causes us to fail position
+; checks.
+G69
+
+; Get current machine position
+M5000 P0
+
+var cPZ = { global.mosMI[2] }
 
 ; Generate target position and defaults
-var tPX = { (exists(param.X)? param.X : move.axes[0].machinePosition) }
-var tPY = { (exists(param.Y)? param.Y : move.axes[1].machinePosition) }
-var tPZ = { (exists(param.Z)? param.Z : move.axes[2].machinePosition) }
+var tPX = { (exists(param.X)? param.X : global.mosMI[0]) }
+var tPY = { (exists(param.Y)? param.Y : global.mosMI[1]) }
+var tPZ = { (exists(param.Z)? param.Z : global.mosMI[2]) }
 
-if { var.tPX == move.axes[0].machinePosition && var.tPY == move.axes[1].machinePosition && var.tPZ == move.axes[2].machinePosition }
+if { var.tPX == global.mosMI[0] && var.tPY == global.mosMI[1] && var.tPZ == global.mosMI[2] }
     ; Commented due to memory limitations
     ; M7500 S{"G6550: Target position is the same as the current position, no move required."}
     M99
 
 ; Check if the positions are within machine limits
 M6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
-
-; Use absolute positions in mm and feeds in mm/min
-G90
-G21
-G94
 
 ; If we're using "manual" probing, we can't
 ; protect any moves as we have no inputs to check.
@@ -65,15 +72,18 @@ if { var.manualProbe }
     G53 G1 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } F{ global.mosMPS[0] }
     M99
 
-; Commented due to memory limitations
-; M7500 S{"Protected move to X=" ^ var.tPX ^ " Y=" ^ var.tPY ^ " Z=" ^ var.tPZ ^ " from X=" ^ move.axes[0].machinePosition ^ " Y=" ^ move.axes[1].machinePosition ^ " Z=" ^ move.axes[2].machinePosition }
+; If we're only moving in the positive Z direction,
+; just move to the target position - the probe should
+; never be obstructed vertically.
+if { var.tPX == global.mosMI[0] && var.tPY == global.mosMI[1] && var.tPZ > var.cPZ }
+    G53 G1 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } F{ sensors.probes[param.I].travelSpeed }
+    M99
 
 ; Note: these must be set as variables as we override the
 ; probe speed below. We need to reset the probe speed
 ; after the move.
 var roughSpeed   = { sensors.probes[param.I].speeds[0] }
 var fineSpeed    = { sensors.probes[param.I].speeds[1] }
-
 
 ; If the sensor is already triggered, we need to back-off slightly first
 ; before backing off the full distance while waiting for the sensor to
@@ -84,15 +94,15 @@ if { sensors.probes[param.I].value[0] != 0 }
     ; to ensure that the probe is not triggered when we call G38.3.
 
     ; Calculate target normal
-    var tN = { sqrt(pow((var.tPX - move.axes[0].machinePosition), 2) + pow((var.tPY - move.axes[1].machinePosition), 2) + pow((var.tPZ - move.axes[2].machinePosition), 2)) }
+    var tN = { sqrt(pow((var.tPX - global.mosMI[0]), 2) + pow((var.tPY - global.mosMI[1]), 2) + pow((var.tPZ - global.mosMI[2]), 2)) }
 
     if { var.tN == 0 }
         abort {"G6550: Probe is triggered and we have no direction to back-off in. You will need to manually move the probe out of harms way!" }
 
     ; Calculate X,Y and Z co-ordinates for initial move.
-    var tDX = { ((var.tPX - move.axes[0].machinePosition) / var.tN) * (global.mosPMBO) }
-    var tDY = { ((var.tPY - move.axes[1].machinePosition) / var.tN) * (global.mosPMBO) }
-    var tDZ = { ((var.tPZ - move.axes[2].machinePosition) / var.tN) * (global.mosPMBO) }
+    var tDX = { ((var.tPX - global.mosMI[0]) / var.tN) * (global.mosPMBO) }
+    var tDY = { ((var.tPY - global.mosMI[1]) / var.tN) * (global.mosPMBO) }
+    var tDZ = { ((var.tPZ - global.mosMI[2]) / var.tN) * (global.mosPMBO) }
 
     ; Calculate straight line distance from current position to initial
     ; move position
@@ -103,23 +113,27 @@ if { sensors.probes[param.I].value[0] != 0 }
     ; Commented due to memory limitations
     ; M7500 S{"Backoff Target position X=" ^ var.tDX ^ " Y=" ^ var.tDY ^ " Z=" ^ var.tDZ ^ " Distance to target: " ^ var.tN ^ " Back-off distance: " ^ var.tIN }
 
+    ; PMBO is the distance that the probe can move that
+    ; is safe - i.e. the probe will not be damaged by moving less
+    ; than this distance, even if it is triggered.
+    ; If the probe is triggered, and the target is less than the
+    ; back-off distance, we will just move to the target position.
+    ; The subsequent G38.3 will be a no-op as we will already be
+    ; at the target position.
     if { var.tIN >= var.tN }
-        abort {"G6550: Probe is triggered and global.mosPMBO=" ^ global.mosPMBO ^ " is greater than the distance to the target position! You will need to manually move the probe out of harms way!" }
-
-    ; Back off by the back-off distance
-    ; We do not use a G38.5 here because it will stop movement the
-    ; instant the probe is triggered. It is possible, although it
-    ; happens rarely, for the probe to deactivate and then re-activate
-    ; because it is still slightly in contact with the surface.
-    ; It is better to just move the backoff distance and assume that it
-    ; is short enough to not damage the probe.
-    G53 G1 X{ move.axes[0].machinePosition + var.tDX} Y{ move.axes[1].machinePosition + var.tDY } Z{ move.axes[2].machinePosition + var.tDZ } F{ var.roughSpeed }
+        G53 G1 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } F{ sensors.probes[param.I].travelSpeed }
+    else
+        ; Back off by the back-off distance
+        ; We do not use a G38.5 here because it will stop movement the
+        ; instant the probe is triggered. It is possible, although it
+        ; happens rarely, for the probe to deactivate and then re-activate
+        ; because it is still slightly in contact with the surface.
+        ; It is better to just move the backoff distance and assume that it
+        ; is short enough to not damage the probe.
+        G53 G1 X{ global.mosMI[0] + var.tDX } Y{ global.mosMI[1] + var.tDY } Z{ global.mosMI[2] + var.tDZ } F{ var.roughSpeed }
 
     ; Wait for moves to complete
     M400
-
-    ; Commented due to memory limitations
-    ; M7500 S{"Probe back-off deactivated at X=" ^ move.axes[0].machinePosition ^ " Y=" ^ move.axes[1].machinePosition ^ " Z=" ^ move.axes[2].machinePosition }
 
     ; Check if probe is still triggered.
     if { sensors.probes[param.I].value[0] != 0 }
@@ -130,21 +144,22 @@ M558 K{ param.I } F{ sensors.probes[param.I].travelSpeed }
 ; Move to position while checking probe for activation
 G53 G38.3 K{ param.I } X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
-; Wait for moves to complete
-M400
+; Get current machine position
+M5000 P0
+
+; Probing move either complete or stopped due to collision, we need to
+; check the location of the machine to determine if the move was completed.
 
 ; Reset probe speed
 M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
 
-; Probing move either complete or stopped due to collision, we need to
-; check the location of the machine to determine if the move was completed.
-var tolerance = 0.01
+var tolerance = { 0.005 }
 
-if { (move.axes[0].machinePosition) < (var.tPX - var.tolerance/2) || (move.axes[0].machinePosition) > (var.tPX + var.tolerance/2) }
-    abort { "G6550: Machine position does not match expected position -  X=" ^ var.tPX ^ " != " ^ move.axes[0].machinePosition }
+if { global.mosMI[0] < (var.tPX - var.tolerance) || global.mosMI[0] > (var.tPX + var.tolerance) }
+    abort { "G6550: Machine position does not match expected position -  X=" ^ var.tPX ^ " != " ^ global.mosMI[0] }
 
-if { (move.axes[1].machinePosition) < (var.tPY - var.tolerance/2) || (move.axes[1].machinePosition) > (var.tPY + var.tolerance/2) }
-    abort { "G6550: Machine position does not match expected position -  Y=" ^ var.tPY ^ " != " ^ move.axes[1].machinePosition }
+if { global.mosMI[1] < (var.tPY - var.tolerance) || global.mosMI[1] > (var.tPY + var.tolerance) }
+    abort { "G6550: Machine position does not match expected position -  Y=" ^ var.tPY ^ " != " ^ global.mosMI[1] }
 
-if { (move.axes[2].machinePosition) < (var.tPZ - var.tolerance/2) || (move.axes[2].machinePosition) > (var.tPZ + var.tolerance/2) }
-    abort { "G6550: Machine position does not match expected position -  Z=" ^ var.tPZ ^ " != " ^ move.axes[2].machinePosition }
+if { global.mosMI[2] < (var.tPZ - var.tolerance) || global.mosMI[2] > (var.tPZ + var.tolerance) }
+    abort { "G6550: Machine position does not match expected position -  Z=" ^ var.tPZ ^ " != " ^ global.mosMI[2] }

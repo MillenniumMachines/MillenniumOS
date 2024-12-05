@@ -179,7 +179,7 @@ properties = {
     group: "homePositions",
     scope: ["machine","post"],
     type: "boolean",
-    value: true
+    value: false
   },
   jobWCSProbeMode: {
     title: "WCS Origin Probing Mode",
@@ -219,7 +219,7 @@ properties = {
     group: "configuration",
     scope: "post",
     type: "boolean",
-    value: false
+    value: true
   }
 };
 
@@ -308,6 +308,7 @@ var M = {
   VSSC_ENABLE: 7000,
   VSSC_DISABLE: 7001,
   SPINDLE_ON_CW: 3.9,
+  SPINDLE_ON_CCW: 4.9,
   SPINDLE_OFF: 5.9,
   CALL_MACRO: 98,
   COOLANT_MIST: 7,
@@ -473,14 +474,11 @@ function onOpen() {
     writeComment("Pass tool details to firmware");
     for(var i = 0; i < nTools; i++) {
       var tool = tools.getTool(i);
-      writeBlock('{cmd} P{index} R{radius} S"{desc} F={f} L={l} CR={cr}"'.supplant({
+      writeBlock('{cmd} P{index} R{radius} S"{desc}"'.supplant({
         cmd: mCodes.format(M.ADD_TOOL),
         index: intFmt.format(tool.number),
         radius: axesFmt.format(tool.diameter/2),
-        desc: tool.description,
-        l: axesFmt.format(tool.fluteLength),
-        cr: axesFmt.format(tool.cornerRadius),
-        f: intFmt.format(tool.numberOfFlutes)
+        desc: tool.description.substring(0, 32),
       }));
     }
     writeln("");
@@ -548,6 +546,7 @@ var curTool = {
   number: -1,
   desc: "unknown",
   rpm: 0,
+  run_cmd: M.SPINDLE_OFF, // Default to not turning on the spindle
   flutes: 0,
   type: -1,
   length: 0,
@@ -604,6 +603,9 @@ function onParameter(param, value) {
     case 'operation:tool_spindleSpeed':
       curTool['rpm'] = value;
     break;
+    case 'operation:tool_clockwise':
+      curTool['run_cmd'] = (value === 1) ? M.SPINDLE_ON_CW : M.SPINDLE_ON_CCW;
+    break;
     // Save Notes
     case 'job-notes':
       jobNotes = value;
@@ -612,11 +614,6 @@ function onParameter(param, value) {
       sectionNotes = value;
     break;
     // Generate errors on unsupported parameter values
-    case 'operation:tool_clockwise':
-      if(value !== 1) {
-        error("Anti-clockwise spindle rotation is not supported by MillenniumOS!");
-      }
-    break;
     case 'operation:isMultiAxisStrategy':
       if(value === 1) {
         error("Multi-axis strategies are not supported by MillenniumOS!");
@@ -686,7 +683,7 @@ function onSection() {
       writeln("");
     }
 
-    writeComment("Enable rotation compensation if necessary");  
+    writeComment("Enable rotation compensation if necessary");
     writeBlock(mCodes.format(M.ENABLE_ROTATION_COMPENSATION));
     writeln("");
   }
@@ -726,7 +723,7 @@ function onSection() {
     // because modal groups do not correctly handle
     // decimals.
 
-    writeBlock(mFmt.format(M.SPINDLE_ON_CW), s);
+    writeBlock(mFmt.format(curTool['run_cmd']), s);
     writeln("");
 
     if(!(curTool.coolant in COOLANT)) {

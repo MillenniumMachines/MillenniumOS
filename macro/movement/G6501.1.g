@@ -35,15 +35,27 @@ var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workpla
 ; the number of the work co-ordinate system, so is 1-indexed.
 var wcsNumber = { var.workOffset + 1 }
 
-var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
+var pID = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
 ; Make sure probe tool is selected
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
 
 ; Reset stored values that we're going to overwrite -
-; center and radius
-M5010 W{var.workOffset} R5
+; center position, rotation and radius
+M5010 W{var.workOffset} R37
+
+; Get current machine position on Z
+M5000 P1 I2
+
+; Store our own safe Z position as the current position. We return to
+; this position where necessary to make moves across the workpiece to
+; the next probe point.
+; We do this _after_ any switch to the touch probe, because while the
+; original position may have been safe with a different tool installed,
+; the touch probe may be longer. After a tool change the spindle
+; will be parked, so essentially our safeZ is at the parking location.
+var safeZ = { global.mosMI }
 
 ; Tool Radius is the first entry for each value in
 ; our extended tool table.
@@ -113,15 +125,13 @@ set var.dirXY[2][1] = { var.sX + (var.cR - var.overtravel)*cos(var.angle*2), var
 ; Boss edge co-ordinates for 3 probed points
 var pXY  = { null, null, null }
 
-var safeZ = { move.axes[2].machinePosition }
-
 ; Probe each of the 3 points
 while { iterations < #var.dirXY }
     ; Perform a probe operation towards the center of the boss
-    G6512 I{var.probeId} J{var.dirXY[iterations][0][0]} K{var.dirXY[iterations][0][1]} L{var.sZ} X{var.dirXY[iterations][1][0]} Y{var.dirXY[iterations][1][1]}
+    G6512 I{var.pID} J{var.dirXY[iterations][0][0]} K{var.dirXY[iterations][0][1]} L{var.sZ} X{var.dirXY[iterations][1][0]} Y{var.dirXY[iterations][1][1]}
 
     ; Save the probed co-ordinates
-    set var.pXY[iterations] = { global.mosPCX, global.mosPCY }
+    set var.pXY[iterations] = { global.mosMI[0], global.mosMI[1] }
 
 ; Calculate the slopes, midpoints, and perpendicular bisectors
 var sM1 = { (var.pXY[1][1] - var.pXY[0][1]) / (var.pXY[1][0] - var.pXY[0][0]) }
@@ -160,10 +170,10 @@ set global.mosWPCtrPos[var.workOffset]   = { var.cX, var.cY }
 set global.mosWPRad[var.workOffset]      = { var.avgR }
 
 ; Confirm we are at the safe Z height
-G6550 I{var.probeId} Z{var.safeZ}
+G6550 I{var.pID} Z{var.safeZ}
 
 ; Move to the calculated center of the boss
-G6550 I{var.probeId} X{var.cX} Y{var.cY}
+G6550 I{var.pID} X{var.cX} Y{var.cY}
 
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }

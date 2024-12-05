@@ -15,12 +15,9 @@
 if { !inputs[state.thisInput].active }
     M99
 
-; This is just for safety. It is good practice to park the machine and
-; stop the spindle before calling any probing macro, and we should do
-; this in any post-processor that targets the MillenniumOS Gcode Dialect,
-; but we do this here just to make 100% certain that nobody is going to
-; end up jogging the spindle around while it is running.
-G27 Z1
+if { spindles[global.mosSID].current != 0 }
+    echo { "Spindle should be stopped before probing! Parking now..."}
+    G27 Z1
 
 if { !exists(global.mosLdd) || !global.mosLdd }
     abort {"MillenniumOS is not loaded! Please restart your mainboard and check for any startup errors!"}
@@ -99,10 +96,17 @@ if { global.mosTM }
 ; If work offset origin is already set
 if { var.pdX != 0 && var.pdY != 0 && var.pdZ != 0 }
     ; Allow operator to continue without resetting the origin and abort the probe
-    M291 P{"WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") already has a valid origin.<br/>Click <b>Continue</b> to use the existing origin or <b>Re-Probe</b> to modify it."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue","Re-Probe"} F0
+    M291 P{"WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") is valid. <br/><b>Continue</b> to proceed, <b>Modify</b> to update or <b>Reset</b> to start again."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue","Modify", "Reset"} F0
     if { input == 0 }
         echo {"MillenniumOS: WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") origin retained, skipping probe cycle."}
         M99
+    elif { input == 2 }
+        echo {"MillenniumOS: WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") origin has been reset."}
+        ; Reset the WCS origin so that all axes must be re-probed.
+        G10 L2 P{var.wcsNumber} X0 Y0 Z0
+
+        ; Clear all stored WCS details
+        M5010 W{var.workOffset}
 
 ; Switch to touchprobe if not already connected
 if { global.mosPTID != state.currentTool }
@@ -112,6 +116,9 @@ if { global.mosPTID != state.currentTool }
 M291 P"Please select a probe cycle type." R"MillenniumOS: Probe Workpiece" T0 S4 F0 K{var.probeCycleNames}
 if { result != 0 }
     abort { "Operator cancelled probe cycle!" }
+
+; Cancel rotation compensation as we use G53 on the probe moves.
+G69
 
 ; Run the selected probing operation.
 ; We cannot lookup G command numbers to run dynamically so these must be
@@ -154,9 +161,18 @@ if { var.workOffset != null }
         if { input == 0 }
             ; This is a recursive call. Let the user break it :)
             G6600 W{var.workOffset}
+            M99
 
-    elif { global.mosTM }
-        M291 P{"WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetCodes[var.workOffset] ^ ") origin is valid.<br/>Click <b>Continue</b> to proceed or <b>Re-Probe</b> to try again."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue", "Re-Probe"}
-        if { input == 1 }
+    else
+        M291 P{"WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetCodes[var.workOffset] ^ ") origin is valid.<br/>Click <b>Continue</b> to proceed or <b>Re-Probe</b> to try again."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue", "Re-Probe", "Cancel"}
+        if { input == 2 }
+            abort { "Operator cancelled probe cycle!" }
+        elif { input == 1 }
             ; This is a recursive call. Let the user break it :)
             G6600 W{var.workOffset}
+            M99
+
+    ; Save restore details to config-override.g
+    M500.1
+
+    echo { "MillenniumOS: WCS Origins have been saved and can be restored on reboot."}

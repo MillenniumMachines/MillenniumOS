@@ -23,7 +23,15 @@ import sys
 import argparse
 import shlex
 import re
-from enum import StrEnum, Flag, auto
+from enum import Flag, auto
+
+if sys.version_info < (3, 11):
+    from enum import Enum
+    class StrEnum(str, Enum):
+        pass
+else:
+    from enum import StrEnum, auto
+
 from contextlib import contextmanager
 import FreeCAD
 from FreeCAD import Units
@@ -139,7 +147,7 @@ parser.add_argument('--output-version', action=argparse.BooleanOptionalAction, d
 parser.add_argument('--output-tools', action=argparse.BooleanOptionalAction, default=True,
     help="Output tool details. Disabling this will make tool changes much harder!")
 
-parser.add_argument('--home-before-start', action=argparse.BooleanOptionalAction, default=True,
+parser.add_argument('--home-before-start', action=argparse.BooleanOptionalAction, default=False,
     help="When enabled, machine will home in X, Y and Z directions prior to executing any operations.")
 
 parser.add_argument('--allow-zero-rpm', action=argparse.BooleanOptionalAction, default=False,
@@ -156,13 +164,13 @@ parser.add_argument('--version-check', action=argparse.BooleanOptionalAction, de
     in RRF match.
     """)
 probe_mode = parser.add_mutually_exclusive_group(required=False)
-probe_mode.add_argument('--probe-at-start', dest='probe_mode', action='store_const', const=PROBE.AT_START,
+probe_mode.add_argument('--probe-at-start', dest='probe_mode', action='store_const', const=PROBE.AT_START, default=PROBE.ON_CHANGE,
     help="When enabled, MillenniumOS will probe a work-piece in each used WCS prior to executing any operations.")
 
 probe_mode.add_argument('--probe-on-change', dest='probe_mode', action='store_const', const=PROBE.ON_CHANGE,
     help="When enabled, MillenniumOS will probe a work-piece just prior to switching into each used WCS.")
 
-probe_mode.add_argument('--no-probe', dest='probe_mode', action='store_const', default=PROBE.NONE)
+probe_mode.add_argument('--no-probe', dest='probe_mode', action='store_const', const=PROBE.NONE)
 
 parser.add_argument(
     "--vssc-period",
@@ -331,7 +339,7 @@ class Output:
             if k in self.varFormats:
                 for o in self.varFormats[k]:
                     argOut, _ = o(v)
-                    if argOut is not None:
+                    if argOut is not None and len(argOut) > 0:
                         outCmd.append(''.join(argOut[0]))
                         # Store index in cmd list of changed key
                         # Necessary because we don't always output
@@ -904,8 +912,7 @@ class MillenniumOSPostProcessor(PostProcessor):
                 self.comment("Pass tool details to firmware")
                 # Output tool info
                 for index, tool in tools.items():
-                    tool_desc = ' '.join([tool['name'], "F={flutes} L={flute_length} CR={corner_radius}".format(**tool['params'])])
-                    self.M(MCODES.ADD_TOOL, P=index, R=tool['params']['radius'], S=rrf_safe_string(tool_desc), ctrl=Control.FORCE)
+                    self.M(MCODES.ADD_TOOL, P=index, R=tool['params']['radius'], S=rrf_safe_string(tool['name'][:32]), ctrl=Control.FORCE)
                 self.brk()
 
             # Output job setup commands if necessary
@@ -956,7 +963,7 @@ class MillenniumOSPostProcessor(PostProcessor):
         return super().output()
 
 # Parse and export the CAM objects.
-def export(objectslist, filename, argstring):
+def export(objectslist, _, argstring):
     try:
         args = parser.parse_args(shlex.split(argstring))
     except Exception as e:
@@ -976,5 +983,4 @@ def export(objectslist, filename, argstring):
     if FreeCAD.GuiUp and args.show_editor:
         out = PostUtils.editor(out)
 
-    with open(filename, "w") as f:
-        f.write(out)
+    return out
