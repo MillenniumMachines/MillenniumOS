@@ -198,4 +198,13 @@ if { var.mag != 0 }
 ; in X/Y, _or_ Z, and we have some control over this as we're writing the higher
 ; level macros.
 
+
+; Update the number of points and surfaces probed
+; Since this macro is called to probe a single point,
+; we assume this is for one surface as well.
+; For surfaces that have multiple points, use G6513
+; instead.
+set global.mosPRPS = { global.mosPRPS + 1 }
+set global.mosPRSS = { global.mosPRSS + 1 }
+
 set global.mosMI = { var.pP }
