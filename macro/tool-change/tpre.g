@@ -14,11 +14,7 @@ if { !inputs[state.thisInput].active }
 
 ; Abort if no tool selected
 if { state.nextTool < 0 }
-    M99
-
-; Abort if not homed
-if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
-    M99
+    abort { "No tool selected!" }
 
 ; If tfree ran to completion or was not run (no previous tool was loaded)
 ; then we can continue.
@@ -30,6 +26,10 @@ if { global.mosTCS != null && global.mosTCS < 1 }
 
 ; Set tool change state to starting tpre
 set global.mosTCS = 2
+
+; Abort if not homed
+if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
+    abort { "Must home machine before running tool changes!" }
 
 ; Stop and park the spindle
 G27 Z1

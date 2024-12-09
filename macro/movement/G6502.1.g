@@ -14,6 +14,9 @@ if { exists(param.W) && param.W != null && (param.W < 0 || param.W >= limits.wor
 if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
     abort { "Must provide a start position to probe from using J, K and L parameters!" }
 
+if { !exists(param.Z) }
+    abort { "Must provide a probe position using the Z parameter!" }
+
 if { !exists(param.H) || !exists(param.I) }
     abort { "Must provide an approximate width and length using H and I parameters!" }
 
@@ -35,6 +38,10 @@ var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workpla
 ; the number of the work co-ordinate system, so is 1-indexed.
 var wcsNumber = { var.workOffset + 1 }
 
+; Increment the probe surface and point totals for status reporting
+set global.mosPRST = { global.mosPRST + 4 }
+set global.mosPRPT = { global.mosPRPT + 8 }
+
 var pID = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
 ; Make sure probe tool is selected
@@ -55,18 +62,18 @@ M5000 P1 I2
 ; original position may have been safe with a different tool installed,
 ; the touch probe may be longer. After a tool change the spindle
 ; will be parked, so essentially our safeZ is at the parking location.
-var safeZ = { global.mosMI }
+var safeZ = { param.L }
 
 ; J = start position X
 ; K = start position Y
-; L = start position Z - our probe height
+; L = start position Z
+; Z = our probe height (absolute)
 ; H = approximate width of pocket in X
 ; I = approximate length of pocket in Y
 
 ; Approximate center of pocket
 var sX   = { param.J }
 var sY   = { param.K }
-var sZ   = { param.L }
 
 ; Width and Height of pocket
 var fW   = { param.H }
@@ -123,7 +130,7 @@ if { var.cornerClearance >= var.hW || var.cornerClearance >= var.hL }
 var pFull = { true }
 
 ; Calculate the probe positions for the surfaces
-var points = { vector(2 - (var.pFull ? 0 : 1), {{null, null, var.sZ}, {null, null, var.sZ}}) }
+var points = { vector(2 - (var.pFull ? 0 : 1), {{null, null, param.Z}, {null, null, param.Z}}) }
 
 var surface1 = { var.points }
 var surface2 = { var.points }
@@ -278,7 +285,7 @@ set global.mosWPDeg[var.workOffset] = { degrees(var.pSfcX[0][2]) }
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
     M7601 W{var.workOffset}
+    echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to the center of the rectangle pocket." }
 
 ; Set WCS origin to the probed center
-echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to the center of the rectangle pocket." }
 G10 L2 P{var.wcsNumber} X{var.sX} Y{var.sY}
