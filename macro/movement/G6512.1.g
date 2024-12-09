@@ -17,6 +17,9 @@ if { !exists(param.I) || param.I == null || sensors.probes[param.I].type < 5 || 
 if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
     abort { "G6512.1: Must provide a valid target position in one or more axes (X.. Y.. Z..)!" }
 
+if { !exists(global.mosMI) }
+    global mosMI = { null }
+
 ; Allow the number of retries to be overridden
 var retries = { (exists(param.R) && param.R != null) ? param.R : (sensors.probes[param.I].maxProbeCount + 1) }
 
