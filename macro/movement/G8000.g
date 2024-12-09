@@ -84,7 +84,7 @@ if { var.wizExpertMode == null }
 ; Last chance to abort out of the wizard and configure RRF
 ; without wasting any time answering questions.
 if { var.wizTutorialMode }
-    M291 P{"<b>NOTE</b>: You will need to configure a spindle and any optional components (touch probe, toolsetter etc) in <b>RRF</b> before continuing.<br/>Press <b>OK</b> to continue, or <b>Cancel</b> to abort!"} R"MillenniumOS: Configuration Wizard" T0 S3
+    M291 P{"<b>NOTE</b>: You will need to configure a spindle and any optional components (touch probe, toolsetter etc) in <b>RRF</b> before continuing.<br/>Press <b>OK</b> to continue, or <b>Cancel</b> to abort!"} R"MillenniumOS: Configuration Wizard" T0 J2 S3
     if { result != 0 }
         abort { "MillenniumOS: Operator aborted configuration wizard!" }
 
@@ -451,8 +451,8 @@ if { var.wizFeatureToolSetter }
         ; position, but it will be homed. Let's just park in Z before moving
         ; to that position just in case.
         if { !var.needsToolSetterXYPos }
-            M291 P{"Toolsetter position <b>X=" ^ var.wizToolSetterPos[0] ^ " Y=" ^ var.wizToolSetterPos[1] ^ "</b>.<br/>Press <b>OK</b> to move above this position."} R"MillenniumOS: Configuration Wizard" S4 K{"OK","Cancel"}
-            if { input != 0 }
+            M291 P{"Toolsetter position <b>X=" ^ var.wizToolSetterPos[0] ^ " Y=" ^ var.wizToolSetterPos[1] ^ "</b>.<br/>Press <b>OK</b> to move above this position."} R"MillenniumOS: Configuration Wizard" S3 J2 T0
+            if { result != 0 }
                 abort { "MillenniumOS: Operator aborted toolsetter calibration!" }
 
             ; Park Z
@@ -461,7 +461,7 @@ if { var.wizFeatureToolSetter }
             ; Move to the toolsetter position
             G53 G0 X{var.wizToolSetterPos[0]} Y{var.wizToolSetterPos[1]}
 
-        M291 P{"Please jog the <b>Datum Tool</b> less than 10mm above the activation point of the toolsetter, then press <b>OK</b> to probe the activation height."} R"MillenniumOS: Configuration Wizard" Z1 S3
+        M291 P{"Please jog the <b>Datum Tool</b> less than 10mm above the activation point of the toolsetter, then press <b>OK</b> to probe the activation height."} R"MillenniumOS: Configuration Wizard" Z1 S3 J2 T0
         if { result != 0 }
             abort { "MillenniumOS: Operator aborted toolsetter calibration!" }
 
@@ -485,7 +485,7 @@ if { var.wizFeatureToolSetter }
             M291 P"When using both a toolsetter and touch probe, we need to probe a flat reference surface with the touch probe at the start of each job to enable accurate Z positioning and tool offsets." R"MillenniumOS: Configuration Wizard" S2 T0
             M291 P"You can use the machine table itself or your fixture plate as the reference surface, but the height between the reference surface and the toolsetter activation point <b>MUST NOT</b> change." R"MillenniumOS: Configuration Wizard" S2 T0
 
-            M291 P"We now need to measure the distance between the toolsetter activation point and your reference surface using the <b>Datum Tool</b> to touch the reference surface and record a position." R"MillenniumOS: Configuration Wizard" S3 T0
+            M291 P"We now need to measure the distance between the toolsetter activation point and your reference surface using the <b>Datum Tool</b> to touch the reference surface and record a position." R"MillenniumOS: Configuration Wizard" S3 T0 J2
             if { result != 0 }
                 abort { "MillenniumOS: Operator aborted touch probe calibration!" }
 
@@ -494,7 +494,7 @@ if { var.wizFeatureToolSetter }
         ; Disable the touch probe feature temporarily so we force a manual probe.
         set global.mosFeatTouchProbe = false
 
-        M291 P{"Please jog the <b>Datum Tool</b> just less than 20mm over the reference surface, but not touching, then press <b>OK</b>."} R"MillenniumOS: Configuration Wizard" X1 Y1 Z1 S3
+        M291 P{"Please jog the <b>Datum Tool</b> just less than 20mm over the reference surface, but not touching, then press <b>OK</b>."} R"MillenniumOS: Configuration Wizard" X1 Y1 Z1 S3 J2 T0
         if { result != 0 }
             abort { "MillenniumOS: Operator aborted touch probe calibration!" }
 
@@ -569,18 +569,18 @@ if { var.wizFeatureTouchProbe && (var.wizTouchProbeID == null || var.wizTouchPro
         M291 P{"We now need to measure the deflection of the touch probe. We will do this by probing a <b>1-2-3 block</b> or other rectangular item of <b>accurate and known dimensions</b> (greater than 10mm per side)."} R"MillenniumOS: Configuration Wizard" S2 T0
 
     if { (!move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed) }
-        M291 P{"One or more axes are not homed.<br/>Press <b>OK</b> to home the machine and continue."} R"MillenniumOS: Configuration Wizard" S3 T0
+        M291 P{"One or more axes are not homed.<br/>Press <b>OK</b> to home the machine and continue."} R"MillenniumOS: Configuration Wizard" S3 T0 J2
         if { result != 0 }
             abort { "MillenniumOS: Operator aborted machine homing!" }
         G28
 
-    M291 P{"We will now move the table to the front of the machine.<br/><b>CAUTION</b>: Please move away from the machine, and remove any obstructions around the table <b>BEFORE</b> clicking <b>OK</b>."} R"MillenniumOS: Configuration Wizard" S3 T0
+    M291 P{"We will now move the table to the front of the machine.<br/><b>CAUTION</b>: Please move away from the machine, and remove any obstructions around the table <b>BEFORE</b> clicking <b>OK</b>."} R"MillenniumOS: Configuration Wizard" S3 T0 J2
 
     ; Park centrally to enable the 1-2-3 block installation
     G27
 
     M291 P{"Please secure your 1-2-3 block or chosen rectangular item onto the table, largest face on top.<br/><b>CAUTION</b>: Please make sure all 4 side surfaces are free of obstructions!"} R"MillenniumOS: Configuration Wizard" S2 T0
-    M291 P{"Please enter the exact <b>surface length</b> of the rectangular item along the X axis in mm.<br/><b>NOTE</b>: Along the X axis means the surface facing towards the operator."} R"MillenniumOS: Configuration Wizard" J1 T0 S6 F50.8
+    M291 P{"Please enter the exact <b>surface length</b> of the rectangular item along the X axis in mm.<br/><b>NOTE</b>: Along the X axis means the surface facing towards the operator."} R"MillenniumOS: Configuration Wizard" J2 T0 S6 F50.8
     if { result != 0 }
         abort { "MillenniumOS: Operator aborted configuration wizard!" }
 
@@ -589,7 +589,7 @@ if { var.wizFeatureTouchProbe && (var.wizTouchProbeID == null || var.wizTouchPro
     if { var.measuredX < 10 }
         abort { "MillenniumOS: Measured X length is too short, must be at least 10mm!" }
 
-    M291 P{"Please enter the exact <b>surface length</b> of the rectangular item along the Y axis in mm.<br/><b>NOTE</b>: Along the Y axis means the surface facing to the left or right."} R"MillenniumOS: Configuration Wizard" J1 T0 S6 F76.2
+    M291 P{"Please enter the exact <b>surface length</b> of the rectangular item along the Y axis in mm.<br/><b>NOTE</b>: Along the Y axis means the surface facing to the left or right."} R"MillenniumOS: Configuration Wizard" J2 T0 S6 F76.2
     if { result != 0 }
         abort { "MillenniumOS: Operator aborted configuration wizard!" }
 
@@ -598,9 +598,11 @@ if { var.wizFeatureTouchProbe && (var.wizTouchProbeID == null || var.wizTouchPro
     if { var.measuredY < 10 }
         abort { "MillenniumOS: Measured Y length is too short, must be at least 10mm!" }
 
-    M291 P{"Jog the touch probe within 5mm of the center of the item and press <b>OK</b>.<br/><b>CAUTION</b>: The probe height when clicking <b>OK</b> is assumed to be safe for horizontal moves!"} R"MillenniumOS: Configuration Wizard" X1 Y1 Z1 S3 T0
+    M291 P{"Jog the touch probe within 5mm of the center of the item and press <b>OK</b>.<br/><b>CAUTION</b>: The probe height when clicking <b>OK</b> is assumed to be safe for horizontal moves!"} R"MillenniumOS: Configuration Wizard" X1 Y1 Z1 S3 T0 J2
+    if { result != 0 }
+        abort { "MillenniumOS: Operator aborted configuration wizard!" }
 
-    M291 P"Please enter the depth to probe at in mm, relative to the current location. A value of 10 will move the probe downwards 10mm before probing towards the item." R"MillenniumOS: Configuration Wizard" J1 T0 S6 F{global.mosOT}
+    M291 P"Please enter the depth to probe at in mm, relative to the current location. A value of 10 will move the probe downwards 10mm before probing towards the item." R"MillenniumOS: Configuration Wizard" J2 T0 S6 F{global.mosOT}
     if { result != 0 }
         abort { "MillenniumOS: Operator aborted configuration wizard!" }
 
@@ -610,7 +612,7 @@ if { var.wizFeatureTouchProbe && (var.wizTouchProbeID == null || var.wizTouchPro
         abort { "Probing depth must not be negative!" }
 
     if { var.wizTutorialMode }
-        M291 P{"We will now probe the item from 15mm outside each surface, at 2 points along each surface, at a depth of " ^ var.probingDepth ^ "mm.<br/>Press <b>OK</b> to proceed!"} R"MillenniumOS: Configuration Wizard" S3 T0
+        M291 P{"We will now probe the item from 15mm outside each surface, at 2 points along each surface, at a depth of " ^ var.probingDepth ^ "mm.<br/>Press <b>OK</b> to proceed!"} R"MillenniumOS: Configuration Wizard" S3 T0 J2
         if { result != 0 }
             abort { "MillenniumOS: Operator aborted configuration wizard!" }
 
@@ -636,7 +638,7 @@ if { var.wizFeatureTouchProbe && (var.wizTouchProbeID == null || var.wizTouchPro
     M5000 P0
 
     ; Probe the item to calculate deflection.
-    G6503.1 W{null} H{var.measuredX} I{var.measuredY} T15 O5 J{global.mosMI[0]} K{global.mosMI[1]} L{global.mosMI[2] - var.probingDepth}
+    G6503.1 W{null} H{var.measuredX} I{var.measuredY} T15 O5 J{global.mosMI[0]} K{global.mosMI[1]} L{global.mosMI[2]} Z{global.mosMI[2] - var.probingDepth}
 
     ; Reset after probing so we don't override wizard
     ; settings if it needs to run again.

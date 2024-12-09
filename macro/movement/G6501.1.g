@@ -22,6 +22,9 @@ if { exists(param.W) && param.W != null && (param.W < 0 || param.W >= limits.wor
 if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
     abort { "Must provide a start position to probe from using J, K and L parameters!" }
 
+if { !exists(param.Z) }
+    abort { "Must provide a probe position using the Z parameter!" }
+
 if { !exists(param.H) }
     abort { "Must provide an approximate boss diameter using the H parameter!" }
 
@@ -35,6 +38,10 @@ var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workpla
 ; the number of the work co-ordinate system, so is 1-indexed.
 var wcsNumber = { var.workOffset + 1 }
 
+; Increment the probe surface and point totals for status reporting
+set global.mosPRST = { global.mosPRST + 1 }
+set global.mosPRPT = { global.mosPRPT + 3 }
+
 var pID = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
 ; Make sure probe tool is selected
@@ -45,9 +52,6 @@ if { global.mosPTID != state.currentTool }
 ; center position, rotation and radius
 M5010 W{var.workOffset} R37
 
-; Get current machine position on Z
-M5000 P1 I2
-
 ; Store our own safe Z position as the current position. We return to
 ; this position where necessary to make moves across the workpiece to
 ; the next probe point.
@@ -55,7 +59,7 @@ M5000 P1 I2
 ; original position may have been safe with a different tool installed,
 ; the touch probe may be longer. After a tool change the spindle
 ; will be parked, so essentially our safeZ is at the parking location.
-var safeZ = { global.mosMI }
+var safeZ = { param.L }
 
 ; Tool Radius is the first entry for each value in
 ; our extended tool table.
@@ -88,7 +92,6 @@ var cR = { (param.H / 2) }
 ; Start position is operator chosen center of the boss
 var sX   = { param.J }
 var sY   = { param.K }
-var sZ   = { param.L }
 
 ; Calculate probing directions using approximate boss radius
 ; Angle is in degrees
@@ -128,7 +131,7 @@ var pXY  = { null, null, null }
 ; Probe each of the 3 points
 while { iterations < #var.dirXY }
     ; Perform a probe operation towards the center of the boss
-    G6512 I{var.pID} J{var.dirXY[iterations][0][0]} K{var.dirXY[iterations][0][1]} L{var.sZ} X{var.dirXY[iterations][1][0]} Y{var.dirXY[iterations][1][1]}
+    G6512 I{var.pID} J{var.dirXY[iterations][0][0]} K{var.dirXY[iterations][0][1]} L{param.Z} X{var.dirXY[iterations][1][0]} Y{var.dirXY[iterations][1][1]}
 
     ; Save the probed co-ordinates
     set var.pXY[iterations] = { global.mosMI[0], global.mosMI[1] }
@@ -178,7 +181,7 @@ G6550 I{var.pID} X{var.cX} Y{var.cY}
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
     M7601 W{var.workOffset}
+    echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to the center of the boss." }
 
 ; Set WCS origin to the probed center
-echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to the center of the boss." }
 G10 L2 P{var.wcsNumber} X{var.cX} Y{var.cY}

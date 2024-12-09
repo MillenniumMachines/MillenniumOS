@@ -13,6 +13,9 @@ if { !inputs[state.thisInput].active }
 if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
     abort { "G6512: Must provide a valid target position in one or more axes (X.. Y.. Z..)!" }
 
+if { !exists(global.mosMI) }
+    global mosMI = { null }
+
 ; Use absolute positions in mm and feeds in mm/min
 G90
 G21
@@ -128,9 +131,6 @@ while { true }
 
     ; Update the current position
     set var.cP = { global.mosMI }
-
-if { !exists(global.mosMI) }
-    global mosMI = { null }
 
 ; Save output variable
 set global.mosMI = { var.cP }
