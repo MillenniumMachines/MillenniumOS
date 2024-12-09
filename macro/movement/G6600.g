@@ -96,13 +96,17 @@ if { global.mosTM }
 ; If work offset origin is already set
 if { var.pdX != 0 && var.pdY != 0 && var.pdZ != 0 }
     ; Allow operator to continue without resetting the origin and abort the probe
-    M291 P{"WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") already has a valid origin.<br/>Click <b>Continue</b> to use the existing origin or <b>Re-Probe</b> to modify it."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue","Re-Probe"} F0
+    M291 P{"WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") is valid. <br/><b>Continue</b> to proceed, <b>Modify</b> to update or <b>Reset</b> to start again."} R"MillenniumOS: Probe Workpiece" T0 S4 K{"Continue","Modify", "Reset"} F0
     if { input == 0 }
         echo {"MillenniumOS: WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") origin retained, skipping probe cycle."}
         M99
+    elif { input == 2 }
+        echo {"MillenniumOS: WCS " ^ var.wcsNumber ^ " (" ^ var.workOffsetName ^ ") origin has been reset."}
+        ; Reset the WCS origin so that all axes must be re-probed.
+        G10 L2 P{var.wcsNumber} X0 Y0 Z0
 
-    ; Reset the WCS origin so that all axes must be re-probed.
-    G10 L2 P{var.wcsNumber} X0 Y0 Z0
+        ; Clear all stored WCS details
+        M5010 W{var.workOffset}
 
 ; Switch to touchprobe if not already connected
 if { global.mosPTID != state.currentTool }
@@ -112,6 +116,9 @@ if { global.mosPTID != state.currentTool }
 M291 P"Please select a probe cycle type." R"MillenniumOS: Probe Workpiece" T0 S4 F0 K{var.probeCycleNames}
 if { result != 0 }
     abort { "Operator cancelled probe cycle!" }
+
+; Cancel rotation compensation as we use G53 on the probe moves.
+G69
 
 ; Run the selected probing operation.
 ; We cannot lookup G command numbers to run dynamically so these must be

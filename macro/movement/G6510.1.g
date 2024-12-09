@@ -29,15 +29,15 @@ var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workpla
 ; the number of the work co-ordinate system, so is 1-indexed.
 var wcsNumber = { var.workOffset + 1 }
 
-var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
+var pID = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
 ; Make sure probe tool is selected
 if { global.mosPTID != state.currentTool }
     T T{global.mosPTID}
 
 ; Reset stored values that we're going to overwrite -
-; surface
-M5010 W{var.workOffset} R8
+; surface and rotation
+M5010 W{var.workOffset} R40
 
 ; Get current machine position on Z
 M5000 P1 I2
@@ -76,7 +76,7 @@ else
 M6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
 ; Run probing operation
-G6512 I{var.probeId} J{param.J} K{param.K} L{param.L} X{var.tPX} Y{var.tPY} Z{var.tPZ}
+G6512 I{var.pID} J{param.J} K{param.K} L{param.L} X{var.tPX} Y{var.tPY} Z{var.tPZ}
 
 var sAxis = { (var.probeAxis <= 1)? "X" : (var.probeAxis <= 3)? "Y" : "Z" }
 

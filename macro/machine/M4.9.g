@@ -1,4 +1,4 @@
-; M3.9.g: SPINDLE ON, CLOCKWISE - WAIT FOR SPINDLE TO ACCELERATE
+; M4.9.g: SPINDLE ON, COUNTER-CLOCKWISE - WAIT FOR SPINDLE TO ACCELERATE
 ;
 ; It takes a bit of time to spin up the spindle. How long this
 ; requires depends on the VFD setup and the spindle power. The spindle
@@ -6,7 +6,7 @@
 ; amongst other things) and the post-processor, so we need an m-code
 ; that can be used by both and that means our wait-for-spindle dwell
 ; time only needs to exist in one place.
-; USAGE: M3.9 [S<rpm>] [P<spindle-id>] [D<override-dwell-seconds>]
+; USAGE: M4.9 [S<rpm>] [P<spindle-id>] [D<override-dwell-seconds>]
 
 ; Make sure this file is not executed by the secondary motion system
 if { !inputs[state.thisInput].active }
@@ -22,6 +22,10 @@ var sID = { (exists(param.P) ? param.P : global.mosSID) }
 ; Validate Spindle ID
 if { var.sID < 0 || var.sID > #spindles-1 || spindles[var.sID] == null || spindles[var.sID].state == "unconfigured" }
     abort { "Spindle ID " ^ var.sID ^ " is not valid!" }
+
+; Validate Spindle direction
+if { !spindles[var.sID].canReverse }
+    abort { "Spindle #" ^ var.sID ^ " is not configured to allow counter-clockwise rotation!" }
 
 ; Validate Spindle Speed parameter
 if { exists(param.S) }
@@ -49,7 +53,7 @@ var sStopping = { spindles[var.sID].current > 0 && param.S == 0 }
 ; Warning Message for Operator
 ; Assigned as a separate variable because
 ; otherwise the dialog box line is too long.
-var wM = {"<b>CAUTION</b>: Spindle <b>#" ^ var.sID ^ "</b> will now start <b>clockwise</b>!<br/>Check that workpiece and tool are secure, and all safety precautions have been taken before pressing <b>Continue</b>."}
+var wM = {"<b>CAUTION</b>: Spindle <b>#" ^ var.sID ^ "</b> will now start <b>counter-clockwise!</b><br/>Check that workpiece and tool are secure, and all safety precautions have been taken before pressing <b>Continue</b>."}
 
 ; If the spindle is stationary
 if { spindles[var.sID].current == 0 }
@@ -89,20 +93,20 @@ else
         set var.dwellTime = { ceil(var.dwellTime * (abs(spindles[var.sID].current - param.S) / spindles[var.sID].max) * 1.05) }
 
 ; All safety checks have now been passed, so we can
-; start the spindle using M3 here.
+; start the spindle using M4 here.
 
-; Account for all permutations of M3 command
+; Account for all permutations of M4 command
 if { exists(param.S) }
     if { exists(param.P) }
-        M3 S{param.S} P{param.P}
+        M4 S{param.S} P{param.P}
     else
-        M3 S{param.S}
+        M4 S{param.S}
 elif { exists(param.P) }
-    M3 P{param.P}
+    M4 P{param.P}
 else
-    M3
+    M4
 
-; If M3 returns an error, abort.
+; If M4 returns an error, abort.
 if { result != 0 }
     abort { "Failed to control Spindle ID " ^ var.sID ^ "!" }
 

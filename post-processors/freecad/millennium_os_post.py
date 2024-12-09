@@ -23,7 +23,15 @@ import sys
 import argparse
 import shlex
 import re
-from enum import StrEnum, Flag, auto
+from enum import Flag, auto
+
+if sys.version_info < (3, 11):
+    from enum import Enum
+    class StrEnum(str, Enum):
+        pass
+else:
+    from enum import StrEnum, auto
+
 from contextlib import contextmanager
 import FreeCAD
 from FreeCAD import Units
@@ -904,8 +912,7 @@ class MillenniumOSPostProcessor(PostProcessor):
                 self.comment("Pass tool details to firmware")
                 # Output tool info
                 for index, tool in tools.items():
-                    tool_desc = ' '.join([tool['name'], "F={flutes} L={flute_length} CR={corner_radius}".format(**tool['params'])])
-                    self.M(MCODES.ADD_TOOL, P=index, R=tool['params']['radius'], S=rrf_safe_string(tool_desc), ctrl=Control.FORCE)
+                    self.M(MCODES.ADD_TOOL, P=index, R=tool['params']['radius'], S=rrf_safe_string(tool['name'][:32]), ctrl=Control.FORCE)
                 self.brk()
 
             # Output job setup commands if necessary

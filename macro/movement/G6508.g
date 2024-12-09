@@ -92,18 +92,20 @@ var surfaceClearance = { input }
 if { var.surfaceClearance <= 0.1 }
     abort { "Clearance distance too low!" }
 
-; Calculate the maximum clearance distance we can use before
-; the probe points will be flipped
-var mC = { min(var.xSL, var.ySL) / 2 }
-
 var cornerClearance = null
 
-if { var.surfaceClearance >= var.mC }
-    var defCC = { max(1, var.mC-1) }
-    M291 P{"The <b>clearance</b> distance is more than half of the length of one of the corner surfaces.<br/>Please enter a <b>corner clearance</b> distance less than <b>" ^ var.mC ^ "</b>."} R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{var.defCC}
-    set var.cornerClearance = { input }
-    if { var.cornerClearance >= var.mC }
-        abort { "Corner clearance distance too high!" }
+; 0 = Full mode, 1 = Quick mode
+if { var.mode == 0 }
+    ; Calculate the maximum clearance distance we can use before
+    ; the probe points will be flipped
+    var mC = { min(var.xSL, var.ySL) / 2 }
+
+    if { var.surfaceClearance >= var.mC }
+        var defCC = { max(1, var.mC-1) }
+        M291 P{"The <b>clearance</b> distance is more than half of the length of one of the corner surfaces.<br/>Please enter a <b>corner clearance</b> distance less than <b>" ^ var.mC ^ "</b>."} R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{var.defCC}
+        set var.cornerClearance = { input }
+        if { var.cornerClearance >= var.mC }
+            abort { "Corner clearance distance too high!" }
 
 ; Prompt for overtravel distance
 M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far we move past the expected surface to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Outside Corner" J1 T0 S6 F{global.mosOT}

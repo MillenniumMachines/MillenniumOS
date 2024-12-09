@@ -1,7 +1,7 @@
 ; G6510.g: SINGLE SURFACE PROBE
 ;
 ; Meta macro to gather operator input before executing a
-; single surface probe (G6512). The macro will explain to
+; single surface probe (G6510). The macro will explain to
 ; the operator what is about to happen and ask on which axis
 ; the user would like to run a probe cycle. The macro will ask
 ; the operator to jog to the starting location, then enter a

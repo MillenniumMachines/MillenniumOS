@@ -19,12 +19,11 @@ jobs:
           dist/release.sh mos-release-${{ github.ref_name }}
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: release-${{ github.sha }}
-          release_name: MillenniumOS ${{ github.ref_name }}
+          name: MillenniumOS ${{ github.ref_name }}
           body: ${{ github.event.head_commit.message }}
           draft: true
           prerelease: false

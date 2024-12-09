@@ -36,8 +36,20 @@ if { !exists(param.X) && !exists(param.Y) && !exists(param.Z) }
 
 var manualProbe = { !exists(param.I) || param.I == null }
 
+; Use absolute positions in mm and feeds in mm/min
+G90
+G21
+G94
+
+; Cancel rotation compensation as we use G53 on the probe move.
+; Leaving rotation compensation active causes us to fail position
+; checks.
+G69
+
 ; Get current machine position
 M5000 P0
+
+var cPZ = { global.mosMI[2] }
 
 ; Generate target position and defaults
 var tPX = { (exists(param.X)? param.X : global.mosMI[0]) }
@@ -52,11 +64,6 @@ if { var.tPX == global.mosMI[0] && var.tPY == global.mosMI[1] && var.tPZ == glob
 ; Check if the positions are within machine limits
 M6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
-; Use absolute positions in mm and feeds in mm/min
-G90
-G21
-G94
-
 ; If we're using "manual" probing, we can't
 ; protect any moves as we have no inputs to check.
 ; So just run the move as normal with our manual
@@ -65,8 +72,12 @@ if { var.manualProbe }
     G53 G1 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } F{ global.mosMPS[0] }
     M99
 
-; Commented due to memory limitations
-; M7500 S{"Protected move to X=" ^ var.tPX ^ " Y=" ^ var.tPY ^ " Z=" ^ var.tPZ ^ " from X=" ^ global.mosMI[0] ^ " Y=" ^ global.mosMI[1] ^ " Z=" ^ global.mosMI[2] }
+; If we're only moving in the positive Z direction,
+; just move to the target position - the probe should
+; never be obstructed vertically.
+if { var.tPX == global.mosMI[0] && var.tPY == global.mosMI[1] && var.tPZ > var.cPZ }
+    G53 G1 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } F{ sensors.probes[param.I].travelSpeed }
+    M99
 
 ; Note: these must be set as variables as we override the
 ; probe speed below. We need to reset the probe speed
@@ -110,7 +121,7 @@ if { sensors.probes[param.I].value[0] != 0 }
     ; The subsequent G38.3 will be a no-op as we will already be
     ; at the target position.
     if { var.tIN >= var.tN }
-        G53 G1 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } F{ var.travelSpeed }
+        G53 G1 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } F{ sensors.probes[param.I].travelSpeed }
     else
         ; Back off by the back-off distance
         ; We do not use a G38.5 here because it will stop movement the
@@ -131,14 +142,14 @@ if { sensors.probes[param.I].value[0] != 0 }
 ; Move to position while checking probe for activation
 G53 G38.3 K{ param.I } F{ sensors.probes[param.I].travelSpeed } X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
-; Wait for moves to complete
-M400
+; Get current machine position
+M5000 P0
 
 ; Probing move either complete or stopped due to collision, we need to
 ; check the location of the machine to determine if the move was completed.
 
-; Get current machine position
-M5000 P0
+; Reset probe speed
+M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
 
 var tolerance = { 0.005 }
 
