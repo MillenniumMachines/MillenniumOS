@@ -120,6 +120,9 @@ if { result != 0 }
 ; Cancel rotation compensation as we use G53 on the probe moves.
 G69
 
+; Reset the current probe status counts
+M5012
+
 ; Run the selected probing operation.
 ; We cannot lookup G command numbers to run dynamically so these must be
 ; hardcoded in a set of if statements.
