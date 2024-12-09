@@ -139,10 +139,8 @@ if { sensors.probes[param.I].value[0] != 0 }
     if { sensors.probes[param.I].value[0] != 0 }
         abort {"G6550: Probe is still triggered after backing off by " ^ global.mosPMBO ^ "mm. You will need to manually move the probe out of harms way!" }
 
-M558 K{ param.I } F{ sensors.probes[param.I].travelSpeed }
-
 ; Move to position while checking probe for activation
-G53 G38.3 K{ param.I } X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
+G53 G38.3 K{ param.I } F{ sensors.probes[param.I].travelSpeed } X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
 ; Get current machine position
 M5000 P0
