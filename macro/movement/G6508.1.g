@@ -47,6 +47,7 @@ var pID = { global.mosFeatTouchProbe ? global.mosTPID : null }
 ; Probe mode defaults to (0=Full)
 var pFull = { exists(param.Q) ? param.Q == 0: false }
 
+; Increment the probe surface and point totals for status reporting
 set global.mosPRST = { global.mosPRST + (var.pFull ? 2 : 1) }
 set global.mosPRPT = { global.mosPRPT + (var.pFull ? 4 : 2) }
 

@@ -39,6 +39,7 @@ var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workpla
 ; the number of the work co-ordinate system, so is 1-indexed.
 var wcsNumber = { var.workOffset + 1 }
 
+; Increment the probe surface and point totals for status reporting
 set global.mosPRST = { global.mosPRST + 1 }
 set global.mosPRPT = { global.mosPRPT + 3 }
 

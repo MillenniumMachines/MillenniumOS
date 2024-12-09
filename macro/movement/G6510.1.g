@@ -20,6 +20,7 @@ if { !exists(param.H) }
 if { !exists(param.I) }
     abort { "Must provide a distance to probe towards the target surface (I...)" }
 
+; Increment the probe surface and point totals for status reporting
 set global.mosPRST = { global.mosPRST + 1 }
 set global.mosPRPT = { global.mosPRPT + 1 }
 
