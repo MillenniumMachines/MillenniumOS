@@ -131,23 +131,25 @@ var dirY = { (param.N == 0) ? -1 : 1 }
 
 ; Add initial probe points
 if { param.N == 0 }
+    ; sX = 266.393 sY = 77.755 hW = (76.2/2) hL = (50.8/2)
+    ; N = 0
     set var.surface1[0][0][0] = { var.sX - var.dirX * (var.hW + var.surfaceClearance) }
     set var.surface1[0][1][0] = { var.sX - var.dirX * (var.hW - var.overtravel) }
-    set var.surface1[0][0][1] = { var.sY + var.dirY * (var.hL + var.edgeClearance) }
-    set var.surface1[0][1][1] = { var.sY + var.dirY * (var.hL + var.edgeClearance) }
+    set var.surface1[0][0][1] = { var.sY + var.dirY * (var.hL - var.edgeClearance) }
+    set var.surface1[0][1][1] = { var.sY + var.dirY * (var.hL - var.edgeClearance) }
 
     set var.surface2[0][0][0] = { var.sX + var.dirX * (var.hW + var.surfaceClearance) }
     set var.surface2[0][1][0] = { var.sX + var.dirX * (var.hW - var.overtravel) }
-    set var.surface2[0][0][1] = { var.sY + var.dirY * (var.hL + var.edgeClearance) }
-    set var.surface2[0][1][1] = { var.sY + var.dirY * (var.hL + var.edgeClearance) }
+    set var.surface2[0][0][1] = { var.sY - var.dirY * (var.hL - var.edgeClearance) }
+    set var.surface2[0][1][1] = { var.sY - var.dirY * (var.hL - var.edgeClearance) }
 else
-    set var.surface1[0][0][0] = { var.sX + var.dirX * (var.hL + var.edgeClearance) }
-    set var.surface1[0][1][0] = { var.sX + var.dirX * (var.hL + var.edgeClearance) }
+    set var.surface1[0][0][0] = { var.sX - var.dirX * (var.hL - var.edgeClearance) }
+    set var.surface1[0][1][0] = { var.sX - var.dirX * (var.hL - var.edgeClearance) }
     set var.surface1[0][0][1] = { var.sY - var.dirY * (var.hW + var.surfaceClearance) }
     set var.surface1[0][1][1] = { var.sY - var.dirY * (var.hW - var.overtravel) }
 
-    set var.surface2[0][0][0] = { var.sX + var.dirX * (var.hL + var.edgeClearance) }
-    set var.surface2[0][1][0] = { var.sX + var.dirX * (var.hL + var.edgeClearance) }
+    set var.surface2[0][0][0] = { var.sX + var.dirX * (var.hL - var.edgeClearance) }
+    set var.surface2[0][1][0] = { var.sX + var.dirX * (var.hL - var.edgeClearance) }
     set var.surface2[0][0][1] = { var.sY + var.dirY * (var.hW + var.surfaceClearance) }
     set var.surface2[0][1][1] = { var.sY + var.dirY * (var.hW - var.overtravel) }
 
@@ -156,21 +158,21 @@ if { var.pFull }
     if { param.N == 0 }
         set var.surface1[1][0][0] = { var.surface1[0][0][0] }
         set var.surface1[1][1][0] = { var.surface1[0][1][0] }
-        set var.surface1[1][0][1] = { var.sY - var.dirY * (var.hL + var.edgeClearance) }
-        set var.surface1[1][1][1] = { var.sY - var.dirY * (var.hL + var.edgeClearance) }
+        set var.surface1[1][0][1] = { var.sY - var.dirY * (var.hL - var.edgeClearance) }
+        set var.surface1[1][1][1] = { var.sY - var.dirY * (var.hL - var.edgeClearance) }
 
         set var.surface2[1][0][0] = { var.surface2[0][0][0] }
         set var.surface2[1][1][0] = { var.surface2[0][1][0] }
-        set var.surface2[1][0][1] = { var.sY - var.dirY * (var.hL + var.edgeClearance) }
-        set var.surface2[1][1][1] = { var.sY - var.dirY * (var.hL + var.edgeClearance) }
+        set var.surface2[1][0][1] = { var.sY + var.dirY * (var.hL - var.edgeClearance) }
+        set var.surface2[1][1][1] = { var.sY + var.dirY * (var.hL - var.edgeClearance) }
     else
-        set var.surface1[1][0][0] = { var.sX - var.dirX * (var.hL + var.edgeClearance) }
-        set var.surface1[1][1][0] = { var.sX - var.dirX * (var.hL + var.edgeClearance) }
+        set var.surface1[1][0][0] = { var.sX + var.dirX * (var.hL - var.edgeClearance) }
+        set var.surface1[1][1][0] = { var.sX + var.dirX * (var.hL - var.edgeClearance) }
         set var.surface1[1][0][1] = { var.surface1[0][0][1] }
         set var.surface1[1][1][1] = { var.surface1[0][1][1] }
 
-        set var.surface2[1][0][0] = { var.sX - var.dirX * (var.hL + var.edgeClearance) }
-        set var.surface2[1][1][0] = { var.sX - var.dirX * (var.hL + var.edgeClearance) }
+        set var.surface2[1][0][0] = { var.sX - var.dirX * (var.hL - var.edgeClearance) }
+        set var.surface2[1][1][0] = { var.sX - var.dirX * (var.hL - var.edgeClearance) }
         set var.surface2[1][0][1] = { var.surface2[0][0][1] }
         set var.surface2[1][1][1] = { var.surface2[0][1][1] }
 
@@ -213,13 +215,18 @@ else
     ; Calculate the rotation of the web.
     ; After the checks above, we know the web has parallel
     ; surfaces, so we can assume that the angle of the first
-    ; surface from 0 or 90 degrees is the angle of the web.
+    ; surface is the angle of the web.
     ; We need to normalise this to between 0 and 45 degrees.
-    var rAngle = { mod(var.pSfc[0][2], pi) }
-    if { var.rAngle > pi/2 }
-        set var.rAngle = { pi - var.rAngle }
+    var aR = { (param.N == 0) ? var.pSfc[0][2] - (pi/2) : var.pSfc[0][2] }
 
-    set global.mosWPDeg[var.workOffset] = { degrees(var.rAngle) }
+    ; Reduce the angle to below +/- 45 degrees (pi/4 radians)
+    while { var.aR > pi/4 || var.aR < -pi/4 }
+        if { var.aR > pi/4 }
+            set var.aR = { var.aR - pi/2 }
+        elif { var.aR < -pi/4 }
+            set var.aR = { var.aR + pi/2 }
+
+    set global.mosWPDeg[var.workOffset] = { degrees(var.aR) }
 
 ; Make sure we're at the safeZ height
 G6550 I{var.pID} Z{var.safeZ}
