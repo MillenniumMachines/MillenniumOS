@@ -23,7 +23,7 @@ if { param.P >= limits.tools || param.P < 0 }
 ; This allows us to re-run a file that defines the tool that is currently
 ; loaded, without unloading the tool.
 ; This has to be split over multiple lines due to length of the condition.
-if { global.mosTT[param.P] != null && tools[param.P] != null }
+if { exists(global.mosTT[param.P]) && global.mosTT[param.P] != null && exists(tools[param.P]) && tools[param.P] != null }
     var toolSame = { global.mosTT[param.P][0] == param.R && tools[param.P].spindle == ((exists(param.I)) ? param.I : global.mosSID) }
 
     set var.toolSame = { var.toolSame && tools[param.P].name == param.S }
