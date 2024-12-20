@@ -15,6 +15,9 @@ if { !inputs[state.thisInput].active }
 if { !exists(param.P) || !exists(param.R) || !exists(param.S) }
     abort { "Must provide tool number (P...), radius (R...) and description (S...) to register tool!" }
 
+if { #param.S < 1 }
+    abort { "Tool description must be at least 1 character long!" }
+
 ; Validate tool index
 if { param.P >= limits.tools || param.P < 0 }
     abort { "Tool index must be between 0 and " ^ limits.tools-1 ^ "!" }
@@ -23,18 +26,25 @@ if { param.P >= limits.tools || param.P < 0 }
 ; This allows us to re-run a file that defines the tool that is currently
 ; loaded, without unloading the tool.
 ; This has to be split over multiple lines due to length of the condition.
-if { exists(global.mosTT[param.P]) && global.mosTT[param.P] != null && exists(tools[param.P]) && tools[param.P] != null }
-    var toolSame = { global.mosTT[param.P][0] == param.R && tools[param.P].spindle == ((exists(param.I)) ? param.I : global.mosSID) }
+; Make sure to check that the tool table has enough entries.
 
-    set var.toolSame = { var.toolSame && tools[param.P].name == param.S }
+; Initial tool similarity check - make sure the tool is defined in both the internal
+; RRF tool table and our own mosTT table.
+var toolSame = { global.mosTT[param.P] != null && #tools > param.P && tools[param.P] != null }
 
-    if { exists(param.X) }
-        set var.toolSame = { var.toolSame && global.mosTT[param.P][1][0] == param.X }
-    if { exists(param.Y) }
-        set var.toolSame = { var.toolSame && global.mosTT[param.P][1][1] == param.Y }
+; Check that tool radius and spindle match
+set var.toolSame = { var.toolSame && global.mosTT[param.P][0] == param.R && tools[param.P].spindle == ((exists(param.I)) ? param.I : global.mosSID) }
 
-    if { var.toolSame }
-        M99
+; Check that tool description matches
+set var.toolSame = { var.toolSame && tools[param.P].name == param.S }
+
+; Check that deflection values match
+set var.toolSame = { var.toolSame && exists(param.X) && global.mosTT[param.P][1][0] == param.X }
+set var.toolSame = { var.toolSame && exists(param.Y) && global.mosTT[param.P][1][1] == param.Y }
+
+; If the tool already matches, return.
+if { var.toolSame }
+    M99
 
 ; Define RRF tool against spindle.
 ; Allow spindle ID to be overridden where necessary using I parameter.
