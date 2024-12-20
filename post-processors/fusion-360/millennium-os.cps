@@ -465,6 +465,9 @@ function onOpen() {
     writeComment("Pass tool details to firmware");
     for(var i = 0; i < nTools; i++) {
       var tool = tools.getTool(i);
+      if(tool.description.length < 1) {
+        error("Tool description must not be empty!");
+      }
       writeBlock('{cmd} P{index} R{radius} S"{desc}"'.supplant({
         cmd: mCodes.format(M.ADD_TOOL),
         index: intFmt.format(tool.number),

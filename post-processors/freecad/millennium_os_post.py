@@ -639,6 +639,9 @@ class MillenniumOSPostProcessor(PostProcessor):
         if index in self.tools and name != self.tools[index]['name']:
             raise ValueError("Duplicate tool index {} with different descriptions!".format(index))
 
+        if len(name) < 1:
+            raise ValueError("Tool name must not be empty!")
+
         self.tools[index] = {"name": name, "params": params}
 
     # Return tool info
