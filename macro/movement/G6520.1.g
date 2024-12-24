@@ -56,7 +56,7 @@ var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
 ; Make sure probe tool is selected
 if { global.mosPTID != state.currentTool }
-    T T{global.mosPTID}
+    abort { "Must run T" ^ global.mosPTID ^ " to select the probe tool before probing!" }
 
 ; Specify R0 so that the underlying macros dont report their own
 ; debug info.
