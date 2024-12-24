@@ -50,7 +50,7 @@ var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
 ; Make sure probe tool is selected
 if { global.mosPTID != state.currentTool }
-    T T{global.mosPTID}
+    abort { "Must run T" ^ global.mosPTID ^ " to select the probe tool before probing!" }
 
 ; Reset stored values that we're going to overwrite
 ; Reset center position, rotation and radius
