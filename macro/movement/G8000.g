@@ -84,7 +84,7 @@ if { var.wizExpertMode == null }
 ; Last chance to abort out of the wizard and configure RRF
 ; without wasting any time answering questions.
 if { var.wizTutorialMode }
-    M291 P{"<b>NOTE</b>: You will need to configure a spindle and any optional components (touch probe, toolsetter etc) in <b>RRF</b> before continuing.<br/>Press <b>OK</b> to continue, or <b>Cancel</b> to abort!"} R"MillenniumOS: Configuration Wizard" T0 J2 S3
+    M291 P{"<b>NOTE</b>: You will need to configure a spindle and any optional components (probe, toolsetter etc) in <b>RRF</b> before continuing.<br/>Press <b>OK</b> to continue, or <b>Cancel</b> to abort!"} R"MillenniumOS: Configuration Wizard" T0 J2 S3
     if { result != 0 }
         abort { "MillenniumOS: Operator aborted configuration wizard!" }
 
