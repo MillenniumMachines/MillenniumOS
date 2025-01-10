@@ -148,6 +148,14 @@ properties = {
     type: "boolean",
     value: true
   },
+  outputNotes: {
+    title: "Output notes",
+    description: "When enabled and notes are made on your setup or tooling strategies, the the post-processor will output popup dialogs with the contents of the notes you have added.",
+    group: "formats",
+    scope: "post",
+    type: "boolean",
+    value: true
+  },
   warpSpeedMode: {
     title: "Restore rapid moves at and above the selected height",
     description: "The operation height above which G0 moves will be restored. Only vertical OR lateral moves are considered. None disables warp mode. Retract and Clearance restore rapid moves at and above the relevant height set on the operation. Zero restores all rapid moves at or above Z=0 in the active WCS. BEWARE: Be absolutely certain when using Zero mode that your tool offsets are calculated accurately, as rapid moves back down to Z=0 will not allow any leeway for tool length errors! Additionally, only use Zero if you can guarantee there is nothing above Z=0 that could interfere with rapid moves.",
@@ -550,6 +558,10 @@ var curTool = {
   coolant: "disabled"
 }
 
+// Track values containing details about notes.
+var jobNotes = '';
+var sectionNotes = '';
+
 // Handle parameters.
 function onParameter(param, value) {
   switch(param) {
@@ -597,7 +609,13 @@ function onParameter(param, value) {
     case 'operation:tool_clockwise':
       curTool['run_cmd'] = (value === 1) ? M.SPINDLE_ON_CW : M.SPINDLE_ON_CCW;
     break;
-
+    // Save Notes
+    case 'job-notes':
+      jobNotes = value;
+    break;
+    case 'notes':
+      sectionNotes = value;
+    break;
     // Generate errors on unsupported parameter values
     case 'operation:isMultiAxisStrategy':
       if(value === 1) {
@@ -661,6 +679,7 @@ function onSection() {
     writeComment("Switch to WCS {wcs}".supplant(workOffsetF));
     writeBlock(gCodes.format(wcsCode));
     writeln("");
+    if(getProperty("outputNotes") && jobNotes !== '') writeConfirmableDialog(jobNotes);
     if(doProbe) {
       writeComment("Probe origin in current WCS");
       writeBlock(gCodesF.format(G.PROBE_OPERATOR));
@@ -735,6 +754,8 @@ function onSection() {
   // Output operation details after WCS and tool changing.
   writeComment("Begin {c} {s}: {v}".supplant({c: curOp['ctx'], s: curOp['strat'], v: curOp['comment']}));
   writeln("");
+
+  if(getProperty("outputNotes") && sectionNotes !== '') writeNonBlockingDialog(sectionNotes);
 
   resetAll();
 
@@ -1114,6 +1135,9 @@ function onManualNC(command, value) {
     case COMMAND_DISPLAY_MESSAGE:
       return writeConfirmableDialog(value);
 
+    case COMMAND_PRINT_MESSAGE:
+      return writeNonBlockingDialog(value);
+
     case COMMAND_PASS_THROUGH:
       return writeBlock(value);
 
@@ -1126,6 +1150,13 @@ function writeConfirmableDialog(text) {
   writeln("");
   writeComment("Output confirmable dialog to operator");
   writeBlock("M3000 R\"Fusion360\" S\"{text}\"".supplant({text: text}));
+  writeln("");
+}
+
+function writeNonBlockingDialog(text) {
+  writeln("");
+  writeComment("Output non-blocking dialog to operator");
+  writeBlock("M118 P0 S\"{text}\" L2".supplant({text: text}));
   writeln("");
 }
 
