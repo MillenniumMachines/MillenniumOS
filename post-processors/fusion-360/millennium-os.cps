@@ -686,13 +686,11 @@ function onSection() {
     writeln("");
   }
 
-  // If RPM has changed, output updated M3 command
-  // We do this regardless of tool-change, because
-  // operations may have different RPMs set on the
-  // same tool.
   var s = sVar.format(curTool['rpm']);
-  if(s > 0) {
 
+  // Only output VSSC and spindle commands if spindle speed
+  // is set, and has changed.
+  if(s !== "" && curTool['type'] !== TOOL_PROBE && curTool['rpm'] > 0) {
     if(getProperty("vsscEnabled")) {
       writeComment("Enable Variable Spindle Speed Control");
       writeBlock(mCodes.format(M.VSSC_ENABLE), "P{period} V{variance}".supplant({
@@ -706,30 +704,28 @@ function onSection() {
     // We do this regardless of tool-change, because
     // operations may have different RPMs set on the
     // same tool.
-    if(s && curTool['type'] !== TOOL_PROBE) {
-      writeComment("Start spindle at requested RPM and wait for it to accelerate");
+    writeComment("Start spindle at requested RPM and wait for it to accelerate");
 
-      // We must use mFmt directly rather than mCodes here
-      // because modal groups do not correctly handle
-      // decimals.
+    // We must use mFmt directly rather than mCodes here
+    // because modal groups do not correctly handle
+    // decimals.
+    writeBlock(mFmt.format(M.SPINDLE_ON_CW), s);
+    writeln("");
 
-      writeBlock(mFmt.format(curTool['run_cmd']), s);
-      writeln("");
-
-      if(!(curTool.coolant in COOLANT)) {
-        error("Unsupported coolant type '{c}'.".supplant({c: curTool.coolant}));
-      }
-
-      var coolant = COOLANT[curTool.coolant];
-
-      // Set to valid coolant option, otherwise set coolant to off.
-      if (coolant != COOLANT.disabled) {
-        writeComment("Enable {c} Coolant".supplant({c: curTool.coolant.capitalize()}));
-        writeBlock(mFmt.format(coolant));
-        writeln("");
-      }
+    if(!(curTool.coolant in COOLANT)) {
+      error("Unsupported coolant type '{c}'.".supplant({c: curTool.coolant}));
     }
 
+
+
+    var coolant = COOLANT[curTool.coolant];
+
+    // Set to valid coolant option, otherwise set coolant to off.
+    if (coolant != COOLANT.disabled) {
+      writeComment("Enable {c} Coolant".supplant({c: curTool.coolant.capitalize()}));
+      writeBlock(mFmt.format(coolant));
+      writeln("");
+    }
   }
 
   // Output operation details after WCS and tool changing.
