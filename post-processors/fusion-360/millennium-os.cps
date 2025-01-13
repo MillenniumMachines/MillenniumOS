@@ -598,13 +598,6 @@ function onParameter(param, value) {
       curTool['run_cmd'] = (value === 1) ? M.SPINDLE_ON_CW : M.SPINDLE_ON_CCW;
     break;
 
-    // Generate errors on unsupported parameter values
-    case 'operation:isMultiAxisStrategy':
-      if(value === 1) {
-        error("Multi-axis strategies are not supported by MillenniumOS!");
-      }
-    break;
-
     // Track feed height and clearance height
     case 'operation:zClearance':
       curOp['clearance'] = value;
@@ -715,8 +708,6 @@ function onSection() {
     if(!(curTool.coolant in COOLANT)) {
       error("Unsupported coolant type '{c}'.".supplant({c: curTool.coolant}));
     }
-
-
 
     var coolant = COOLANT[curTool.coolant];
 
