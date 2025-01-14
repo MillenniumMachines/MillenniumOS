@@ -14,16 +14,16 @@ if { !inputs[state.thisInput].active }
     M99
 
 ; Display description of web probe if not already displayed this session
-if { global.mosTM && !global.mosDD[5] }
-    M291 P"This probe cycle finds the X and Y co-ordinates of the center of a rectangular web (protruding feature) on a workpiece by probing towards the web surfaces from all 4 directions." R"MillenniumOS: Probe Rect. Block " T0 S2
-    M291 P"You will be asked to enter an approximate <b>width</b> and <b>length</b> of the web, and a <b>clearance distance</b>." R"MillenniumOS: Probe Rect. Block" T0 S2
-    M291 P"These define how far the probe will move away from the center point before moving downwards and probing back towards the relevant surfaces." R"MillenniumOS: Probe Rect. Block" T0 S2
-    M291 P"You will then jog the tool over the approximate center of the web.<br/><b>CAUTION</b>: Jogging in RRF does not watch the probe status, so you could cause damage if moving in the wrong direction!" R"MillenniumOS: Probe Rect. Block" T0 S2
-    M291 P"Finally, you will be asked for a <b>probe depth</b>. This is how far the probe will move downwards before probing towards the centerpoint." R"MillenniumOS: Probe Rect. Block" T0 S2
-    M291 P"If you are still unsure, you can <a target=""_blank"" href=""https://mos.diycnc.xyz/usage/rectangle-web"">View the Rectangle Block Documentation</a> for more details." R"MillenniumOS: Probe Rect. Block" T0 S4 K{"Continue", "Cancel"} F0
+if { global.mosTM && !global.mosDD[6] }
+    M291 P"This probe cycle finds the X or Y co-ordinates of the midpoint of a web (protruding feature) on a workpiece by probing towards the web surfaces from each side." R"MillenniumOS: Probe Web " T0 S2
+    M291 P"You will be asked to enter an approximate <b>width</b> and optionally <b>length</b> of the web, and a <b>clearance distance</b>." R"MillenniumOS: Probe Web" T0 S2
+    M291 P"These define how far the probe will move away from the starting point before moving downwards and probing back towards the relevant surfaces." R"MillenniumOS: Probe Web" T0 S2
+    M291 P"You will then jog the tool over the approximate midpoint of the web.<br/><b>CAUTION</b>: Jogging in RRF does not watch the probe status, so you could cause damage if moving in the wrong direction!" R"MillenniumOS: Probe Web" T0 S2
+    M291 P"Finally, you will be asked for a <b>probe depth</b>. This is how far the probe will move downwards before probing towards the midpoint." R"MillenniumOS: Probe Web" T0 S2
+    M291 P"If you are still unsure, you can <a target=""_blank"" href=""https://mos.diycnc.xyz/usage/web"">View the Web Documentation</a> for more details." R"MillenniumOS: Probe Web" T0 S4 K{"Continue", "Cancel"} F0
     if { input != 0 }
         abort { "Web probe aborted!" }
-    set global.mosDD[5] = true
+    set global.mosDD[6] = true
 
 ; Make sure probe tool is selected
 if { global.mosPTID != state.currentTool }
@@ -50,31 +50,38 @@ if { result != 0 }
     abort { "Web probe aborted!" }
 
 var axis = { input }
+var webLetter = { (var.axis == 0) ? "X" : "Y" }
+var lengthLetter = { (var.axis == 0) ? "Y" : "X" }
 
 var bW = { (global.mosWPDims[var.workOffset][0] != null) ? global.mosWPDims[var.workOffset][0] : 100 }
 
-M291 P{"Please enter approximate <b>web width</b> in mm.<br/><b>NOTE</b>: <b>Width</b> is measured along the <b>X</b> axis."} R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{var.bW}
+M291 P{"Please enter approximate <b>web width</b> in mm.<br/><b>NOTE</b>: <b>Width</b> is measured along the <b>" ^ var.webLetter ^ " axis."} R"MillenniumOS: Probe Web" J1 T0 S6 F{var.bW}
 if { result != 0 }
     abort { "Web probe aborted!" }
 
 var webWidth = { input }
 
 if { var.webWidth < 1 }
-    abort { "Block width too low!" }
+    abort { "Web width too low!" }
 
-var bL = { (global.mosWPDims[var.workOffset][1] != null) ? global.mosWPDims[var.workOffset][1] : 100 }
+var webLength = { null }
 
-M291 P{"Please enter approximate <b>web length</b> in mm.<br/><b>NOTE</b>: <b>Length</b> is measured along the <b>Y</b> axis."} R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{var.bL}
-if { result != 0 }
-    abort { "Web probe aborted!" }
+; 0 = Full mode, 1 = Quick mode
+; Only prompt for length if in full mode
+if { var.mode == 0 }
+    var bL = { (global.mosWPDims[var.workOffset][1] != null) ? global.mosWPDims[var.workOffset][1] : 100 }
 
-var webLength = { input }
+    M291 P{"Please enter approximate <b>web length</b> in mm.<br/><b>NOTE</b>: <b>Length</b> is measured along the <b>" ^ var.lengthLetter ^ "</b> axis."} R"MillenniumOS: Probe Web" J1 T0 S6 F{var.bL}
+    if { result != 0 }
+        abort { "Web probe aborted!" }
 
-if { var.webLength < 1 }
-    abort { "Block length too low!" }
+    set var.webLength = { input }
+
+    if { var.webLength < 1 }
+        abort { "Web length too low!" }
 
 ; Prompt for clearance distance
-M291 P"Please enter <b>clearance</b> distance in mm.<br/>This is how far away from the expected surfaces and corners we probe from, to account for any innaccuracy in the start position." R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{global.mosCL}
+M291 P"Please enter <b>clearance</b> distance in mm.<br/>This is how far away from the expected surfaces and corners we probe from, to account for any innaccuracy in the start position." R"MillenniumOS: Probe Web" J1 T0 S6 F{global.mosCL}
 if { result != 0 }
     abort { "Web probe aborted!" }
 
@@ -83,21 +90,24 @@ var surfaceClearance = { input }
 if { var.surfaceClearance <= 0.1 }
     abort { "Clearance distance too low!" }
 
-; Calculate the maximum clearance distance we can use before
-; the probe points will be flipped
-var mC = { min(var.webWidth, var.webLength) / 2 }
-
 var edgeClearance = null
 
-if { var.surfaceClearance >= var.mC }
-    var defCC = { max(1, var.mC-1) }
-    M291 P{"The <b>clearance</b> distance is more than half of the length of the web.<br/>Please enter an <b>edge clearance</b> distance less than <b>" ^ var.mC ^ "</b>."} R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{var.defCC}
-    set var.edgeClearance = { input }
-    if { var.edgeClearance >= var.mC }
-        abort { "Edge clearance distance too high!" }
+; 0 = Full mode, 1 = Quick mode
+; Only check for edge clearance if in full mode
+if { var.mode == 0 }
+    ; Calculate the maximum clearance distance we can use before
+    ; the probe points will be flipped
+    var mC = { min(var.webWidth, var.webLength) / 2 }
+
+    if { var.surfaceClearance >= var.mC }
+        var defCC = { max(1, var.mC-1) }
+        M291 P{"The <b>clearance</b> distance is more than half of the length of the web.<br/>Please enter an <b>edge clearance</b> distance less than <b>" ^ var.mC ^ "</b>."} R"MillenniumOS: Probe Web" J1 T0 S6 F{var.defCC}
+        set var.edgeClearance = { input }
+        if { var.edgeClearance >= var.mC }
+            abort { "Edge clearance distance too high!" }
 
 ; Prompt for overtravel distance
-M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far we move past the expected surfaces to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{global.mosOT}
+M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far we move past the expected surfaces to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Web" J1 T0 S6 F{global.mosOT}
 if { result != 0 }
     abort { "Web probe aborted!" }
 
@@ -105,11 +115,11 @@ var overtravel = { input }
 if { var.overtravel < 0.1 }
     abort { "Overtravel distance too low!" }
 
-M291 P"Please jog the probe <b>OVER</b> the center of the web and press <b>OK</b>.<br/><b>CAUTION</b>: The chosen height of the probe is assumed to be safe for horizontal moves!" R"MillenniumOS: Probe Rect. Block" X1 Y1 Z1 J1 T0 S3
+M291 P"Please jog the probe <b>OVER</b> the approximate midpoint of the web and press <b>OK</b>.<br/><b>CAUTION</b>: The chosen height of the probe is assumed to be safe for horizontal moves!" R"MillenniumOS: Probe Web" X1 Y1 Z1 J1 T0 S3
 if { result != 0 }
     abort { "Web probe aborted!" }
 
-M291 P"Please enter the depth to probe at in mm, relative to the current location. A value of 10 will move the probe downwards 10mm before probing inwards." R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{global.mosOT}
+M291 P"Please enter the depth to probe at in mm, relative to the current location. A value of 10 will move the probe downwards 10mm before probing inwards." R"MillenniumOS: Probe Web" J1 T0 S6 F{global.mosOT}
 if { result != 0 }
     abort { "Web probe aborted!" }
 
@@ -120,7 +130,7 @@ if { var.probingDepth < 0 }
 
 ; Run the web probe cycle
 if { global.mosTM }
-    M291 P{"Probe will now move outside each surface and down by " ^ var.probingDepth ^ "mm, before probing towards the center."} R"MillenniumOS: Probe Rect. Block" T0 S4 K{"Continue", "Cancel"} F0
+    M291 P{"Probe will now move outside each surface and down by " ^ var.probingDepth ^ "mm, before probing towards the midpoint."} R"MillenniumOS: Probe Web" T0 S4 K{"Continue", "Cancel"} F0
     if { input != 0 }
         abort { "Web probe aborted!" }
 
