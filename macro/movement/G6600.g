@@ -35,7 +35,7 @@ var workOffsetCodes={"G54","G55","G56","G57","G58","G59","G59.1","G59.2","G59.3"
 
 
 ; Define probe cycle names
-var probeCycleNames = { "Vise Corner (X,Y,Z)", "Circular Bore (X,Y)", "Circular Boss (X,Y)", "Rectangle Pocket (X,Y)", "Rectangle Block (X,Y)", "Outside Corner (X,Y)", "Single Surface (X/Y/Z)" }
+var probeCycleNames = { "Vise Corner (X,Y,Z)", "Circular Bore (X,Y)", "Circular Boss (X,Y)", "Rectangle Pocket (X,Y)", "Rectangle Block (X,Y)", "Web (X/Y)", "Pocket (X/Y)", "Outside Corner (X,Y)", "Single Surface (X/Y/Z)" }
 
 if { global.mosTM && !global.mosDD[0] }
     M291 P{"Before executing cutting operations, it is necessary to identify where the workpiece for a part is. We will do this by probing and setting a work co-ordinate system (WCS) origin point."} R"MillenniumOS: Probe Workpiece" T0 S2
@@ -140,9 +140,13 @@ elif { input == 3 } ; Rectangle Pocket
     G6502 W{var.workOffset}
 elif { input == 4 } ; Rectangle Block
     G6503 W{var.workOffset}
-elif { input == 5 } ; Outside Corner
+elif { input == 5 } ; Web X/Y
+    G6504 W{var.workOffset}
+elif { input == 6 } ; Pocket X/Y
+    G6505 W{var.workOffset}
+elif { input == 7 } ; Outside Corner
     G6508 W{var.workOffset}
-elif { input == 6 } ; Single Surface
+elif { input == 8 } ; Single Surface
     G6510 W{var.workOffset}
 else
     abort { "Invalid probe operation " ^ input ^ " selected!" }
