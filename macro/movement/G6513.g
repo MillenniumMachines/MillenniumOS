@@ -152,7 +152,7 @@ while { iterations < #param.P }
 
         ; Move to probe height.
         ; No-op if we already moved above.
-        G6550 I{ var.probe } Z{ var.startPos[2]}
+        G6550 I{ var.probe } Z{ var.startPos[2] }
 
         ; Run automated probing cycle
         if { var.manualProbe }
