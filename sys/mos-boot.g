@@ -46,7 +46,7 @@ else
 ; If we have a toolsetter, make sure the relevant variables are set
 if { global.mosFeatToolSetter }
     if { !exists(global.mosTSID) || global.mosTSID == null }
-        set global.mosErr = { "<b>global.mosTSID</b> must contain the ID of the Toolsetter probe. Configure it using M558 K[probe-id]... in config.g, then run the configuration wizard (<b>G8000</b>)." }
+        set global.mosErr = { "<b>global.mosTSID</b> must contain the ID of the Toolsetter probe. Configure it using M558 K<probe-id>... in config.g, then run the configuration wizard (<b>G8000</b>)." }
         M99
     if { !exists(global.mosTSP) || global.mosTSP == null }
         set global.mosErr = { "<b>global.mosTSP</b> is not set." }
