@@ -10,7 +10,7 @@ if { !inputs[state.thisInput].active }
     M99
 
 if { !exists(param.P) }
-    abort { "M5011: No machine information requested with P parameter." }
+    abort { "M5000: No machine information requested with P parameter." }
 
 if { !exists(global.mosMI) }
     global mosMI = { null }

@@ -148,9 +148,6 @@ M5000 P0
 ; Probing move either complete or stopped due to collision, we need to
 ; check the location of the machine to determine if the move was completed.
 
-; Reset probe speed
-M558 K{ param.I } F{ var.roughSpeed, var.fineSpeed }
-
 var tolerance = { 0.005 }
 
 if { global.mosMI[0] < (var.tPX - var.tolerance) || global.mosMI[0] > (var.tPX + var.tolerance) }
