@@ -264,5 +264,5 @@ while { iterations < #var.pSfc }
         set var.pSfc[var.surfaceNo][0][iterations][0] = { var.surfacePoints[iterations][0] + var.dX }
         set var.pSfc[var.surfaceNo][0][iterations][1] = { var.surfacePoints[iterations][1] + var.dY }
 
-    ; Save the output surfaces
-    set global.mosMI = { var.pSfc }
+; Save the output surfaces
+set global.mosMI = { var.pSfc }
