@@ -71,27 +71,24 @@ var safeZ = { param.L }
 var sX = { param.J }
 var sY = { param.K }
 
-; Calculate probing directions using approximate bore radius (120 degrees apart)
-var angle = { radians(120) }
-
 ; Create an array of probe points for G6513
-var numPoints = 3 ; This could become a parameter in the future
-var probePoints = { vector(var.numPoints, null) }
+var numPoints = 3
+var probePoints = { vector(var.numPoints, {null, null}) }
 
 ; Set first probe point directly (0 degrees) to avoid rounding errors
-set var.probePoints[0] = { {{var.sX, var.sY, param.Z}, {var.sX + var.bR, var.sY, param.Z}} }
+set var.probePoints[0][0] = {var.sX, var.sY, param.Z}
+set var.probePoints[0][1] = {var.sX + var.bR + var.overtravel, var.sY, param.Z}
 
 ; Generate remaining probe points
 while { iterations < var.numPoints - 1 }
     var pointNo = { iterations + 1 }
-    var angle = { radians(120 * var.pointNo) }
+    var probeAngle = { radians(120 * var.pointNo) }
 
-    ; Calculate target position for this point - start position is always the same
-    var targetX = { var.sX + var.bR * cos(var.angle) }
-    var targetY = { var.sY + var.bR * sin(var.angle) }
-
-    ; Set probe point with the same start position but different target positions
-    set var.probePoints[var.pointNo] = { {{var.sX, var.sY, param.Z}, {var.targetX, var.targetY, param.Z}} }
+    ; Set probe point directly with calculated positions
+    ; We have to keep the lines short to avoid going over the 255 character limit
+    ; So we should set each index separately
+    set var.probePoints[var.pointNo][0] = { var.sX, var.sY, param.Z }
+    set var.probePoints[var.pointNo][1] = { var.sX + (var.bR + var.overtravel) * cos(var.probeAngle), var.sY + (var.bR + var.overtravel) * sin(var.probeAngle), param.Z }
 
 ; Call G6513 to probe the points
 G6513 I{var.probeId} P{var.probePoints} S{var.safeZ} D1

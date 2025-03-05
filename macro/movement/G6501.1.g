@@ -80,10 +80,8 @@ var overtravel = { (exists(param.O) ? param.O : global.mosOT) - ((state.currentT
 ; Commented due to memory limitations
 ; M7500 S{"Distance Modifiers adjusted for Tool Radius - Clearance=" ^ var.clearance ^ " Overtravel=" ^ var.overtravel }
 
-; We add the clearance distance to the boss
-; radius to ensure we move clear of the boss
-; before dropping to probe height.
-var cR = { (param.H / 2) }
+; Boss Radius
+var.bR = { (param.H / 2) }
 
 ; J = start position X
 ; K = start position Y
@@ -93,29 +91,24 @@ var cR = { (param.H / 2) }
 var sX = { param.J }
 var sY = { param.K }
 
-; Calculate probing directions using approximate boss radius (120 degrees apart)
-var angle = { radians(120) }
-
 ; Create an array of probe points for G6513
-var numPoints = 3 ; This could become a parameter in the future
-var probePoints = { vector(var.numPoints, null) }
+var numPoints = 3
+var probePoints = { vector(var.numPoints, {null, null}) }
 
 ; Set first probe point directly (0 degrees) to avoid rounding errors
-set var.probePoints[0] = { {{var.sX + var.cR + var.clearance, var.sY, param.Z}, {var.sX + var.cR - var.overtravel, var.sY, param.Z}} }
+set var.probePoints[0][0] = {var.sX + var.bR + var.clearance, var.sY, param.Z}
+set var.probePoints[0][1] = {var.sX + var.bR - var.overtravel, var.sY, param.Z}
 
 ; Generate remaining probe points
 while { iterations < var.numPoints - 1 }
     var pointNo = { iterations + 1 }
-    var angle = { radians(120 * var.pointNo) }
+    var probeAngle = { radians(120 * var.pointNo) }
 
-    ; Calculate positions for this point
-    var startX = { var.sX + (var.cR + var.clearance) * cos(var.angle) }
-    var startY = { var.sY + (var.cR + var.clearance) * sin(var.angle) }
-    var targetX = { var.sX + (var.cR - var.overtravel) * cos(var.angle) }
-    var targetY = { var.sY + (var.cR - var.overtravel) * sin(var.angle) }
-
-    ; Set probe point
-    set var.probePoints[var.pointNo] = { {{var.startX, var.startY, param.Z}, {var.targetX, var.targetY, param.Z}} }
+    ; Set probe point directly with calculated positions
+    ; We have to keep the lines short to avoid going over the 255 character limit
+    ; So we should set each index separately
+    set var.probePoints[var.pointNo][0] = { var.sX + (var.bR + var.clearance) * cos(var.probeAngle), var.sY + (var.bR + var.clearance) * sin(var.probeAngle), param.Z }
+    set var.probePoints[var.pointNo][1] = { var.sX + (var.bR - var.overtravel) * cos(var.probeAngle), var.sY + (var.bR - var.overtravel) * sin(var.probeAngle), param.Z }
 
 ; Call G6513 to probe the points
 G6513 I{var.pID} P{var.probePoints} S{var.safeZ}
