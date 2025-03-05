@@ -90,58 +90,49 @@ var cR = { (param.H / 2) }
 ; L = start position Z - our probe height
 
 ; Start position is operator chosen center of the boss
-var sX   = { param.J }
-var sY   = { param.K }
+var sX = { param.J }
+var sY = { param.K }
 
-; Calculate probing directions using approximate boss radius
-; Angle is in degrees
+; Calculate probing directions using approximate boss radius (120 degrees apart)
 var angle = { radians(120) }
 
-; For each probe point: {start x, start y}, {target x, target y}
-var dirXY = { vector(3, {{null, null}, {null, null}}) }
+; Create an array of probe points for G6513
+var numPoints = 3 ; This could become a parameter in the future
+var probePoints = { vector(var.numPoints, null) }
 
-; The start position is the approximate radius of the boss plus
-; the clearance at 3 points around the center of the boss, at
-; 120 degree intervals.
-; The target position is the approximate radius of the boss minus
-; the overtravel distance, at the same 3 points around the center
-; of the boss, at 120 degree intervals.
+; Set first probe point directly (0 degrees) to avoid rounding errors
+set var.probePoints[0] = { {{var.sX + var.cR + var.clearance, var.sY, param.Z}, {var.sX + var.cR - var.overtravel, var.sY, param.Z}} }
 
-; Start position probe 1
-set var.dirXY[0][0] = { var.sX + var.cR + var.clearance, var.sY }
+; Generate remaining probe points
+while { iterations < var.numPoints - 1 }
+    var pointNo = { iterations + 1 }
+    var angle = { radians(120 * var.pointNo) }
 
-; Target position probe 1
-set var.dirXY[0][1] = { var.sX + var.cR - var.overtravel, var.sY }
+    ; Calculate positions for this point
+    var startX = { var.sX + (var.cR + var.clearance) * cos(var.angle) }
+    var startY = { var.sY + (var.cR + var.clearance) * sin(var.angle) }
+    var targetX = { var.sX + (var.cR - var.overtravel) * cos(var.angle) }
+    var targetY = { var.sY + (var.cR - var.overtravel) * sin(var.angle) }
 
-; Start position probe 2 (120 degrees)
-set var.dirXY[1][0] = { var.sX + (var.cR + var.clearance)*cos(var.angle), var.sY + (var.cR + var.clearance)*sin(var.angle) }
+    ; Set probe point
+    set var.probePoints[var.pointNo] = { {{var.startX, var.startY, param.Z}, {var.targetX, var.targetY, param.Z}} }
 
-; Target position probe 2 (120 degrees)
-set var.dirXY[1][1] = { var.sX + (var.cR - var.overtravel)*cos(var.angle), var.sY + (var.cR - var.overtravel)*sin(var.angle) }
+; Call G6513 to probe the points
+G6513 I{var.pID} P{var.probePoints} S{var.safeZ}
 
-; Start position probe 3 (240 degrees)
-set var.dirXY[2][0] = { var.sX + (var.cR + var.clearance)*cos(var.angle*2), var.sY + (var.cR + var.clearance)*sin(var.angle*2) }
+; Extract the compensated probe points from G6513's output
+var result = { global.mosMI }
+var pXY = { vector(3, null) }
 
-; Target position probe 3 (240 degrees)
-set var.dirXY[2][1] = { var.sX + (var.cR - var.overtravel)*cos(var.angle*2), var.sY + (var.cR - var.overtravel)*sin(var.angle*2) }
-
-; Boss edge co-ordinates for 3 probed points
-var pXY  = { null, null, null }
-
-; Probe each of the 3 points
-while { iterations < #var.dirXY }
-    ; Perform a probe operation towards the center of the boss
-    G6512 I{var.pID} J{var.dirXY[iterations][0][0]} K{var.dirXY[iterations][0][1]} L{param.Z} X{var.dirXY[iterations][1][0]} Y{var.dirXY[iterations][1][1]}
-
-    ; Save the probed co-ordinates
-    set var.pXY[iterations] = { global.mosMI[0], global.mosMI[1] }
+; Get the probed points from each surface
+while { iterations < #var.result }
+    set var.pXY[iterations] = { var.result[iterations][0][0][0], var.result[iterations][0][0][1] }
 
 ; Calculate the slopes, midpoints, and perpendicular bisectors
 var sM1 = { (var.pXY[1][1] - var.pXY[0][1]) / (var.pXY[1][0] - var.pXY[0][0]) }
 var sM2 = { (var.pXY[2][1] - var.pXY[1][1]) / (var.pXY[2][0] - var.pXY[1][0]) }
 
-; Validate the slopes. These should never be NaN but if they are,
-; we can't calculate the bore center position and we must abort.
+; Validate the slopes
 if { isnan(var.sM1) || isnan(var.sM2) }
     abort { "Could not calculate boss center position!" }
 

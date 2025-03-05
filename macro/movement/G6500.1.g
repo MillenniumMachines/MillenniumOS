@@ -6,7 +6,7 @@
 ; positions of the probe, which should be an
 ; approximate center of the bore in X and Y, with
 ; the L value below the surface of the bore.
-
+;
 ; H indicates the approximate bore diameter,
 ; and is used to calculate a probing radius along
 ; with O, the overtravel distance.
@@ -32,11 +32,6 @@ if { !exists(param.H) }
 ; Default workOffset to the current workplace number if not specified
 ; with the W parameter.
 var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workplaceNumber }
-
-
-; WCS Numbers and Offsets are confusing. Work Offset indicates the offset
-; from the first work co-ordinate system, so is 0-indexed. WCS number indicates
-; the number of the work co-ordinate system, so is 1-indexed.
 var wcsNumber = { var.workOffset + 1 }
 
 ; Increment the probe surface and point totals for status reporting
@@ -44,9 +39,6 @@ set global.mosPRST = { global.mosPRST + 1 }
 set global.mosPRPT = { global.mosPRPT + 3 }
 
 var probeId = { global.mosFeatTouchProbe ? global.mosTPID : null }
-
-; TODO: Validate minimum bore diameter we can probe based on
-; dive height and back-off distance.
 
 ; Make sure probe tool is selected
 if { global.mosPTID != state.currentTool }
@@ -56,60 +48,67 @@ if { global.mosPTID != state.currentTool }
 ; Reset center position, rotation and radius
 M5010 W{var.workOffset} R37
 
-; Apply tool radius to overtravel. We want to allow
-; less movement past the expected point of contact
-; with the surface based on the tool radius.
-; For big tools and low overtravel values, this value
-; might end up being negative. This is fine, as long
-; as the configured tool radius is accurate.
+; Apply tool radius to overtravel. We want to allow less movement past the expected point of contact
 var overtravel = { (exists(param.O) ? param.O : global.mosOT) - ((state.currentTool <= limits.tools-1 && state.currentTool >= 0) ? global.mosTT[state.currentTool][0] : 0) }
 
-; Commented due to memory limitations
-; M7500 S{"Distance Modifiers adjusted for Tool Radius - Overtravel=" ^ var.overtravel }
-
-; We add the overtravel to the bore radius to give the user
-; some leeway. If their estimate of the bore diameter is too
-; small, then the probe will not activate and the operation
-; will fail.
+; We add the overtravel to the bore radius
 var bR = { (param.H / 2) + var.overtravel }
+
+; Store our own safe Z position as the current position. We return to
+; this position where necessary to make moves across the workpiece to
+; the next probe point.
+; We do this _after_ any switch to the touch probe, because while the
+; original position may have been safe with a different tool installed,
+; the touch probe may be longer. After a tool change the spindle
+; will be parked, so essentially our safeZ is at the parking location.
+var safeZ = { param.L }
 
 ; J = start position X
 ; K = start position Y
-; L = start position Z
-; Z = our probe height (absolute)
-
-var safeZ = { param.L }
+; L = start position Z - our probe height
 
 ; Start position is operator chosen center of the bore
-var sX   = { param.J }
-var sY   = { param.K }
+var sX = { param.J }
+var sY = { param.K }
 
-; Calculate probing directions using approximate bore radius
-; Angle is in degrees
+; Calculate probing directions using approximate bore radius (120 degrees apart)
 var angle = { radians(120) }
 
-var dirXY = { { var.sX + var.bR, var.sY}, { var.sX + var.bR * cos(var.angle), var.sY + var.bR * sin(var.angle) }, { var.sX + var.bR * cos(2 * var.angle), var.sY + var.bR * sin(2 * var.angle) } }
+; Create an array of probe points for G6513
+var numPoints = 3 ; This could become a parameter in the future
+var probePoints = { vector(var.numPoints, null) }
 
-; Bore edge co-ordinates for 3 probed points
-var pXY  = { null, null, null }
+; Set first probe point directly (0 degrees) to avoid rounding errors
+set var.probePoints[0] = { {{var.sX, var.sY, param.Z}, {var.sX + var.bR, var.sY, param.Z}} }
 
-; Probe each of the 3 points
-while { iterations < #var.dirXY }
-    ; Perform a probe operation
-    ; D1 causes the probe macro to not return to the safe position after probing.
-    ; Since we're probing multiple times from the same starting point, there's no
-    ; need to raise and lower the probe between each probe point.
-    G6512 D1 I{var.probeId} J{var.sX} K{var.sY} L{param.Z} X{var.dirXY[iterations][0]} Y{var.dirXY[iterations][1]}
+; Generate remaining probe points
+while { iterations < var.numPoints - 1 }
+    var pointNo = { iterations + 1 }
+    var angle = { radians(120 * var.pointNo) }
 
-    ; Save the probed co-ordinates
-    set var.pXY[iterations] = { global.mosMI[0], global.mosMI[1] }
+    ; Calculate target position for this point - start position is always the same
+    var targetX = { var.sX + var.bR * cos(var.angle) }
+    var targetY = { var.sY + var.bR * sin(var.angle) }
+
+    ; Set probe point with the same start position but different target positions
+    set var.probePoints[var.pointNo] = { {{var.sX, var.sY, param.Z}, {var.targetX, var.targetY, param.Z}} }
+
+; Call G6513 to probe the points
+G6513 I{var.probeId} P{var.probePoints} S{var.safeZ} D1
+
+; Extract the compensated probe points from G6513's output
+var result = { global.mosMI }
+var pXY = { vector(3, null) }
+
+; Get the probed points from each surface
+while { iterations < #var.result }
+    set var.pXY[iterations] = { var.result[iterations][0][0][0], var.result[iterations][0][0][1] }
 
 ; Calculate the slopes, midpoints, and perpendicular bisectors
 var sM1 = { (var.pXY[1][1] - var.pXY[0][1]) / (var.pXY[1][0] - var.pXY[0][0]) }
 var sM2 = { (var.pXY[2][1] - var.pXY[1][1]) / (var.pXY[2][0] - var.pXY[1][0]) }
 
-; Validate the slopes. These should never be NaN but if they are,
-; we can't calculate the bore center position and we must abort.
+; Validate the slopes
 if { isnan(var.sM1) || isnan(var.sM2) }
     abort { "Could not calculate bore center position!" }
 
@@ -149,7 +148,7 @@ G6550 I{var.probeId} Z{var.safeZ}
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
     M7601 W{var.workOffset}
-    echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to center of bore." }
+echo { "MillenniumOS: Setting WCS " ^ var.wcsNumber ^ " X,Y origin to center of bore." }
 
 ; Set WCS origin to the probed center
 G10 L2 P{var.wcsNumber} X{var.cX} Y{var.cY}
