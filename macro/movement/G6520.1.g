@@ -22,9 +22,6 @@ if { exists(param.W) && param.W != null && (param.W < 0 || param.W >= limits.wor
 if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
     abort { "Must provide a start position to probe from using J, K and L parameters!" }
 
-if { !exists(param.H) || !exists(param.I) }
-    abort { "Must provide an approximate X length and Y length using H and I parameters!" }
-
 if { !exists(param.P) }
     abort { "Must provide a probe depth below the top surface using the P parameter!" }
 
