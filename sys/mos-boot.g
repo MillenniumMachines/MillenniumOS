@@ -72,6 +72,9 @@ if { !exists(global.mosSDS) || global.mosSDS == null }
 ; Allow MOS macros to run.
 set global.mosLdd = true
 
+; Activate machine power if safety net is configured
+M80.9
+
 ; Conditionally load saved WCS details and tool offsets
 M501.1
 
