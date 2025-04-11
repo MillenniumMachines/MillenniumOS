@@ -77,14 +77,23 @@ M5
 if { !var.doWait }
     M99
 
+var alreadyWaited = false
+
+if { exists(global.arborctlLdd) && global.arborctlLdd }
+    if { !global.mosEM }
+        echo { "MillenniumOS: Waiting for ArborCtl to report spindle #" ^ var.sID ^ " has stopped" }
+    G4.9 S{var.sID}
+    set var.alreadyWaited = true
+
 if { global.mosFeatSpindleFeedback && global.mosSFSID != null }
     if { !global.mosEM }
         echo { "MillenniumOS: Waiting for spindle #" ^ var.sID ^ " to stop" }
     ; Wait for Spindle Feedback input to change state.
     ; Wait a maximum of 30 seconds, or abort.
     M8004 K{global.mosSFSID} D100 W30
+    set var.alreadyWaited = true
 
-elif { var.dwellTime > 0 }
+if { !var.alreadyWaited && var.dwellTime > 0 }
     ; Otherwise wait for spindle to stop manually
     if { !global.mosEM }
         echo { "MillenniumOS: Waiting " ^ var.dwellTime ^ " seconds for spindle #" ^ var.sID ^ " to stop" }
