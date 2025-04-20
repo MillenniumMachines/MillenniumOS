@@ -115,6 +115,7 @@ if { state.currentTool >= #tools || state.currentTool < 0 }
 ; Create vector to store surfaces
 var pSfc = { vector(#param.P, null) }
 
+; Calculate the tool radius and deflection values to compensate.
 var trX = { global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][0] }
 var trY = { global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][1] }
 
@@ -215,47 +216,49 @@ while { iterations < #var.pSfc }
     var rApproach = { var.pSfc[iterations][1] }
     var rSurface = { var.pSfc[iterations][2] }
 
-    var dX = 0
-    var dY = 0
+    ; Create unit vectors for the approach and surface directions
+    ; Approach vector - direction from start to probed point
+    var approachVecX = { cos(var.rApproach) }
+    var approachVecY = { sin(var.rApproach) }
 
-    ; Calculate the difference between the approach and perpendicular-to-surface angles.
-    ; Adjust rActual to be in the same direction as rApproach
-    var rActual = { (var.rSurface + pi/2) }
+    ; Surface vector - direction along the surface
+    var surfaceVecX = { cos(var.rSurface) }
+    var surfaceVecY = { sin(var.rSurface) }
 
-    if { (var.rApproach - var.rActual) < -pi/2 }
-        set var.rActual = { var.rActual + pi }
-    elif { (var.rApproach - var.rActual) > pi/2 }
-        set var.rActual = { var.rActual - pi }
+    ; Surface normal vector - perpendicular to the surface
+    var normalVecX = { cos(var.rSurface + pi/2) }
+    var normalVecY = { sin(var.rSurface + pi/2) }
 
-    var rDiff = { var.rApproach - var.rActual }
+    ; Calculate dot product between approach vector and normal vector
+    ; This gives the cosine of the angle between them (when vectors are unit length)
+    var dotProduct = { var.approachVecX * var.normalVecX + var.approachVecY * var.normalVecY }
 
-    ; echo { "Surface #" ^ (iterations+1) ^ " surface angle: " ^ degrees(var.rSurface) ^ ", approach angle: " ^ degrees(var.rApproach) ^ " difference: " ^ degrees(var.rDiff) }
+    ; Make sure dot product is not zero (which would mean approach is parallel to surface)
+    if { abs(var.dotProduct) < 0.001 }
+        set var.dotProduct = { var.dotProduct >= 0 ? 0.001 : -0.001 }
 
-    ; Calculate the compensation to apply
-    var dcosX = { var.trX * cos(var.rDiff) }
-    var dsinX = { var.trX * sin(var.rDiff) }
-    var dcosY = { var.trY * cos(var.rDiff) }
-    var dsinY = { var.trY * sin(var.rDiff) }
+    ; Ensure the normal is pointing against the approach direction
+    if { var.dotProduct > 0 }
+        set var.normalVecX = { -var.normalVecX }
+        set var.normalVecY = { -var.normalVecY }
+        set var.dotProduct = { -var.dotProduct }
 
-    ; Select cos or sin compensation based on 45-degree quadrants
-    if { var.rApproach > -3*pi/4 && var.rApproach < -pi/4 }
-        ; Right surface
-        set var.dX = { -abs(var.dcosX) }
-        set var.dY = { var.rSurface > 0 ? abs(var.dsinY) : -abs(var.dsinY) }
-    elif { var.rApproach > pi/4 && var.rApproach < 3*pi/4 }
-        ; Left surface
-        set var.dX = { abs(var.dcosX) }
-        set var.dY = { var.rSurface > 0 ? abs(var.dsinY) : -abs(var.dsinY) }
-    elif { var.rApproach > -pi/4 && var.rApproach < pi/4 }
-        ; Front surface
-        set var.dX = { var.rSurface > 0 ? -abs(var.dsinX) : abs(var.dsinX) }
-        set var.dY = { abs(var.dcosY) }
-    elif { (var.rApproach > 3*pi/4 && var.rApproach < pi) || (var.rApproach > -pi && var.rApproach < -3*pi/4) }
-        ; Back surface
-        set var.dX = { var.rSurface > 0 ? abs(var.dsinX) : -abs(var.dsinX) }
-        set var.dY = { -abs(var.dcosY) }
+    ; Calculate deflection magnitude - amount the probe deflects along the approach vector
+    ; Adjust by deflection values from tool table
 
-    ; echo { "Compensation: " ^ var.dX ^ ", " ^ var.dY }
+    ; Calculate effective deflection along the approach vector based on individual axis deflections
+    var effectiveDeflection = { (var.trX * abs(var.approachVecX)) + (var.trY * abs(var.approachVecY)) }
+
+    ; Calculate compensation vector components
+    ; Project the effective deflection onto the direction perpendicular to the surface (the normal vector)
+    ; Divide by dot product to account for non-perpendicular approach
+    var compMagnitude = { var.effectiveDeflection / abs(var.dotProduct) }
+
+    ; Calculate final compensation in X and Y
+    var dX = { var.normalVecX * var.compMagnitude }
+    var dY = { var.normalVecY * var.compMagnitude }
+
+    echo { "Surface #" ^ (iterations+1) ^ " approach: " ^ degrees(var.rApproach) ^ ", surface: " ^ degrees(var.rSurface) ^ ", dot product: " ^ var.dotProduct ^ ", comp: " ^ var.dX ^ ", " ^ var.dY }
 
     ; Adjust each of the points
     while { iterations < #var.surfacePoints }
