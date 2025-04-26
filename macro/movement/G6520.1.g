@@ -25,7 +25,7 @@ if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
 if { !exists(param.P) }
     abort { "Must provide a probe depth below the top surface using the P parameter!" }
 
-if { (!exists(param.Q) || param.Q == 0) && !exists(param.H) || !exists(param.I) }
+if { (!exists(param.Q) || param.Q == 0) && (!exists(param.H) || !exists(param.I)) }
     abort { "Must provide an approximate X length and Y length using H and I parameters when using full probe, Q0!" }
 
 if { !exists(param.N) || param.N < 0 || param.N >= (#global.mosCornerNames) }
