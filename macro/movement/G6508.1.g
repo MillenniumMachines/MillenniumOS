@@ -16,7 +16,7 @@ if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
 if { !exists(param.Z) }
     abort { "Must provide a probe position using the Z parameter!" }
 
-if { (!exists(param.Q) || param.Q == 0) && !exists(param.H) || !exists(param.I) }
+if { (!exists(param.Q) || param.Q == 0) && (!exists(param.H) || !exists(param.I)) }
     abort { "Must provide an approximate X length and Y length using H and I parameters when using full probe, Q0!" }
 
 ; Maximum of 4 corners (0..3)
