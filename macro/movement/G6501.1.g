@@ -81,7 +81,7 @@ var overtravel = { (exists(param.O) ? param.O : global.mosOT) - ((state.currentT
 ; M7500 S{"Distance Modifiers adjusted for Tool Radius - Clearance=" ^ var.clearance ^ " Overtravel=" ^ var.overtravel }
 
 ; Boss Radius
-var.bR = { (param.H / 2) }
+var bR = { (param.H / 2) }
 
 ; J = start position X
 ; K = start position Y
@@ -96,8 +96,8 @@ var numPoints = 3
 var probePoints = { vector(var.numPoints, {null, null}) }
 
 ; Set first probe point directly (0 degrees) to avoid rounding errors
-set var.probePoints[0][0] = {var.sX + var.bR + var.clearance, var.sY, param.Z}
-set var.probePoints[0][1] = {var.sX + var.bR - var.overtravel, var.sY, param.Z}
+set var.probePoints[0][0][0] = {var.sX + var.bR + var.clearance, var.sY, param.Z}
+set var.probePoints[0][0][1] = {var.sX + var.bR - var.overtravel, var.sY, param.Z}
 
 ; Generate remaining probe points
 while { iterations < var.numPoints - 1 }
@@ -107,8 +107,8 @@ while { iterations < var.numPoints - 1 }
     ; Set probe point directly with calculated positions
     ; We have to keep the lines short to avoid going over the 255 character limit
     ; So we should set each index separately
-    set var.probePoints[var.pointNo][0] = { var.sX + (var.bR + var.clearance) * cos(var.probeAngle), var.sY + (var.bR + var.clearance) * sin(var.probeAngle), param.Z }
-    set var.probePoints[var.pointNo][1] = { var.sX + (var.bR - var.overtravel) * cos(var.probeAngle), var.sY + (var.bR - var.overtravel) * sin(var.probeAngle), param.Z }
+    set var.probePoints[var.pointNo][0][0] = { var.sX + (var.bR + var.clearance) * cos(var.probeAngle), var.sY + (var.bR + var.clearance) * sin(var.probeAngle), param.Z }
+    set var.probePoints[var.pointNo][0][1] = { var.sX + (var.bR - var.overtravel) * cos(var.probeAngle), var.sY + (var.bR - var.overtravel) * sin(var.probeAngle), param.Z }
 
 ; Call G6513 to probe the points
 G6513 I{var.pID} P{var.probePoints} S{var.safeZ}
