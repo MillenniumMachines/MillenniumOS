@@ -93,7 +93,7 @@ var sY = { param.K }
 
 ; Create an array of probe points for G6513
 var numPoints = 3
-var probePoints = { vector(var.numPoints, {null, null}) }
+var probePoints = { vector(var.numPoints, {{null, null, null}, {null, null, null}}) }
 
 ; Set first probe point directly (0 degrees) to avoid rounding errors
 set var.probePoints[0][0][0] = {var.sX + var.bR + var.clearance, var.sY, param.Z}
