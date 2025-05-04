@@ -284,7 +284,18 @@ G6550 I{var.pID} X{var.sX} Y{var.sY}
 ; rotated in relation to our axes. At this point, the angle
 ; of the entire block's rotation can be assumed to be the angle
 ; of the first surface on the longest edge of the block.
-set global.mosWPDeg[var.workOffset] = { degrees(var.pSfcX[0][2]) }
+; We need to normalise the rotation to be within +- 45 degrees
+
+var aR = { var.pSfcX[0][2] }
+
+; Reduce the angle to below +/- 45 degrees (pi/4 radians)
+while { var.aR > pi/4 || var.aR < -pi/4 }
+    if { var.aR > pi/4 }
+        set var.aR = { var.aR - pi/2 }
+    elif { var.aR < -pi/4 }
+        set var.aR = { var.aR + pi/2 }
+
+set global.mosWPDeg[var.workOffset] = { degrees(var.aR) }
 
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }

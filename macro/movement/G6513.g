@@ -166,7 +166,7 @@ while { iterations < #param.P }
         var probedPos = { global.mosMI }
 
         ; Calculate the approach angle in radians based on the start and probed position
-        var rApproachCur = { atan2(var.probedPos[0] - var.startPos[0], var.probedPos[1] - var.startPos[1]) }
+        var rApproachCur = { atan2(var.probedPos[1] - var.startPos[1], var.probedPos[0] - var.startPos[0]) }
 
         ; Accumulate the approach angle
         set var.pSfc[var.surfaceNo][1] = { var.pSfc[var.surfaceNo][1] + (var.rApproachCur / #var.curSurface) }
@@ -182,7 +182,7 @@ while { iterations < #param.P }
         ; Calculate a surface angle from the probe point once we have two points
         if { var.lastPos != null }
             ; Calculate the surface angle from the raw points
-            set var.pSfc[var.surfaceNo][2] = { atan2(var.probedPos[0] - var.lastPos[0], var.probedPos[1] - var.lastPos[1]) }
+            set var.pSfc[var.surfaceNo][2] = { atan2(var.probedPos[1] - var.lastPos[1], var.probedPos[0] - var.lastPos[0]) }
 
         ; Move back to starting position before moving to next probe point
         G6550 I{ param.I } X{ var.startPos[0] } Y{ var.startPos[1] }
@@ -264,8 +264,8 @@ while { iterations < #var.pSfc }
     while { iterations < #var.surfacePoints }
         ; Do not overwrite the original vector otherwise
         ; we will lose the Z value in index 2
-        set var.pSfc[var.surfaceNo][0][iterations][0] = { var.surfacePoints[iterations][0] + var.dX }
-        set var.pSfc[var.surfaceNo][0][iterations][1] = { var.surfacePoints[iterations][1] + var.dY }
+        set var.pSfc[var.surfaceNo][0][iterations][0] = { var.surfacePoints[iterations][0] - var.dX }
+        set var.pSfc[var.surfaceNo][0][iterations][1] = { var.surfacePoints[iterations][1] - var.dY }
 
 ; Save the output surfaces
 set global.mosMI = { var.pSfc }
