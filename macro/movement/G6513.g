@@ -126,7 +126,7 @@ while { iterations < #param.P }
     var curSurface = { param.P[var.surfaceNo] }
 
     ; Create vector to store start points, probed points, approach angle and surface angle
-    set var.pSfc[var.surfaceNo] = { vector(#var.curSurface, {{null, null, null}, {null, null, null}}), 0, null}
+    set var.pSfc[var.surfaceNo] = { vector(#var.curSurface, {{null, null, null}, {null, null, null}}), 0, null }
 
     var lastPos = { null }
 
