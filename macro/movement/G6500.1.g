@@ -73,7 +73,8 @@ var sY = { param.K }
 
 ; Create an array of probe points for G6513
 var numPoints = 3
-var probePoints = { vector(var.numPoints, {{null, null, null}, {null, null, null}}) }
+
+var probePoints = { vector(var.numPoints, {{{null, null, null}, {null, null, null}},}) }
 
 ; Set first probe point directly (0 degrees) to avoid rounding errors
 set var.probePoints[0][0][0] = {var.sX, var.sY, param.Z}
@@ -91,7 +92,7 @@ while { iterations < var.numPoints - 1 }
     set var.probePoints[var.pointNo][0][1] = { var.sX + (var.bR + var.overtravel) * cos(var.probeAngle), var.sY + (var.bR + var.overtravel) * sin(var.probeAngle), param.Z }
 
 ; Call G6513 to probe the points
-G6513 I{var.probeId} P{var.probePoints} S{var.safeZ} D1
+G6513 I{var.probeId} P{var.probePoints} S{var.safeZ} D1 H1
 
 ; Extract the compensated probe points from G6513's output
 var result = { global.mosMI }

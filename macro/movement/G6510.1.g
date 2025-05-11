@@ -79,16 +79,10 @@ else
 ; Check if the positions are within machine limits
 M6515 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ }
 
-; Create a single surface with a single probe point for G6513
-var probePoints = { vector(1, {{null, null, null}, {null, null, null}}) }
+var probePoints = {{{{param.J, param.K, param.L}, {var.tPX, var.tPY, var.tPZ}},}, }
 
-set var.probePoints[0][0][0] = { param.J, param.K, param.L }
-set var.probePoints[0][0][1] = { var.tPX, var.tPY, var.tPZ }
-
-; Run probing operation using G6513
+; Run probing operation using G6513 with direct vector creation
 G6513 I{var.pID} P{var.probePoints} S{var.safeZ} D1
-
-echo { "Probe Points: " ^ var.probePoints }
 
 var sAxis = { (var.probeAxis <= 1)? "X" : (var.probeAxis <= 3)? "Y" : "Z" }
 
@@ -96,7 +90,7 @@ var sAxis = { (var.probeAxis <= 1)? "X" : (var.probeAxis <= 3)? "Y" : "Z" }
 set global.mosWPSfcAxis[var.workOffset] = { var.sAxis }
 
 ; Set surface position on relevant axis
-set global.mosWPSfcPos[var.workOffset] = { (var.probeAxis <= 1)? global.mosMI[0][0][0] : (var.probeAxis <= 3)? global.mosMI[0][0][1] : global.mosMI[0][0][2] }
+set global.mosWPSfcPos[var.workOffset] = { (var.probeAxis <= 1)? global.mosMI[0][0][0][0] : (var.probeAxis <= 3)? global.mosMI[0][0][0][1] : global.mosMI[0][0][0][2] }
 
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
