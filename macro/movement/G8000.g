@@ -653,6 +653,7 @@ if { var.wizFeatureTouchProbe && (var.wizTouchProbeID == null || var.wizTouchPro
         M291 P{"Measured block dimensions are <b>X=" ^ global.mosWPDims[move.workplaceNumber][0] ^ " Y=" ^ global.mosWPDims[move.workplaceNumber][1] ^ "</b>.<br/>Current probe location is over the center of the item."} R"MillenniumOS: Configuration Wizard" S2 T0
 
     var deflectionX = { (var.measuredX - global.mosWPDims[move.workplaceNumber][0])/2 }
+
     var deflectionY = { (var.measuredY - global.mosWPDims[move.workplaceNumber][1])/2 }
 
     ; Deflection values are stored separately per axis, as 3d touch probes almost
