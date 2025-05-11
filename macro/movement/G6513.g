@@ -68,6 +68,17 @@
 if { !inputs[state.thisInput].active }
     M99
 
+; Debug output if global.mosDebug is enabled
+if { exists(global.mosDebug) && global.mosDebug }
+    echo { "G6513: SURFACE PROBE START" }
+    echo { "    Params: I=" ^ (exists(param.I) ? param.I : "null") }
+    echo { "            S=" ^ (exists(param.S) ? param.S : "null") }
+    echo { "            P=" ^ (exists(param.P) ? param.P : "null") }
+    echo { "            D=" ^ (exists(param.D) ? param.D : "null") }
+    echo { "            H=" ^ (exists(param.H) ? param.H : "null") }
+    echo { "            R=" ^ (exists(param.R) ? param.R : "null") }
+    echo { "            E=" ^ (exists(param.E) ? param.E : "null") }
+
 if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
     abort { "All axes must be homed before probing!" }
 
@@ -119,6 +130,14 @@ var pSfc = { vector(#param.P, null) }
 var trX = { global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][0] }
 var trY = { global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][1] }
 
+if { exists(global.mosDebug) && global.mosDebug }
+    echo { "G6513: SURFACE PROBE TOOL RADIUS AND DEFLECTION" }
+    echo { "    Tool Radius = " ^ global.mosTT[state.currentTool][0] }
+    echo { "    Tool Deflection X = " ^ global.mosTT[state.currentTool][1][0] }
+    echo { "    Tool Deflection Y = " ^ global.mosTT[state.currentTool][1][1] }
+    echo { "    var.trX = " ^ var.trX }
+    echo { "    var.trY = " ^ var.trY }
+
 ; Iterate over surfaces and run probes
 ; Track total number of points probed to calculate progress
 while { iterations < #param.P }
@@ -142,6 +161,9 @@ while { iterations < #param.P }
         ; Check if the positions are within machine limits
         M6515 X{ var.startPos[0] } Y{ var.startPos[1] } Z{ var.startPos[2] }
         M6515 X{ var.targetPos[0] } Y{ var.targetPos[1] } Z{ var.targetPos[2] }
+
+        if { exists(global.mosDebug) && global.mosDebug }
+            echo { "G6513: Positions valid" }
 
         ; If starting probe height is above safe height,
         ; then move to the starting probe height first.
@@ -201,6 +223,9 @@ while { iterations < #param.P }
     if { var.retractAfterSurface }
         G6550 I{ param.I } Z{ var.safeZ }
 
+    if { exists(global.mosDebug) && global.mosDebug }
+        echo { "G6513: Finished surface" }
+
     ; Update the number of surfaces probed
     set global.mosPRSS = { global.mosPRSS + 1 }
 
@@ -247,7 +272,9 @@ while { iterations < #var.pSfc }
     ; Adjust by deflection values from tool table
 
     ; Calculate effective deflection along the approach vector based on individual axis deflections
-    var effectiveDeflection = { (var.trX * abs(var.approachVecX)) + (var.trY * abs(var.approachVecY)) }
+    ;var effectiveDeflection = { (var.trX * abs(var.approachVecX)) + (var.trY * abs(var.approachVecY)) }
+    var effectiveDeflection = { sqrt(pow(var.trX * var.approachVecX, 2) + pow(var.trY * var.approachVecY, 2)) }
+
 
     ; Calculate compensation vector components
     ; Project the effective deflection onto the direction perpendicular to the surface (the normal vector)
@@ -258,7 +285,21 @@ while { iterations < #var.pSfc }
     var dX = { var.normalVecX * var.compMagnitude }
     var dY = { var.normalVecY * var.compMagnitude }
 
-    echo { "Surface #" ^ (iterations+1) ^ " approach: " ^ degrees(var.rApproach) ^ ", surface: " ^ degrees(var.rSurface) ^ ", dot product: " ^ var.dotProduct ^ ", comp: " ^ var.dX ^ ", " ^ var.dY }
+    if { exists(global.mosDebug) && global.mosDebug }
+        echo { "G6513: COMPENSATION POINT " ^ var.surfaceNo + 1 }
+        echo { "    Effective Deflection = " ^ var.effectiveDeflection }
+        echo { "    Approach Vector X = " ^ var.approachVecX }
+        echo { "    Approach Vector Y = " ^ var.approachVecY }
+        echo { "    Surface Vector X = " ^ var.surfaceVecX }
+        echo { "    Surface Vector Y = " ^ var.surfaceVecY }
+        echo { "    Normal Vector X = " ^ var.normalVecX }
+        echo { "    Normal Vector Y = " ^ var.normalVecY }
+        echo { "    Dot Product = " ^ var.dotProduct }
+        echo { "    Surface Angle = " ^ degrees(var.rSurface) }
+        echo { "    Approach Angle = " ^ degrees(var.rApproach) }
+        echo { "    Magnitude = " ^ var.compMagnitude }
+        echo { "    Compensation X = " ^ var.dX }
+        echo { "    Compensation Y = " ^ var.dY }
 
     ; Adjust each of the points
     while { iterations < #var.surfacePoints }
@@ -269,3 +310,7 @@ while { iterations < #var.pSfc }
 
 ; Save the output surfaces
 set global.mosMI = { var.pSfc }
+
+if { exists(global.mosDebug) && global.mosDebug }
+    echo { "G6513: SURFACE PROBE END" }
+    echo { "    Output: " ^ global.mosMI }
