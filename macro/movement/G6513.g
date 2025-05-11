@@ -68,6 +68,17 @@
 if { !inputs[state.thisInput].active }
     M99
 
+; Debug output if global.mosDebug is enabled
+if { exists(global.mosDebug) && global.mosDebug }
+    echo { "G6513: SURFACE PROBE START" }
+    echo { "    Params: I=" ^ (exists(param.I) ? param.I : "null") }
+    echo { "            S=" ^ (exists(param.S) ? param.S : "null") }
+    echo { "            P=" ^ (exists(param.P) ? param.P : "null") }
+    echo { "            D=" ^ (exists(param.D) ? param.D : "null") }
+    echo { "            H=" ^ (exists(param.H) ? param.H : "null") }
+    echo { "            R=" ^ (exists(param.R) ? param.R : "null") }
+    echo { "            E=" ^ (exists(param.E) ? param.E : "null") }
+
 if { !move.axes[0].homed || !move.axes[1].homed || !move.axes[2].homed }
     abort { "All axes must be homed before probing!" }
 
@@ -115,8 +126,17 @@ if { state.currentTool >= #tools || state.currentTool < 0 }
 ; Create vector to store surfaces
 var pSfc = { vector(#param.P, null) }
 
+; Calculate the tool radius and deflection values to compensate.
 var trX = { global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][0] }
 var trY = { global.mosTT[state.currentTool][0] - global.mosTT[state.currentTool][1][1] }
+
+if { exists(global.mosDebug) && global.mosDebug }
+    echo { "G6513: SURFACE PROBE TOOL RADIUS AND DEFLECTION" }
+    echo { "    Tool Radius = " ^ global.mosTT[state.currentTool][0] }
+    echo { "    Tool Deflection X = " ^ global.mosTT[state.currentTool][1][0] }
+    echo { "    Tool Deflection Y = " ^ global.mosTT[state.currentTool][1][1] }
+    echo { "    var.trX = " ^ var.trX }
+    echo { "    var.trY = " ^ var.trY }
 
 ; Iterate over surfaces and run probes
 ; Track total number of points probed to calculate progress
@@ -125,7 +145,7 @@ while { iterations < #param.P }
     var curSurface = { param.P[var.surfaceNo] }
 
     ; Create vector to store start points, probed points, approach angle and surface angle
-    set var.pSfc[var.surfaceNo] = { vector(#var.curSurface, {{null, null, null}, {null, null, null}}), 0, null}
+    set var.pSfc[var.surfaceNo] = { vector(#var.curSurface, {{null, null, null}, {null, null, null}}), 0, null }
 
     var lastPos = { null }
 
@@ -141,6 +161,9 @@ while { iterations < #param.P }
         ; Check if the positions are within machine limits
         M6515 X{ var.startPos[0] } Y{ var.startPos[1] } Z{ var.startPos[2] }
         M6515 X{ var.targetPos[0] } Y{ var.targetPos[1] } Z{ var.targetPos[2] }
+
+        if { exists(global.mosDebug) && global.mosDebug }
+            echo { "G6513: Positions valid" }
 
         ; If starting probe height is above safe height,
         ; then move to the starting probe height first.
@@ -165,7 +188,7 @@ while { iterations < #param.P }
         var probedPos = { global.mosMI }
 
         ; Calculate the approach angle in radians based on the start and probed position
-        var rApproachCur = { atan2(var.probedPos[0] - var.startPos[0], var.probedPos[1] - var.startPos[1]) }
+        var rApproachCur = { atan2(var.probedPos[1] - var.startPos[1], var.probedPos[0] - var.startPos[0]) }
 
         ; Accumulate the approach angle
         set var.pSfc[var.surfaceNo][1] = { var.pSfc[var.surfaceNo][1] + (var.rApproachCur / #var.curSurface) }
@@ -181,7 +204,7 @@ while { iterations < #param.P }
         ; Calculate a surface angle from the probe point once we have two points
         if { var.lastPos != null }
             ; Calculate the surface angle from the raw points
-            set var.pSfc[var.surfaceNo][2] = { atan2(var.probedPos[0] - var.lastPos[0], var.probedPos[1] - var.lastPos[1]) }
+            set var.pSfc[var.surfaceNo][2] = { atan2(var.probedPos[1] - var.lastPos[1], var.probedPos[0] - var.lastPos[0]) }
 
         ; Move back to starting position before moving to next probe point
         G6550 I{ param.I } X{ var.startPos[0] } Y{ var.startPos[1] }
@@ -200,6 +223,9 @@ while { iterations < #param.P }
     if { var.retractAfterSurface }
         G6550 I{ param.I } Z{ var.safeZ }
 
+    if { exists(global.mosDebug) && global.mosDebug }
+        echo { "G6513: Finished surface" }
+
     ; Update the number of surfaces probed
     set global.mosPRSS = { global.mosPRSS + 1 }
 
@@ -215,54 +241,76 @@ while { iterations < #var.pSfc }
     var rApproach = { var.pSfc[iterations][1] }
     var rSurface = { var.pSfc[iterations][2] }
 
-    var dX = 0
-    var dY = 0
+    ; Create unit vectors for the approach and surface directions
+    ; Approach vector - direction from start to probed point
+    var approachVecX = { cos(var.rApproach) }
+    var approachVecY = { sin(var.rApproach) }
 
-    ; Calculate the difference between the approach and perpendicular-to-surface angles.
-    ; Adjust rActual to be in the same direction as rApproach
-    var rActual = { (var.rSurface + pi/2) }
+    ; Surface vector - direction along the surface
+    var surfaceVecX = { cos(var.rSurface) }
+    var surfaceVecY = { sin(var.rSurface) }
 
-    if { (var.rApproach - var.rActual) < -pi/2 }
-        set var.rActual = { var.rActual + pi }
-    elif { (var.rApproach - var.rActual) > pi/2 }
-        set var.rActual = { var.rActual - pi }
+    ; Surface normal vector - perpendicular to the surface
+    var normalVecX = { cos(var.rSurface + pi/2) }
+    var normalVecY = { sin(var.rSurface + pi/2) }
 
-    var rDiff = { var.rApproach - var.rActual }
+    ; Calculate dot product between approach vector and normal vector
+    ; This gives the cosine of the angle between them (when vectors are unit length)
+    var dotProduct = { var.approachVecX * var.normalVecX + var.approachVecY * var.normalVecY }
 
-    ; echo { "Surface #" ^ (iterations+1) ^ " surface angle: " ^ degrees(var.rSurface) ^ ", approach angle: " ^ degrees(var.rApproach) ^ " difference: " ^ degrees(var.rDiff) }
+    ; Make sure dot product is not zero (which would mean approach is parallel to surface)
+    if { abs(var.dotProduct) < 0.001 }
+        set var.dotProduct = { var.dotProduct >= 0 ? 0.001 : -0.001 }
 
-    ; Calculate the compensation to apply
-    var dcosX = { var.trX * cos(var.rDiff) }
-    var dsinX = { var.trX * sin(var.rDiff) }
-    var dcosY = { var.trY * cos(var.rDiff) }
-    var dsinY = { var.trY * sin(var.rDiff) }
+    ; Ensure the normal is pointing against the approach direction
+    if { var.dotProduct > 0 }
+        set var.normalVecX = { -var.normalVecX }
+        set var.normalVecY = { -var.normalVecY }
+        set var.dotProduct = { -var.dotProduct }
 
-    ; Select cos or sin compensation based on 45-degree quadrants
-    if { var.rApproach > -3*pi/4 && var.rApproach < -pi/4 }
-        ; Right surface
-        set var.dX = { -abs(var.dcosX) }
-        set var.dY = { var.rSurface > 0 ? abs(var.dsinY) : -abs(var.dsinY) }
-    elif { var.rApproach > pi/4 && var.rApproach < 3*pi/4 }
-        ; Left surface
-        set var.dX = { abs(var.dcosX) }
-        set var.dY = { var.rSurface > 0 ? abs(var.dsinY) : -abs(var.dsinY) }
-    elif { var.rApproach > -pi/4 && var.rApproach < pi/4 }
-        ; Front surface
-        set var.dX = { var.rSurface > 0 ? -abs(var.dsinX) : abs(var.dsinX) }
-        set var.dY = { abs(var.dcosY) }
-    elif { (var.rApproach > 3*pi/4 && var.rApproach < pi) || (var.rApproach > -pi && var.rApproach < -3*pi/4) }
-        ; Back surface
-        set var.dX = { var.rSurface > 0 ? abs(var.dsinX) : -abs(var.dsinX) }
-        set var.dY = { -abs(var.dcosY) }
+    ; Calculate deflection magnitude - amount the probe deflects along the approach vector
+    ; Adjust by deflection values from tool table
 
-    ; echo { "Compensation: " ^ var.dX ^ ", " ^ var.dY }
+    ; Calculate effective deflection along the approach vector based on individual axis deflections
+    ;var effectiveDeflection = { (var.trX * abs(var.approachVecX)) + (var.trY * abs(var.approachVecY)) }
+    var effectiveDeflection = { sqrt(pow(var.trX * var.approachVecX, 2) + pow(var.trY * var.approachVecY, 2)) }
+
+
+    ; Calculate compensation vector components
+    ; Project the effective deflection onto the direction perpendicular to the surface (the normal vector)
+    ; Divide by dot product to account for non-perpendicular approach
+    var compMagnitude = { var.effectiveDeflection / abs(var.dotProduct) }
+
+    ; Calculate final compensation in X and Y
+    var dX = { var.normalVecX * var.compMagnitude }
+    var dY = { var.normalVecY * var.compMagnitude }
+
+    if { exists(global.mosDebug) && global.mosDebug }
+        echo { "G6513: COMPENSATION POINT " ^ var.surfaceNo + 1 }
+        echo { "    Effective Deflection = " ^ var.effectiveDeflection }
+        echo { "    Approach Vector X = " ^ var.approachVecX }
+        echo { "    Approach Vector Y = " ^ var.approachVecY }
+        echo { "    Surface Vector X = " ^ var.surfaceVecX }
+        echo { "    Surface Vector Y = " ^ var.surfaceVecY }
+        echo { "    Normal Vector X = " ^ var.normalVecX }
+        echo { "    Normal Vector Y = " ^ var.normalVecY }
+        echo { "    Dot Product = " ^ var.dotProduct }
+        echo { "    Surface Angle = " ^ degrees(var.rSurface) }
+        echo { "    Approach Angle = " ^ degrees(var.rApproach) }
+        echo { "    Magnitude = " ^ var.compMagnitude }
+        echo { "    Compensation X = " ^ var.dX }
+        echo { "    Compensation Y = " ^ var.dY }
 
     ; Adjust each of the points
     while { iterations < #var.surfacePoints }
         ; Do not overwrite the original vector otherwise
         ; we will lose the Z value in index 2
-        set var.pSfc[var.surfaceNo][0][iterations][0] = { var.surfacePoints[iterations][0] + var.dX }
-        set var.pSfc[var.surfaceNo][0][iterations][1] = { var.surfacePoints[iterations][1] + var.dY }
+        set var.pSfc[var.surfaceNo][0][iterations][0] = { var.surfacePoints[iterations][0] - var.dX }
+        set var.pSfc[var.surfaceNo][0][iterations][1] = { var.surfacePoints[iterations][1] - var.dY }
 
 ; Save the output surfaces
 set global.mosMI = { var.pSfc }
+
+if { exists(global.mosDebug) && global.mosDebug }
+    echo { "G6513: SURFACE PROBE END" }
+    echo { "    Output: " ^ global.mosMI }

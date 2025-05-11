@@ -115,40 +115,62 @@ while { iterations <= var.retries }
 
     set var.cP = { global.mosMI }
 
-
     ; Set the initial values for iterations 0 and 1.
-    ; Some calls to the probe macro only probe once, so
-    ; we need return values. In all other cases, the
-    ; first iteration, 0, is discarded as this is performed
-    ; at higher speed so will be less accurate.
-    if { iterations == 0 || iterations == 1 }
+    ; Separate logic for iteration 0 (high speed) and iteration 1 (first fine speed)
+    if { iterations == 0 }
+        ; First probe at high speed - just initialize values
+        set var.oM = var.cP
+        set var.nM = var.cP
+        set var.oS = { 0.0, 0.0, 0.0 }
+    elif { iterations == 1 }
+        ; Second probe at fine speed - reset mean to this more accurate value
         set var.oM = var.cP
         set var.nM = var.cP
         set var.oS = { 0.0, 0.0, 0.0 }
     else
         ; Otherwise calculate mean and cumulative variance for each axis
-        set var.nD[0] = { var.cP[0] - var.oM[0] }
-        set var.nD[1] = { var.cP[1] - var.oM[1] }
-        set var.nD[2] = { var.cP[2] - var.oM[2] }
+        ; Store intermediate values to avoid long expressions
+        var deltaX = { var.cP[0] - var.oM[0] }
+        var deltaY = { var.cP[1] - var.oM[1] }
+        var deltaZ = { var.cP[2] - var.oM[2] }
 
-        set var.nM[0] = { var.oM[0] + (var.nD[0] / iterations) }
-        set var.nM[1] = { var.oM[1] + (var.nD[1] / iterations) }
-        set var.nM[2] = { var.oM[2] + (var.nD[2] / iterations) }
+        ; Apply scaling factor based on iteration count
+        var scaleFactor = { 1.0 / (iterations-1) }
 
-        set var.nS[0] = { var.oS[0] + (var.nD[0] * (var.cP[0] - var.nM[0])) }
-        set var.nS[1] = { var.oS[1] + (var.nD[1] * (var.cP[1] - var.nM[1])) }
-        set var.nS[2] = { var.oS[2] + (var.nD[2] * (var.cP[2] - var.nM[2])) }
+        ; Calculate new means
+        set var.nM[0] = { var.oM[0] + var.deltaX * var.scaleFactor }
+        set var.nM[1] = { var.oM[1] + var.deltaY * var.scaleFactor }
+        set var.nM[2] = { var.oM[2] + var.deltaZ * var.scaleFactor }
+
+        ; Calculate contribution to sum of squares
+        ; Using temporary variables for clarity and shorter lines
+        var ssContribX = { var.deltaX * (var.cP[0] - var.nM[0]) }
+        var ssContribY = { var.deltaY * (var.cP[1] - var.nM[1]) }
+        var ssContribZ = { var.deltaZ * (var.cP[2] - var.nM[2]) }
+
+        ; Update sum of squares - using temporary variables for readability
+        set var.nS[0] = { var.oS[0] + var.ssContribX }
+        set var.nS[1] = { var.oS[1] + var.ssContribY }
+        set var.nS[2] = { var.oS[2] + var.ssContribZ }
 
         ; Set old values for next iteration
         set var.oM = var.nM
         set var.oS = var.nS
 
-        ; TODO: Does this actually calculate per-probe variance accurately?
         ; Calculate per-probe variance on each axis
         if { iterations > 1 }
-            set var.pV[0] = { var.nS[0] / (iterations-1) }
-            set var.pV[1] = { var.nS[1] / (iterations-1) }
-            set var.pV[2] = { var.nS[2] / (iterations-1) }
+            ; Ensure denominator is valid and variance isn't negative due to numerical errors
+            var divisor = { iterations - 1 }
+
+            ; Calculate variance using the accumulated sum of squares
+            var varianceX = { var.nS[0] / var.divisor }
+            var varianceY = { var.nS[1] / var.divisor }
+            var varianceZ = { var.nS[2] / var.divisor }
+
+            ; Ensure variance isn't negative due to calculation errors
+            set var.pV[0] = { var.varianceX < 0.0 ? 0.0 : var.varianceX }
+            set var.pV[1] = { var.varianceY < 0.0 ? 0.0 : var.varianceY }
+            set var.pV[2] = { var.varianceZ < 0.0 ? 0.0 : var.varianceZ }
 
     ; Drop to fine probing speed
     set var.curSpeed = { var.fineSpeed }
