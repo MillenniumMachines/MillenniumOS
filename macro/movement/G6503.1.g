@@ -177,10 +177,14 @@ if { var.dXAngleDiff > global.mosAngleTol }
 ; Now we have validated that the block is square in X, we need to calculate
 ; the real center position of the block so we can probe the Y surfaces.
 
-; Our midpoint for each line is the average of the 2 points, so
-; we can just add all of the points together and divide by 4.
+; Calculate left surface midpoint
+var leftMidpoint = { (var.pSfcX[0][0][0][0] + var.pSfcX[0][0][1][0]) / 2 }
 
-set var.sX = { (var.pSfcX[0][0][0][0] + var.pSfcX[0][0][1][0] + var.pSfcX[1][0][0][0] + var.pSfcX[1][0][1][0]) / 4 }
+; Calculate right surface midpoint
+var rightMidpoint = { (var.pSfcX[1][0][0][0] + var.pSfcX[1][0][1][0]) / 2 }
+
+; Calculate the average of the left and right surface midpoints
+set var.sX = { (var.leftMidpoint + var.rightMidpoint) / 2 }
 
 ; Use the recalculated center of the block to probe Y surfaces.
 
@@ -249,8 +253,14 @@ set global.mosWPCnrDeg[var.workOffset] = { 90 + var.cornerAngleError }
 if { (var.cornerAngleError > global.mosAngleTol) }
     abort { "Rectangular block corner angle is not perpendicular (" ^ var.cornerAngleError ^ " > " ^ global.mosAngleTol ^ ") - this block does not appear to be square." }
 
-; Calculate Y centerpoint
-set var.sY = { (var.pSfcY[0][0][0][1] + var.pSfcY[0][0][1][1] + var.pSfcY[1][0][0][1] + var.pSfcY[1][0][1][1]) / 4 }
+; Calculate bottom surface midpoint
+var bottomMidpoint = { (var.pSfcY[0][0][0][1] + var.pSfcY[0][0][1][1]) / 2 }
+
+; Calculate top surface midpoint
+var topMidpoint = { (var.pSfcY[1][0][0][1] + var.pSfcY[1][0][1][1]) / 2 }
+
+; Calculate center Y as midpoint between bottom and top surfaces
+set var.sY = { (var.bottomMidpoint + var.topMidpoint) / 2 }
 
 ; TODO: These are the center points between the locations we probed, but
 ; that doesn't mean they're the center of the block, as our probe
@@ -260,7 +270,6 @@ set var.sY = { (var.pSfcY[0][0][0][1] + var.pSfcY[0][0][1][1] + var.pSfcY[1][0][
 
 ; Set the centre of the block
 set global.mosWPCtrPos[var.workOffset] = { var.sX, var.sY }
-
 
 ; We can now calculate the actual dimensions of the block.
 ; The dimensions are the difference between the average of each
