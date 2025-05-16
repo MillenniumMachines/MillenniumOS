@@ -1,0 +1,12 @@
+{
+    "dwcWebpackChunk": "MillenniumOS",
+    "id": "MillenniumOS",
+    "name": "MillenniumOS",
+    "author": "Nine Mile",
+    "version": "auto",
+    "license": "GPL-3.0-or-later",
+    "homepage": "https://github.com/benagricola",
+    "dwcVersion": "auto",
+    "dependencies": {},
+    "rrfVersion": "auto"
+  }

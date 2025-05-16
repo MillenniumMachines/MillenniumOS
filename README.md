@@ -46,7 +46,7 @@ The information contained here is for advanced users who want to understand furt
 
 ### Notes
 
-- You _must_ be using RRF `v3.5.0-rc.3` or above. MOS uses many 'meta gcode' features that do not exist in earlier versions.
+- You _must_ be using RRF `v3.6.0-rc.3` or above. MOS uses many 'meta gcode' features that do not exist in earlier versions.
 - MOS includes its own `daemon.g` file to implement repetitive tasks, such as VSSC. If you want to implement your own repetitive tasks, you should create a `user-daemon.g` file in the `/sys` directory, which MillenniumOS will run during its' own daemon loop. Disabling the MOS daemon tasks will also disable any `user-daemon.g` tasks. Do not use any long-running loops inside `user-daemon.g` as this will interfere with MOS's own daemon behaviour.
 
 ### RRF Config
@@ -65,7 +65,7 @@ You would add line(s) similar to these to your RRF `config.g` file, above where 
 
 ; Configure the touch probe as Z-Probe 0 on pin "probe" - mainboard specific, DO NOT COPY AND PASTE!
 ; Type P5             = filtered digital
-; Dive Height H2      = back-off 2mm before repeat probing
+; Dive Height H5      = back-off 5mm before repeat probing
 ; Max Retries A10     = retry probe a maximum of 10 times
 ; Tolerance S0.01     = when tolerance is reached, stop probing
 ; Travel Speed T1200  = travel moves run at this speed to the start of the probing location
