@@ -13,60 +13,33 @@ jobs:
       id-token: 'write'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Build release asset
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout Duet Web Control
+        uses: actions/checkout@v4
+        with:
+          repository: Duet3D/DuetWebControl
+          ref: v3.6.0-rc.3
+          path: dwc-build
+
+      - name: Build release assets
         run: |
-          dist/release.sh mos-release-${{ github.ref_name }}
+          # Build the MillenniumOS release with SD card files and UI plugin
+          dist/release.sh mos-release-${{ github.ref_name }} dwc-build
+
       - name: Create Release
-        id: create_release
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           name: MillenniumOS ${{ github.ref_name }}
-          body: ${{ github.event.head_commit.message }}
           draft: true
-          prerelease: false
-      - name: Upload Release Zip
-        id: upload-mos-zip
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist/mos-release-${{ github.ref_name }}.zip
-          asset_name: mos-release-${{ github.ref_name }}.zip
-          asset_content_type: application/zip
-
-      - name: Upload F360 Post-processor
-        id: upload-f360-post
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/millennium-os.cps
-          asset_name: millennium-os-${{ github.ref_name }}-post-f360.cps
-          asset_content_type: application/octet-stream
-
-      - name: Upload FreeCAD Post-processor
-        id: upload-freecad-post
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/millennium_os_post.py
-          asset_name: millennium_os_${{ github.ref_name }}_post.py
-          asset_content_type: application/octet-stream
-
-      - name: Upload F360 Machine Definition
-        id: upload-f360-mch-std
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/milo-v1.5-std.mch
-          asset_name: milo-v1.5-std-${{ github.ref_name }}.mch
-          asset_content_type: application/octet-stream
+          generate_release_notes: true
+          files: |
+            dist/mos-release-${{ github.ref_name }}.zip
+            dist/MillenniumOS-${{ github.ref_name }}.zip
+            dist/millennium-os.cps
+            dist/millennium_os_post.py
+            dist/milo-v1.5-std.mch
