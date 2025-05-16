@@ -34,7 +34,6 @@ export default defineComponent({
 	},
 	methods: {},
 	mounted() {
-		const that = this;
 	},
 	watch: {}
 });
