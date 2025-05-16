@@ -109,7 +109,7 @@ export default defineComponent({
 
 			const state = this.axisState(axisIndex);
 
-			switch(this.axisState(axisIndex)) {
+			switch(state) {
 				case AxisState.NONE:
 					classList.push("grey");
 					break;
