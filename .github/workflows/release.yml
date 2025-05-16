@@ -27,7 +27,7 @@ jobs:
       - name: Build release assets
         run: |
           # Build the MillenniumOS release with SD card files and UI plugin
-          dist/release.sh mos-release-${{ github.ref_name }} ./dwc-build
+          dist/release.sh mos-release-${{ github.ref_name }} ${{ github.workspace }}/dwc-build
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
