@@ -66,8 +66,16 @@ if { global.mosWPSfcPos[var.workOffset] == global.mosDfltWPSfcPos || global.mosW
 ; Get current machine position on Z
 M5000 P1 I2
 
-; Probe the corner surface
-G6508.1 R0 W{var.workOffset} Q{param.Q} H{param.H} I{param.I} N{param.N} T{param.T} C{param.C} O{param.O} J{param.J} K{param.K} L{ global.mosMI } Z{global.mosWPSfcPos[var.workOffset] - param.P }
+; Probe mode defaults to (0=Full)
+var pFull = { exists(param.Q) ? param.Q == 0: false }
+
+if { var.pFull }
+    ; Probe the corner surface
+    G6508.1 R0 W{var.workOffset} Q0 H{param.H} I{param.I} N{param.N} T{param.T} C{param.C} O{param.O} J{param.J} K{param.K} L{ global.mosMI } Z{global.mosWPSfcPos[var.workOffset] - param.P }
+else
+    ; Quick Probe the corner surface
+    G6508.1 R0 W{var.workOffset} Q1 N{param.N} T{param.T} C{param.C} O{param.O} J{param.J} K{param.K} L{ global.mosMI } Z{global.mosWPSfcPos[var.workOffset] - param.P }
+
 if { global.mosWPCnrNum[var.workOffset] == null }
     abort { "G6520: Failed to probe the corner surface of the workpiece!" }
 
