@@ -67,7 +67,7 @@ if { global.mosWPSfcPos[var.workOffset] == global.mosDfltWPSfcPos || global.mosW
 M5000 P1 I2
 
 ; Probe the corner surface
-G6508.1 R0 W{var.workOffset} Q{param.Q} H{param.H} I{param.I} N{param.N} T{param.T} C{param.C} O{param.O} J{param.J} K{param.K} L{ global.mosMI } Z{global.mosWPSfcPos[var.workOffset] - param.P }
+G6508.1 R0 W{var.workOffset} Q{param.Q} H{exists(param.H) ? param.H : null} I{exists(param.I) ? param.I : null} N{param.N} T{param.T} C{param.C} O{param.O} J{param.J} K{param.K} L{ global.mosMI } Z{global.mosWPSfcPos[var.workOffset] - param.P }
 if { global.mosWPCnrNum[var.workOffset] == null }
     abort { "G6520: Failed to probe the corner surface of the workpiece!" }
 
