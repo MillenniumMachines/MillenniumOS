@@ -79,10 +79,9 @@ var sY   = { param.K }
 
 
 ; Length of surfaces on X and Y forming the corner
-; These will be null when using quick mode so
-; _always_ check for var.pMO == 0 before using these.
-var fX   = { param.H }
-var fY   = { param.I }
+; These are 0 when using quick mode
+var fX   = { (var.pFull) ? param.H : 0 }
+var fY   = { (var.pFull) ? param.I : 0 }
 
 ; Tool Radius is the first entry for each value in
 ; our extended tool table.
