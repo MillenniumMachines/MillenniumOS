@@ -16,7 +16,7 @@ if { !exists(param.J) || !exists(param.K) || !exists(param.L) }
 if { !exists(param.Z) }
     abort { "Must provide a probe position using the Z parameter!" }
 
-if { (!exists(param.Q) || param.Q == 0) && (!exists(param.H) || !exists(param.I)) }
+if { (!exists(param.Q) || param.Q == 0) && (!exists(param.H) || !exists(param.I) || param.H == null || param.I == null) }
     abort { "Must provide an approximate X length and Y length using H and I parameters when using full probe, Q0!" }
 
 ; Maximum of 4 corners (0..3)
@@ -79,9 +79,12 @@ var sY   = { param.K }
 
 
 ; Length of surfaces on X and Y forming the corner
-; These are 0 when using quick mode
-var fX   = { (var.pFull) ? param.H : 0 }
-var fY   = { (var.pFull) ? param.I : 0 }
+; These are null when in quick mode, as using 0 could
+; lead to unintended maths consequences. It is invalid
+; to use these values in quick mode so we should always
+; error out if they are used.
+var fX   = { (var.pFull) ? param.H : null }
+var fY   = { (var.pFull) ? param.I : null }
 
 ; Tool Radius is the first entry for each value in
 ; our extended tool table.
