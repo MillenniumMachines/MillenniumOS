@@ -656,6 +656,9 @@ if { var.wizFeatureTouchProbe && (var.wizTouchProbeID == null || var.wizTouchPro
 
     var deflectionY = { (var.measuredY - global.mosWPDims[move.workplaceNumber][1])/2 }
 
+    if { var.deflectionX < 0 || var.deflectionY < 0 }
+        abort { "MillenniumOS: One or more measured deflection values is negative! This is not possible and means you have triggered a bug."}
+
     ; Deflection values are stored separately per axis, as 3d touch probes almost
     ; always have different deflection values. These are applied during the
     ; compensation stage of the probe routine (G6512) and are multiplied by

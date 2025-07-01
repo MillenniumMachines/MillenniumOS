@@ -187,8 +187,9 @@ while { iterations < #param.P }
         ; Retrieve the probed point
         var probedPos = { global.mosMI }
 
-        ; Calculate the approach angle in radians based on the start and probed position
-        var rApproachCur = { atan2(var.probedPos[1] - var.startPos[1], var.probedPos[0] - var.startPos[0]) }
+        ; Calculate the approach angle in radians based on the start and target position
+        ; This represents the intended probe direction, not where we actually hit
+        var rApproachCur = { atan2(var.targetPos[1] - var.startPos[1], var.targetPos[0] - var.startPos[0]) }
 
         ; Accumulate the approach angle
         set var.pSfc[var.surfaceNo][1] = { var.pSfc[var.surfaceNo][1] + (var.rApproachCur / #var.curSurface) }
@@ -286,7 +287,7 @@ while { iterations < #var.pSfc }
     var dY = { var.normalVecY * var.compMagnitude }
 
     if { exists(global.mosDebug) && global.mosDebug }
-        echo { "G6513: COMPENSATION POINT " ^ var.surfaceNo + 1 }
+        echo { "G6513: COMPENSATION SURFACE " ^ var.surfaceNo + 1 }
         echo { "    Effective Deflection = " ^ var.effectiveDeflection }
         echo { "    Approach Vector X = " ^ var.approachVecX }
         echo { "    Approach Vector Y = " ^ var.approachVecY }
