@@ -79,12 +79,6 @@ if { var.tPX == global.mosMI[0] && var.tPY == global.mosMI[1] && var.tPZ > var.c
     G53 G1 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } F{ sensors.probes[param.I].travelSpeed }
     M99
 
-; Note: these must be set as variables as we override the
-; probe speed below. We need to reset the probe speed
-; after the move.
-var roughSpeed   = { sensors.probes[param.I].speeds[0] }
-var fineSpeed    = { sensors.probes[param.I].speeds[1] }
-
 ; If the sensor is already triggered, we need to back-off slightly first
 ; before backing off the full distance while waiting for the sensor to
 ; trigger. When the sensor is _NOT_ triggered, it should read a value of

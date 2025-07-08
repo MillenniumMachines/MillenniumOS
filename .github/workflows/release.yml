@@ -24,12 +24,24 @@ jobs:
           ref: v3.6.0
           path: dwc-build
 
-      - name: Build release assets
+      - name: Build release asset
         run: |
-          # Build the MillenniumOS release with SD card files and UI plugin
-          dist/release.sh mos-release-${{ github.ref_name }} ${{ github.workspace }}/dwc-build
+          command -v rsync >/dev/null 2>&1 || {
+            apt update && apt install -y rsync;
+          }
+          dist/release.sh mos-release-${{ github.ref_name }}
+
+      - name: Build MillenniumOS UI Release
+        run: |
+          mkdir -p ui/sd
+          cp -r ui/* dwc-build/
+          cp -r ui/sd dwc-build/src/plugins/MillenniumOS/
+          cd dwc-build
+          ./src/plugins/MillenniumOS/dist/release.sh
+          cp dist/MillenniumOS-*.zip ../dist/
 
       - name: Create Release
+        id: create_release
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
