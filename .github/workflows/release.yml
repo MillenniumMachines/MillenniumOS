@@ -26,7 +26,9 @@ jobs:
 
       - name: Build release asset
         run: |
-          apt update && apt install -y rsync
+          command -v rsync >/dev/null 2>&1 || {
+            apt update && apt install -y rsync;
+          }
           dist/release.sh mos-release-${{ github.ref_name }}
 
       - name: Build MillenniumOS UI Release
