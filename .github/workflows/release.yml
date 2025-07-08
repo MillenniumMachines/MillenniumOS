@@ -24,12 +24,20 @@ jobs:
           ref: v3.6.0-rc.3
           path: dwc-build
 
-      - name: Build release assets
+      - name: Build release asset
         run: |
-          # Build the MillenniumOS release with SD card files and UI plugin
-          dist/release.sh mos-release-${{ github.ref_name }} ${{ github.workspace }}/dwc-build
+          dist/release.sh mos-release-${{ github.ref_name }}
+
+      - name: Build MillenniumOS UI Release
+        run: |
+          cp -r ui/* dwc-build/
+          cp -r ui/sd dwc-build/src/plugins/MillenniumOS/
+          cd dwc-build
+          ./src/plugins/MillenniumOS/dist/release.sh
+          cp dist/MillenniumOS-*.zip ../dist/
 
       - name: Create Release
+        id: create_release
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -38,7 +46,8 @@ jobs:
           draft: true
           generate_release_notes: true
           files: |
-            dist/MillenniumOS-${{ github.ref_name }}.zip
+            dist/mos-release-${{ github.ref_name }}.zip
+            dist/MillenniumOS-*.zip
             dist/millennium-os.cps
             dist/millennium_os_post.py
             dist/milo-v1.5-std.mch
