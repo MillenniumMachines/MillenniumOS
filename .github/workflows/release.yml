@@ -29,16 +29,8 @@ jobs:
           command -v rsync >/dev/null 2>&1 || {
             apt update && apt install -y rsync;
           }
-          dist/release.sh mos-release-${{ github.ref_name }}
+          dist/release.sh mos-release-${{ github.ref_name }} ${{ github.workspace }}/dwc-build
 
-      - name: Build MillenniumOS UI Release
-        run: |
-          mkdir -p ui/sd
-          cp -r ui/* dwc-build/
-          cp -r ui/sd dwc-build/src/plugins/MillenniumOS/
-          cd dwc-build
-          ./src/plugins/MillenniumOS/dist/release.sh
-          cp dist/MillenniumOS-*.zip ../dist/
 
       - name: Create Release
         id: create_release
