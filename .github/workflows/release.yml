@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Duet3D/DuetWebControl
-          ref: v3.6.0-rc.3
+          ref: v3.6.0
           path: dwc-build
 
       - name: Build release assets
