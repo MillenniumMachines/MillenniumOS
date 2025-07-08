@@ -21,15 +21,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Duet3D/DuetWebControl
-          ref: v3.6.0-rc.3
+          ref: v3.6.0
           path: dwc-build
 
       - name: Build release asset
         run: |
+          command -v rsync >/dev/null 2>&1 || {
+            apt update && apt install -y rsync;
+          }
           dist/release.sh mos-release-${{ github.ref_name }}
 
       - name: Build MillenniumOS UI Release
         run: |
+          mkdir -p ui/sd
           cp -r ui/* dwc-build/
           cp -r ui/sd dwc-build/src/plugins/MillenniumOS/
           cd dwc-build
