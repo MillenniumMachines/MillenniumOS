@@ -124,7 +124,7 @@ if { sensors.probes[param.I].value[0] != 0 }
         ; because it is still slightly in contact with the surface.
         ; It is better to just move the backoff distance and assume that it
         ; is short enough to not damage the probe.
-        G53 G1 X{ global.mosMI[0] + var.tDX } Y{ global.mosMI[1] + var.tDY } Z{ global.mosMI[2] + var.tDZ } F{ var.roughSpeed }
+        G53 G1 X{ global.mosMI[0] + var.tDX } Y{ global.mosMI[1] + var.tDY } Z{ global.mosMI[2] + var.tDZ } F{ sensors.probes[param.I].speeds[0] }
 
     ; Wait for moves to complete
     M400
