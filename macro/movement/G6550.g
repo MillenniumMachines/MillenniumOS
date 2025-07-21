@@ -115,7 +115,7 @@ if { sensors.probes[param.I].value[0] != 0 }
     ; The subsequent G38.3 will be a no-op as we will already be
     ; at the target position.
     if { var.tIN >= var.tN }
-        G53 G1 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } F{ sensors.probes[param.I].travelSpeed }
+        G53 G1 X{ var.tPX } Y{ var.tPY } Z{ var.tPZ } F{ sensors.probes[param.I].speeds[0] }
     else
         ; Back off by the back-off distance
         ; We do not use a G38.5 here because it will stop movement the
