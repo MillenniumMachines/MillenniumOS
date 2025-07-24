@@ -142,7 +142,12 @@ M5000 P0
 ; Probing move either complete or stopped due to collision, we need to
 ; check the location of the machine to determine if the move was completed.
 
+; Tolerance should be the maximum backlash value of the machine if that is
+; higher than the default tolerance.
 var tolerance = { 0.005 }
+
+while { iterations < #move.axes }
+    set var.tolerance = { max(var.tolerance, move.axes[iterations].backlash) }
 
 if { global.mosMI[0] < (var.tPX - var.tolerance) || global.mosMI[0] > (var.tPX + var.tolerance) }
     abort { "G6550: Machine position does not match expected position -  X=" ^ var.tPX ^ " != " ^ global.mosMI[0] }
