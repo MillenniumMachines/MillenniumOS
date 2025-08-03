@@ -498,9 +498,9 @@ function onOpen() {
     if(getProperty("jobWCSProbeMode") === wcsProbeMode.ATSTART) {
       writeln("")
       for(var i = 0; i < seenWCS.length; i++) {
-        var offset = seenWCS[i];
-        writeComment("Probe origin and save in WCS {wcs}".supplant({wcs: offset+1}));
-        writeBlock(gCodesF.format(G.PROBE_OPERATOR), "W{offset}".supplant({offset: offset}));
+        var wcs = seenWCS[i];
+        writeComment("Probe origin and save in WCS {wcs}".supplant({wcs: wcs}));
+        writeBlock(gCodesF.format(G.PROBE_OPERATOR), "W{offset}".supplant({offset: wcs-1}));
         writeln("");
       }
     } else {
