@@ -8,6 +8,7 @@ This document outlines the development process, branching strategy, and code rev
 
 *   **Scope:** All development work should be scoped to a specific feature or a small group of related features as outlined in `FEATURES.md`.
 *   **Clarity:** Commits, branches, and Pull Requests should have clear and descriptive names and messages.
+*   **Clean History:** A clean, readable git history is preferred. A single feature should ideally be represented by a single, well-documented commit on the `next` branch upon merging.
 
 ---
 
@@ -45,9 +46,11 @@ All feature branches must be merged into `next` via a Pull Request (PR). This en
         *   Unused, unneeded, or dead code.
         *   Deviations from the agreed-upon architecture or feature requirements.
 
-4.  **Submitting Review Feedback:**
-    *   Any findings from the self-review will be added as comments to the PR using the `gh pr review --comment` command.
-    *   If issues are found, the necessary code changes will be pushed to the feature branch to update the PR.
+4.  **Correcting and Amending Commits:**
+    *   If issues are found during the self-review, they will first be documented as comments on the PR using `gh pr review --comment` for transparency.
+    *   The code will then be corrected on the local feature branch.
+    *   Instead of creating a new 'fixup' commit, `git commit --amend` will be used to incorporate the corrections directly into the original commit.
+    *   The commit message will be updated during the amend process to include a brief note about the fixes made (e.g., "docs: Add DEVELOPMENT.md... [fix: corrected review criteria]"), preserving a clear history of changes within the single commit.
 
 5.  **Human Approval (Strictly Enforced):**
     *   **I will never approve or merge my own Pull Request.**
