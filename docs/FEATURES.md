@@ -12,6 +12,8 @@ This document distills the requirements for the NeXT rewrite, categorizing featu
     - For functionality not implemented by RepRapFirmware (RRF), we will use the standard G-code (e.g., `G37` for tool measurement).
     - To add safety or features to existing RRF commands (e.g., `M3`, `M5`), we will create "wrapper" macros with a decimal extension (e.g., `M3.9`, `M5.9`). These wrappers will contain our custom logic and then call the base RRF command. This requires our post-processors to be configured to output these extended codes.
 - [ ] **UI-Dependent Action Fallback:** For actions requiring user confirmation, macros will check a global flag (`nxtUiReady`). If the UI is loaded (`true`), they will use the UI's confirmation system. If not (`false`), they will fall back to using a standard `M291` dialog. This allows for backend development and testing before the UI is complete.
+- [ ] **Variable Naming for Readability:** Global variables will use descriptive names, expanding on previous short forms (e.g., `nxtCoolantFloodID` instead of `nxtCFID`).
+- [ ] **Expression Wrapping in Conditionals:** All expressions in the conditional part of `if` statements must be wrapped in curly braces `{}` to ensure proper parsing of complex expressions (e.g., `if { exists(param.S) && param.S > 0 }` instead of `if exists(param.S) && param.S > 0`).
 
 ---
 
@@ -81,6 +83,7 @@ These features add value but are not part of the initial core rewrite. They can 
 
 - [ ] **Drilling Canned Cycles (`G73`, `G81`, `G83`):** Useful for manual operations, but not essential to the core OS. Can be re-implemented after the main rewrite.
 - [ ] **Variable Spindle Speed Control (VSSC):** A valuable feature for improving surface finish, but its complexity is self-contained. It can be re-added as a modular component.
+- [ ] **Spindle Feedback:** Use sensor input to detect when the spindle has reached target speed or stopped.
 
 ---
 
