@@ -16,6 +16,18 @@ Before proceeding with any test, you must ensure:
 
 ---
 
+## Live Testing Rules and Operator Confirmation
+
+1.  **Explicit Confirmation Required:** A live test **MUST NOT** be run unless the user has explicitly confirmed that it is safe to do so. The agent must ask for confirmation before initiating any test that moves the machine.
+
+2.  **Exception for Repetitive Testing:** The only situation where the confirmation requirement can be bypassed is if the same macro is being run multiple times in a sequence for testing purposes. This is only permitted if the agent can guarantee that the machine has been returned to its original starting position before each re-execution of the macro.
+
+3.  **Test Sparingly:** Live tests should be used judiciously. The machine is not always available, and operator attendance is required. Tests should be grouped and run efficiently to minimize machine-on time.
+
+4.  **Pre-Pull Request Validation:** The ideal time to run live tests is when a feature is considered complete, but *before* creating a pull request. This allows for the capture and resolution of simple or obvious errors that only appear during live execution, ensuring a cleaner and more stable pull request.
+
+---
+
 ## 1. Prerequisites
 
 *   **Duet IP Address:** The IP address of the Duet board on the local network (referred to as `<DUET_IP>`).
