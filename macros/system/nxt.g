@@ -3,16 +3,16 @@
 ; To be called from config.g using M98 P"macros/system/nxt.g"
 
 ; Set NeXT Version
-if !exists(global.nxtVer)
-    global nxtVer = "%%NXT_VERSION%%"
+if { !exists(global.nxtVersion) }
+    global nxtVersion = "%%NXT_VERSION%%"
 else
-    set global.nxtVer = "%%NXT_VERSION%%"
+    set global.nxtVersion = "%%NXT_VERSION%%"
 
 ; Load default variables
 M98 P"macros/system/nxt-vars.g"
 
 ; Load user-defined variables if they exist
-if fileexists("0:/sys/nxt-user-vars.g")
+if { fileexists("0:/sys/nxt-user-vars.g") }
     M98 P"nxt-user-vars.g"
 else
     ; In the future, the UI will handle this. For now, we halt.
@@ -23,7 +23,7 @@ else
 M98 P"macros/system/nxt-boot.g"
 
 ; Final check if NeXT loaded successfully
-if global.nxtLdd
-    echo "NeXT v" ^ global.nxtVer ^ " loaded successfully."
+if { global.nxtLoaded }
+    echo "NeXT v" ^ global.nxtVersion ^ " loaded successfully."
 else
-    echo "FATAL: NeXT failed to load. Error: " ^ global.nxtErr
+    echo "FATAL: NeXT failed to load. Error: " ^ global.nxtError

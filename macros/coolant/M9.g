@@ -5,7 +5,7 @@
 ; coolant outputs. The state is only saved on pause.
 
 ; Do not report an error here as M9 is called during parking
-if !global.nxtFeatureCoolantControl
+if { !global.nxtFeatureCoolantControl }
     M99
 
 ; Wait for all movement to stop before continuing.
@@ -15,13 +15,13 @@ M400
 var restore = { exists(param.R) && param.R == 1 }
 
 ; Configure flood
-if global.nxtCoolantFloodID != null
+if { global.nxtCoolantFloodID != null }
     M42 P{global.nxtCoolantFloodID} S{ var.restore ? global.nxtPinStates[global.nxtCoolantFloodID] : 0 }
 
 ; Configure mist
-if global.nxtCoolantMistID != null
+if { global.nxtCoolantMistID != null }
     M42 P{global.nxtCoolantMistID} S{ var.restore ? global.nxtPinStates[global.nxtCoolantMistID] : 0 }
 
 ; Configure air blast
-if global.nxtCoolantAirID != null
+if { global.nxtCoolantAirID != null }
     M42 P{global.nxtCoolantAirID} S{ var.restore ? global.nxtPinStates[global.nxtCoolantAirID] : 0 }

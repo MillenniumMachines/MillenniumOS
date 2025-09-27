@@ -3,10 +3,10 @@
 ; USAGE: M5.9 [D<overrideDwellSeconds>]
 
 ; Make sure this file is not executed by the secondary motion system
-if !inputs[state.thisInput].active
+if { !inputs[state.thisInput].active }
     M99
 
-if exists(param.D) && param.D < 0
+if { exists(param.D) && param.D < 0 }
     abort "Dwell time must be a positive value!"
 
 ; Wait for all movement to stop before continuing.
@@ -19,7 +19,7 @@ var doWait = false
 
 while (iterations < #spindles) && !var.doWait
     ; Ignore unconfigured spindles
-    if spindles[iterations].state == "unconfigured"
+    if { spindles[iterations].state == "unconfigured" }
         continue
 
     set var.doWait = { spindles[iterations].current != 0 }
@@ -34,9 +34,9 @@ while (iterations < #spindles) && !var.doWait
 var dwellTime = 0
 
 ; D parameter always overrides the dwell time
-if exists(param.D)
+if { exists(param.D) }
     set var.dwellTime = { param.D }
-elif var.doWait
+elif { var.doWait }
     ; Dwell time defaults to the previously timed spindle deceleration time.
     set var.dwellTime = { global.nxtSpindleDecelSec }
 
@@ -44,7 +44,7 @@ elif var.doWait
     ; for nulls on the individual values before doing the dwellTime calculation.
     ; If the current spindle is not valid then M5 will be called but we wont
     ; wait for it to stop.
-    if spindles[var.spindleID].current != null && spindles[var.spindleID].max != null
+    if { spindles[var.spindleID].current != null && spindles[var.spindleID].max != null }
         set var.dwellTime = { ceil(var.dwellTime * (abs(spindles[var.spindleID].current) / spindles[var.spindleID].max) * 1.05) }
 
 ; We run M5 unconditionally for safety purposes. If
@@ -55,13 +55,13 @@ elif var.doWait
 M5
 
 ; No spindles were running, so don't wait
-if !var.doWait
+if { !var.doWait }
     M99
 
 ; Spindle feedback functionality is now part of the 'Nice-to-Have' features and will be implemented later.
 
-elif var.dwellTime > 0
+elif { var.dwellTime > 0 }
     ; Otherwise wait for spindle to stop manually
-    if !global.nxtExpertMode
+    if { !global.nxtExpertMode }
         echo { "NeXT: Waiting " ^ var.dwellTime ^ " seconds for spindle #" ^ var.spindleID ^ " to stop" }
     G4 S{var.dwellTime}

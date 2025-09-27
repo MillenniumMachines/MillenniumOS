@@ -5,7 +5,6 @@
 global nxtFeatureTouchProbe = false
 global nxtFeatureToolSetter = false
 global nxtFeatureCoolantControl = false ; Coolant Control feature flag
-global nxtFeatureSpindleFeedback = false ; Spindle Feedback feature flag (Nice-to-Have)
 
 ; --- Core Settings ---
 global nxtProbeToolID = limits.tools - 1  ; Probe Tool ID, always the last tool
