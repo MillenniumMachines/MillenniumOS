@@ -1,6 +1,6 @@
-# MillenniumOS Custom G and M Codes Documentation
+# Legacy MillenniumOS Custom G and M Codes Documentation
 
-This document outlines the custom G and M codes implemented in MillenniumOS, detailing their functionality, arguments, and operational specifics.
+This document outlines the custom G and M codes implemented in NeXT, detailing their functionality, arguments, and operational specifics.
 
 ---
 
