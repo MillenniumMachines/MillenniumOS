@@ -11,6 +11,7 @@ This document distills the requirements for the NeXT rewrite, categorizing featu
 - [ ] **G-code and M-code Conventions:** NeXT will adhere to industry standards (e.g., NIST) for G-code numbering where possible.
     - For functionality not implemented by RepRapFirmware (RRF), we will use the standard G-code (e.g., `G37` for tool measurement).
     - To add safety or features to existing RRF commands (e.g., `M3`, `M5`), we will create "wrapper" macros with a decimal extension (e.g., `M3.9`, `M5.9`). These wrappers will contain our custom logic and then call the base RRF command. This requires our post-processors to be configured to output these extended codes.
+- [ ] **UI-Dependent Action Fallback:** For actions requiring user confirmation, macros will check a global flag (`nxtUiReady`). If the UI is loaded (`true`), they will use the UI's confirmation system. If not (`false`), they will fall back to using a standard `M291` dialog. This allows for backend development and testing before the UI is complete.
 
 ---
 
