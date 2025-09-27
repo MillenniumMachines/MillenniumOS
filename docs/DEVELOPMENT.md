@@ -1,6 +1,6 @@
-# MillenniumOS-Next Development Workflow
+# NeXT Development Workflow
 
-This document outlines the development process, branching strategy, and code review workflow to be followed for the MillenniumOS-Next rewrite. The primary goal is to ensure all changes are structured, reviewed, and aligned with the project's core principles of simplicity and accuracy.
+This document outlines the development process, branching strategy, and code review workflow to be followed for the NeXT rewrite. The primary goal is to ensure all changes are structured, reviewed, and aligned with the project's core principles of simplicity and accuracy.
 
 ---
 

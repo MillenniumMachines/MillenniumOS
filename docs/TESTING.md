@@ -1,6 +1,6 @@
-# MillenniumOS-Next Testing Workflow
+# NeXT Testing Workflow
 
-This document outlines the process for testing new builds of MillenniumOS-Next on a live machine using the DuetWebControl (DWC) API directly via `curl`.
+This document outlines the process for testing new builds of NeXT on a live machine using the DuetWebControl (DWC) API directly via `curl`.
 
 ---
 

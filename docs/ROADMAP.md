@@ -1,6 +1,6 @@
-# MillenniumOS-Next Rewrite Roadmap
+# NeXT Rewrite Roadmap
 
-This document outlines the development roadmap for the complete rewrite of MillenniumOS, codenamed "MillenniumOS-Next". The primary goal is to refactor the system for simplicity, accuracy, and maintainability, starting from a clean slate on the `next` branch.
+This document outlines the development roadmap for the complete rewrite of MillenniumOS, codenamed "NeXT". The primary goal is to refactor the system for simplicity, accuracy, and maintainability, starting from a clean slate on the `next` branch.
 
 ---
 

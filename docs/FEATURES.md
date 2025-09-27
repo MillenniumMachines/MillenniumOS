@@ -1,6 +1,6 @@
-# MillenniumOS-Next Feature Set
+# NeXT Feature Set
 
-This document distills the requirements for the MillenniumOS-Next rewrite, categorizing features into Critical, Nice-to-Have, and To Be Cut. The focus is on simplicity, accuracy, and a streamlined user experience.
+This document distills the requirements for the NeXT rewrite, categorizing features into Critical, Nice-to-Have, and To Be Cut. The focus is on simplicity, accuracy, and a streamlined user experience.
 
 ---
 

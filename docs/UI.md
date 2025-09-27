@@ -1,4 +1,4 @@
-# MillenniumOS UI Functionality Documentation
+# Legacy MillenniumOS UI Functionality Documentation
 
 This document outlines the functionality of the MillenniumOS User Interface (UI) components, describing their purpose, how they work, and the features they enable.
 
