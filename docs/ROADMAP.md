@@ -4,6 +4,14 @@ This document outlines the development roadmap for the complete rewrite of Mille
 
 ---
 
+## Project Naming and Conventions
+
+- **Project Name:** The official name for this rewrite is **NeXT**.
+- **Variable Naming:** All global variables created for the NeXT system must be prefixed with `nxt` to avoid conflicts with other plugins or user variables (e.g., `nxtDeltaMachine`).
+- **File Naming:** Core system files should also adopt this prefix where appropriate (e.g., the main entrypoint will be `nxt.g`).
+
+---
+
 ## Phase 0: Foundation & Cleanup
 
 The goal of this phase is to establish a clean and organized repository structure for the new implementation.
