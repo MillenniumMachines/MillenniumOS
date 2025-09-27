@@ -2,7 +2,7 @@
 ;
 ; Enables air blast for chip clearing.
 
-if !global.nxtFeatureCoolantControl || global.nxtCoolantAirID == null
+if { !global.nxtFeatureCoolantControl || global.nxtCoolantAirID == null }
     echo "NeXT: Coolant Control feature is disabled or not configured, cannot enable Air Blast."
     M99
 

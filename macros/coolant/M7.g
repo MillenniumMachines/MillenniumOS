@@ -3,7 +3,7 @@
 ; Mist is a combination output of air and unpressurized coolant.
 ; Turn on the blast air first, then turn on the coolant.
 
-if !global.nxtFeatureCoolantControl || global.nxtCoolantMistID == null
+if { !global.nxtFeatureCoolantControl || global.nxtCoolantMistID == null }
     echo "NeXT: Coolant Control feature is disabled or not configured, cannot enable Mist Coolant."
     M99
 

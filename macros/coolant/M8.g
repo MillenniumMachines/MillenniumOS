@@ -2,7 +2,7 @@
 ;
 ; Flood enables pressurised coolant flow over the cutting tool.
 
-if !global.nxtFeatureCoolantControl || global.nxtCoolantFloodID == null
+if { !global.nxtFeatureCoolantControl || global.nxtCoolantFloodID == null }
     echo "NeXT: Coolant Control feature is disabled or not configured, cannot enable Flood Coolant."
     M99
 

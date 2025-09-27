@@ -59,5 +59,12 @@ This document outlines the coding conventions and style guidelines to be followe
 
 - **Avoid Magic Numbers:** Use named constants or variables instead of hard-coded numbers.
 - **Modular Code:** Break down complex logic into smaller, reusable functions or macros.
-- **Testing:** Write code with testing in mind; ensure macros can be tested independently.</content>
-<parameter name="filePath">/home/ben/Documents/CAD/Millennium Milo/Repos/OS/docs/CODE.md
+- **Testing:** Write code with testing in mind; ensure macros can be tested independently.
+
+---
+
+## 8. Parameter Naming
+
+- **Avoid Axis Letters:** Do not use common axis letters (e.g., `X`, `Y`, `Z`, `A`, `B`, `C`, `U`, `V`, `W`) for parameters that do not represent a coordinate in that axis.
+- **Avoid Reserved Letters:** Do not use letters that correspond to G-code or M-code commands (e.g., `G`, `M`, `T`). The `P` parameter is also frequently used by RRF for various purposes and should be used with caution.
+- **Clarity:** Choose parameter letters that are descriptive or conventional for their purpose (e.g., `I` for ID, `F` for speed (feed), `R` for retries, `J` for axis index). Document the purpose of each parameter in the macro's header comment.
