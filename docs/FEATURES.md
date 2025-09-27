@@ -8,12 +8,7 @@ This document distills the requirements for the NeXT rewrite, categorizing featu
 
 - [ ] **Simplicity & Accuracy:** The primary goal is to reduce complexity wherever possible. All implementation choices must prioritize accuracy, especially in probing and calculation-heavy operations.
 - [ ] **Numerical Stability:** Algorithms used for calculations (e.g., probe compensation, geometric calculations) must be chosen to minimize floating-point error accumulation.
-- [ ] **G-code and M-code Conventions:** NeXT will adhere to industry standards (e.g., NIST) for G-code numbering where possible.
-    - For functionality not implemented by RepRapFirmware (RRF), we will use the standard G-code (e.g., `G37` for tool measurement).
-    - To add safety or features to existing RRF commands (e.g., `M3`, `M5`), we will create "wrapper" macros with a decimal extension (e.g., `M3.9`, `M5.9`). These wrappers will contain our custom logic and then call the base RRF command. This requires our post-processors to be configured to output these extended codes.
 - [ ] **UI-Dependent Action Fallback:** For actions requiring user confirmation, macros will check a global flag (`nxtUiReady`). If the UI is loaded (`true`), they will use the UI's confirmation system. If not (`false`), they will fall back to using a standard `M291` dialog. This allows for backend development and testing before the UI is complete.
-- [ ] **Variable Naming for Readability:** Global variables will use descriptive names, expanding on previous short forms (e.g., `nxtCoolantFloodID` instead of `nxtCFID`).
-- [ ] **Expression Wrapping in Conditionals:** All expressions in the conditional part of `if` statements must be wrapped in curly braces `{}` to ensure proper parsing of complex expressions (e.g., `if { exists(param.S) && param.S > 0 }` instead of `if exists(param.S) && param.S > 0`).
 
 ---
 
