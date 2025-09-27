@@ -16,6 +16,8 @@ global nxtUiReady = false          ; Flag to indicate if the NeXT UI is loaded a
 global nxtDeltaMachine = null      ; The static Z distance between the toolsetter and reference surface
 global nxtProbeResults = vector(10, {0.0, 0.0, 0.0}) ; A table to store the last 10 probe results
 global nxtToolCache = vector(limits.tools, null) ; A cache for tool measurement results per session
+global nxtProbeTipRadius = null    ; Radius of the probe tip for compensation (mm)
+global nxtProbeDeflection = null   ; Probe deflection compensation value (mm)
 
 ; --- Coolant Control ---
 global nxtCoolantAirID = null ; Coolant Air Output Pin ID
