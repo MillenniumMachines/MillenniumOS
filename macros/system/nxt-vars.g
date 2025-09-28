@@ -33,3 +33,4 @@ global nxtPinStates = { vector(limits.gpOutPorts, 0.0) } ; Tracks the state of g
 global nxtSpindleID = null  ; Default Spindle ID
 global nxtSpindleAccelSec = null  ; Spindle Acceleration Time (seconds)
 global nxtSpindleDecelSec = null  ; Spindle Deceleration Time (seconds)
+
