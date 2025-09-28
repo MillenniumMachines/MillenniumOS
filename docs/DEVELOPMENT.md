@@ -66,3 +66,25 @@ All feature branches must be merged into `next` via a Pull Request (PR). This en
 2.  **Updating `FEATURES.md`:**
     *   Once you grant confirmation, I will create a new commit directly on the `next` branch.
     *   This commit will edit the `FEATURES.md` file to mark the completed feature with a checkmark (e.g., changing `- [ ]` to `- [x]`). This will serve as our living progress tracker for the project.
+
+---
+
+## 5. GitHub CLI (`gh`) Usage Tips
+
+The `gh` command-line tool is used extensively for PR management and reviews. To ensure smooth operation and avoid common issues:
+
+* **Avoiding Pagers:** By default, `gh` may pipe output through a pager (e.g., `less`). To prevent this and get raw output:
+  * Unset the `PAGER` environment variable: `export PAGER=`
+  * Or pipe commands through `tee` without a file: `gh pr diff 220 | tee`
+
+* **Structured Output:** Use the `--json` flag for machine-readable output when fetching PR details:
+  * `gh pr view 220 --json title,body,author,reviews,comments`
+
+* **Common Commands:**
+  * View PR: `gh pr view <number>`
+  * View diff: `gh pr diff <number>`
+  * Add review comments: `gh pr review --comment -b "Comment text"`
+  * Approve PR: `gh pr review --approve`
+  * Merge PR: `gh pr merge <number>`
+
+These tips help maintain an efficient review workflow without interruptions from pagers.
