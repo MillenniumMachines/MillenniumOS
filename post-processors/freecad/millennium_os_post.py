@@ -664,11 +664,16 @@ class MillenniumOSPostProcessor(PostProcessor):
         self.M(MCODES.SHOW_DIALOG, R="FreeCAD", S=obj.Comment)
 
 
-    def onpark(self, _, __):
+    def onpark(self, code, params):
         self._forceTool()
         self._forceFeed()
         self._forceSpindle()
         self.spindle_started = False
+
+        cmd, _ = self._G(code, **params)
+        if not cmd:
+            return None
+        self.cmd(' '.join(cmd))
 
     def onwcs(self, code, params):
         wcsOffset = int(code - (self._WCS_CHANGES[0]-1))
