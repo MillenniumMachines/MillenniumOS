@@ -42,7 +42,7 @@ import PathScripts.PathUtils as PathUtils
 from datetime import datetime, timezone
 
 class RELEASE:
-    VERSION = "v0.5.0"
+    VERSION = "%%MOS_VERSION%%"
     VENDOR  = "Millennium Machines"
 
 class PROBE:
@@ -374,6 +374,7 @@ class Section(StrEnum):
 class PostProcessor:
     name      = "FreeCAD Post-Processor"
     vendor    = "Unknown"
+    version   = FreeCAD.Version()
 
 
     def __init__(self, name=None, vendor=None, args={}):
@@ -398,7 +399,7 @@ class PostProcessor:
 
         # Switch to PRE section
         with self.Section(Section.PRE):
-            self.comment('Exported by FreeCAD')
+            self.comment(f'Exported by FreeCAD v{self.version[0]}.{self.version[1]}.{self.version[2]}')
             self.comment('Post Processor: {} by {}'.format(self.name, self.vendor))
             self.comment('Output Time: {}'.format(datetime.now(timezone.utc)))
             self.brk()
