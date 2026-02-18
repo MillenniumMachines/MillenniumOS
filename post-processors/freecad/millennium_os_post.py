@@ -42,7 +42,7 @@ import PathScripts.PathUtils as PathUtils
 from datetime import datetime, timezone
 
 class RELEASE:
-    VERSION = "%%MOS_VERSION%%"
+    VERSION = "v0.5.0"
     VENDOR  = "Millennium Machines"
 
 class PROBE:
@@ -833,12 +833,20 @@ class MillenniumOSPostProcessor(PostProcessor):
 
         # A bull nose bit has a flat radius. The corner radius
         # is the difference between the radius and the flat radius.
-        if tc.Tool.ShapeName == "bullnose":
+        
+        # adjust for FreeCad renaming of tool shape field after v1.2
+        # note, capitalization has also changed for tool shape types
+        if hasattr(tc.Tool, "ShapeType"):
+            tool_shape = tc.Tool.ShapeType
+        else:
+            tool_shape = tc.Tool.ShapeName
+        
+        if tool_shape.lower() == "bullnose":
             cr = radius - float(tc.Tool.FlatRadius.getValueAs(UNITS.LENGTH))
 
         # A ball nose bit is rounded all the way to the centre of
         # the bit. The corner radius is the radius of the bit.
-        elif tc.Tool.ShapeName == "ballnose":
+        elif tool_shape.lower() == "ballnose":
             cr = radius
 
         tl = float(tc.Tool.Length.getValueAs(UNITS.LENGTH))
