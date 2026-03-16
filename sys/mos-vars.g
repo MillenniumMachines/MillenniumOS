@@ -167,6 +167,7 @@ global mosDTR = null ; Datum Tool Radius
 global mosCAID = null ; Coolant Air ID
 global mosCMID = null ; Coolant Mist ID
 global mosCFID = null ; Coolant Flood ID
+global mosTAID = null ; Toolsetter Air ID
 
 ; Protected move configuration
 global mosPMBO = null ; Protected Move Back Off
