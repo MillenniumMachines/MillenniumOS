@@ -10,6 +10,10 @@ M98 P"mos/display-startup-messages.g"
 ; file in your /sys directory and add your tasks there. DO NOT use any
 ; infinite loops as we already loop in this file.
 while { exists(global.mosDAE) && global.mosDAE }
+    ; Do not process daemon.g when machine is emergency stopped or turned off
+    if { state.status == "halted" || state.status == "off"}
+        M99
+
     G4 P{global.mosDAEUR} ; Minimum interval between daemon runs
 
     ; Run the ArborCtl daemon if it exists
