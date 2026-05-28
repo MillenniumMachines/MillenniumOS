@@ -16,6 +16,8 @@ if { !inputs[state.thisInput].active }
 ; Display description of rectangle block probe if not already displayed this session
 if { global.mosTM && !global.mosDD[5] }
     M291 P"This probe cycle finds the X and Y co-ordinates of the center of a rectangular block (protruding feature) on a workpiece by probing towards the block surfaces from all 4 directions." R"MillenniumOS: Probe Rect. Block " T0 S2
+    M291 P"In <b>Full</b> mode, this cycle will take 2 probe points on each surface, allowing us to calculate the rotation and squareness of the block." R"MillenniumOS: Probe Rect. Block" T0 S2
+    M291 P"In <b>Quick</b> mode, this cycle will take 1 probe point on each surface, assuming the block is aligned with the table, and will not calculate rotation." R"MillenniumOS: Probe Rect. Block" T0 S2
     M291 P"You will be asked to enter an approximate <b>width</b> and <b>length</b> of the block, and a <b>clearance distance</b>." R"MillenniumOS: Probe Rect. Block" T0 S2
     M291 P"These define how far the probe will move away from the center point before moving downwards and probing back towards the relevant surfaces." R"MillenniumOS: Probe Rect. Block" T0 S2
     M291 P"You will then jog the tool over the approximate center of the block.<br/><b>CAUTION</b>: Jogging in RRF does not watch the probe status, so you could cause damage if moving in the wrong direction!" R"MillenniumOS: Probe Rect. Block" T0 S2
@@ -38,6 +40,12 @@ var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workpla
 ; from the first work co-ordinate system, so is 0-indexed. WCS number indicates
 ; the number of the work co-ordinate system, so is 1-indexed.
 var wcsNumber = { var.workOffset + 1 }
+
+M291 P{"Please select the probing mode to use.<br/><b>Full</b> probes 2 points on each surface (8 total) and calculates rotation. <b>Quick</b> probes 1 point on each surface (4 total) and skips rotation."} R"MillenniumOS: Probe Rect. Block" T0 S4 K{"Full","Quick"} F0
+if { result != 0 }
+    abort { "Rectangle block probe aborted!" }
+
+var mode = { input }
 
 var bW = { (global.mosWPDims[var.workOffset][0] != null) ? global.mosWPDims[var.workOffset][0] : 100 }
 
@@ -71,18 +79,21 @@ var surfaceClearance = { input }
 if { var.surfaceClearance <= 0.1 }
     abort { "Clearance distance too low!" }
 
-; Calculate the maximum clearance distance we can use before
-; the probe points will be flipped
-var mC = { min(var.blockWidth, var.blockLength) / 2 }
-
 var cornerClearance = null
 
-if { var.surfaceClearance >= var.mC }
-    var defCC = { max(1, var.mC-1) }
-    M291 P{"The <b>clearance</b> distance is more than half of the length or width of the block.<br/>Please enter a <b>corner clearance</b> distance less than <b>" ^ var.mC ^ "</b>."} R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{var.defCC}
-    set var.cornerClearance = { input }
-    if { var.cornerClearance >= var.mC }
-        abort { "Corner clearance distance too high!" }
+; Corner clearance is only relevant in full mode; quick mode probes
+; at the centre of each surface and ignores it.
+if { var.mode == 0 }
+    ; Calculate the maximum clearance distance we can use before
+    ; the probe points will be flipped
+    var mC = { min(var.blockWidth, var.blockLength) / 2 }
+
+    if { var.surfaceClearance >= var.mC }
+        var defCC = { max(1, var.mC-1) }
+        M291 P{"The <b>clearance</b> distance is more than half of the length or width of the block.<br/>Please enter a <b>corner clearance</b> distance less than <b>" ^ var.mC ^ "</b>."} R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{var.defCC}
+        set var.cornerClearance = { input }
+        if { var.cornerClearance >= var.mC }
+            abort { "Corner clearance distance too high!" }
 
 ; Prompt for overtravel distance
 M291 P"Please enter <b>overtravel</b> distance in mm.<br/>This is how far we move past the expected surfaces to account for any innaccuracy in the dimensions." R"MillenniumOS: Probe Rect. Block" J1 T0 S6 F{global.mosOT}
@@ -115,4 +126,4 @@ if { global.mosTM }
 ; Get current machine position
 M5000 P0
 
-G6503.1 W{var.workOffset} H{var.blockWidth} I{var.blockLength} T{var.surfaceClearance} C{var.cornerClearance} O{var.overtravel} J{global.mosMI[0]} K{global.mosMI[1]} L{global.mosMI[2]} Z{global.mosMI[2] - var.probingDepth}
+G6503.1 W{var.workOffset} Q{var.mode} H{var.blockWidth} I{var.blockLength} T{var.surfaceClearance} C{var.cornerClearance} O{var.overtravel} J{global.mosMI[0]} K{global.mosMI[1]} L{global.mosMI[2]} Z{global.mosMI[2] - var.probingDepth}
