@@ -73,8 +73,32 @@ class GCODES:
     PROBE_REFERENCE_SURFACE = 6511
     PROBE_VISE_CORNER       = 6520.1
 
+
+# Note: FreeCAD only supports None, Mist and Flood by default, no Air only option. 
+# Included here for completeness and to match MOS/RRF options, but it is not possible to select in FreeCAD without extending the enumeration.
+# You can extend the enumeration from the Python console with the code below, but it will not be saved with the job and will need to be re-run each time FreeCAD is restarted.
+#
+# job = App.ActiveDocument.getObject("Job")   # your job's internal name
+# modes = ["None", "Air", "Mist", "Flood"]
+#
+# for op in job.Operations.Group:
+#    if hasattr(op, "CoolantMode"):
+#         cur = op.CoolantMode
+#         op.CoolantMode = modes    # replace the enumeration
+#         op.CoolantMode = cur      # assigning a list resets to the first entry
+
+class COOLANT:
+    NONE  = 'None'
+    AIR   = 'Air'
+    MIST  = 'Mist'
+    FLOOD = 'Flood'
+
 class MCODES:
     CALL_MACRO                   = 98
+    COOLANT_AIR                  = 7.1
+    COOLANT_MIST                 = 7
+    COOLANT_FLOOD                = 8
+    COOLANT_OFF                  = 9
     ADD_TOOL                     = 4000
     VERSION_CHECK                = 4005
     ENABLE_ROTATION_COMPENSATION = 5011
@@ -184,6 +208,15 @@ parser.add_argument(
     default=200,
     help="Variance around target RPM to vary Spindle speed when VSSC is enabled, in RPM."
 )
+parser.add_argument('--coolant', action=argparse.BooleanOptionalAction, default=True,
+    help="""
+    When enabled, the post-processor will emit M7.1 (air blast), M7 (mist), M8 (flood) and
+    M9 (off) based on the Coolant Mode property of each CAM operation. Coolant is switched
+    off automatically before parking, tool changes and at the end of the job.
+
+    FreeCAD only offers None, Flood and Mist by default. 
+    """)
+
 parser.add_argument('--vssc', action=argparse.BooleanOptionalAction, default=True,
     help="""
     When enabled, spindle speed is varied between an upper and lower limit surrounding the requested RPM
@@ -375,6 +408,9 @@ class PostProcessor:
     name      = "FreeCAD Post-Processor"
     vendor    = "Unknown"
     version   = FreeCAD.Version()
+    revision = FreeCAD.ConfigGet("BuildRevision")
+    if isinstance(revision, str):
+        revision = re.sub(r'[()]', '', revision)   
 
 
     def __init__(self, name=None, vendor=None, args={}):
@@ -399,7 +435,7 @@ class PostProcessor:
 
         # Switch to PRE section
         with self.Section(Section.PRE):
-            self.comment(f'Exported by FreeCAD v{self.version[0]}.{self.version[1]}.{self.version[2]}')
+            self.comment(f'Exported by FreeCAD v{self.version[0]}.{self.version[1]}.{self.version[2]}.{self.revision}')
             self.comment('Post Processor: {} by {}'.format(self.name, self.vendor))
             self.comment('Output Time: {}'.format(datetime.now(timezone.utc)))
             self.brk()
@@ -511,6 +547,13 @@ class MillenniumOSPostProcessor(PostProcessor):
     _WCS_CHANGES           = [54, 55, 56, 57, 58, 59, 59.1, 59.2, 59.3]
     _CANNED_CYCLES         = [73, 81, 83]
     _UNSUPPORTED           = [98, 99]
+    _CUTTING_MOVES         = [1, 2, 3, 73, 81, 83]
+    _COOLANT_MODES         = {
+        MCODES.COOLANT_AIR:   COOLANT.AIR,
+        MCODES.COOLANT_MIST:  COOLANT.MIST,
+        MCODES.COOLANT_FLOOD: COOLANT.FLOOD,
+        MCODES.COOLANT_OFF:   COOLANT.NONE,
+    }
 
     # Define command output formatters
     _G   = Output(fmt=FORMATS.CMD, prefix='G', vars = [
@@ -558,6 +601,8 @@ class MillenniumOSPostProcessor(PostProcessor):
         self.xy_seen         = False
         self.delayed_z       = None
         self.spindle_started = False
+        self.coolant_mode    = COOLANT.NONE
+        self.pending_coolant = None
 
         with self.Section(Section.PRE):
             # Warn operator
@@ -621,6 +666,16 @@ class MillenniumOSPostProcessor(PostProcessor):
 
     def M(self, code, **params):
 
+        # FreeCAD v1.2-dev (now v26.3) and later inject M7/M8/M9 directly into the
+        # operation command list. Route those through the coolant state
+        # machine so they are de-duplicated against the codes we emit
+        # ourselves, and suppressed entirely when --no-coolant is set.
+        if code in self._COOLANT_MODES:
+            if self.args.coolant:
+                self.pending_coolant = None
+                self.setcoolant(self._COOLANT_MODES[code])
+            return
+
         # If code is a tool change, send the T command
         # and return so the M6 is not output.
         if ARGS.TOOL in params and code in self._TOOL_CHANGES:
@@ -666,6 +721,7 @@ class MillenniumOSPostProcessor(PostProcessor):
 
 
     def onpark(self, code, params):
+        self.coolantoff()
         self._forceTool()
         self._forceFeed()
         self._forceSpindle()
@@ -765,9 +821,20 @@ class MillenniumOSPostProcessor(PostProcessor):
             self.delayed_z = None
             self.brk()
 
+            # The tool is now positioned in XY and sat at clearance height
+            # over the stock, so start coolant here and let it establish
+            # during the descent.
+            self._flushcoolant()
+
+        # Backstop: if the operation had no leading Z move to defer, start
+        # coolant immediately before the first cutting move instead.
+        if code in self._CUTTING_MOVES:
+            self._flushcoolant()
+
         self.cmd(' '.join(cmd))
 
     def ontoolchange(self, _, params):
+        self.coolantoff()
         self.T(params[ARGS.TOOL])
         self.spindle_started = False
         self.brk()
@@ -790,7 +857,75 @@ class MillenniumOSPostProcessor(PostProcessor):
         self.cmd(' '.join(cmd))
 
 
+    # Emit an M-code directly, bypassing the dispatch in M(). Used by the
+    # coolant state machine to avoid recursing back into itself. Recursing bad.
+    def _rawM(self, code, **params):
+        cmd, _ = self._M(code, **params)
+        if cmd:
+            self.cmd(' '.join(cmd))
+
+    # Read the CoolantMode property from an operation. Falls back to the
+    # operation's Base object, and to 'None' if the property is missing.
+    def _coolantModeForOp(self, op):
+        if hasattr(PathUtil, 'coolantModeForOp'):
+            mode = PathUtil.coolantModeForOp(op)
+        else:
+            mode = PathUtil.opProperty(op, 'CoolantMode')
+        return str(mode) if mode else COOLANT.NONE
+
+    # Queue coolant for this operation. The actual M7/M8 is emitted by
+    # _flushcoolant() immediately before the first cutting move, so coolant
+    # does not start while the tool is still rapiding into position.
+    def queuecoolant(self, mode):
+        if mode == COOLANT.NONE:
+            self.coolantoff()
+        else:
+            self.pending_coolant = mode
+
+    # Emit any queued coolant command.
+    def _flushcoolant(self):
+        if self.pending_coolant is not None:
+            mode = self.pending_coolant
+            self.pending_coolant = None
+            self.setcoolant(mode)
+
+    # Cancel any queued coolant and switch off.
+    def coolantoff(self):
+        self.pending_coolant = None
+        self.setcoolant(COOLANT.NONE)
+
+    # Emit coolant control codes, but only when the requested mode
+    # differs from the currently active mode.
+    def setcoolant(self, mode):
+        if not self.args.coolant:
+            return
+
+        if mode not in (COOLANT.NONE, COOLANT.AIR, COOLANT.MIST, COOLANT.FLOOD):
+            self.comment("Unsupported coolant mode '{}', treating as None".format(mode))
+            mode = COOLANT.NONE
+
+        if mode == self.coolant_mode:
+            return
+
+        # Always switch off before switching modes.
+        if self.coolant_mode != COOLANT.NONE:
+            self.comment("Coolant off")
+            self._rawM(MCODES.COOLANT_OFF)
+
+        if mode == COOLANT.AIR:
+            self.comment("Coolant on: Air blast")
+            self._rawM(MCODES.COOLANT_AIR)
+        elif mode == COOLANT.MIST:
+            self.comment("Coolant on: Mist")
+            self._rawM(MCODES.COOLANT_MIST)
+        elif mode == COOLANT.FLOOD:
+            self.comment("Coolant on: Flood")
+            self._rawM(MCODES.COOLANT_FLOOD)
+
+        self.coolant_mode = mode
+
     def onfixture(self, _):
+        self.coolantoff()
         self._forceTool()
         self._forceFeed()
         self._forceSpindle()
@@ -818,6 +953,9 @@ class MillenniumOSPostProcessor(PostProcessor):
         # as well.
 
         self.xy_seen = False
+
+        # Queue (or stop) coolant based on this operation's Coolant Mode.
+        self.queuecoolant(self._coolantModeForOp(op))
 
         self._forceAll()
 
