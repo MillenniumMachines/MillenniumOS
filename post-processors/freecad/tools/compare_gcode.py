@@ -29,12 +29,13 @@ def load(path, keep_comments=False):
         line = raw.strip()
         if not line:
             continue
-        if line.startswith("("):
+        if line.startswith("(") or line.startswith(";"):
             if keep_comments:
                 out.append(("comment", line, raw.rstrip("\n")))
             continue
         # Strip trailing comments
-        line = re.sub(r"\(.*?\)", "", line).strip()
+        line = re.sub(r"\(.*?\)", "", line)
+        line = line.split(";", 1)[0].strip()
         if not line:
             continue
         # Drop line numbers

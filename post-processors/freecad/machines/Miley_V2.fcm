@@ -101,7 +101,7 @@
                 "id": "spindle1",
                 "max_power_kw": 2.2,
                 "max_rpm": 24000,
-                "min_rpm": 6000,
+                "min_rpm": 7200,
                 "name": "Spindle",
                 "tool_change": "manual",
                 "toolhead_type": "rotary",
@@ -116,10 +116,10 @@
             "include_blank_lines": true,
             "include_operation_labels": true,
             "output_bcnc_comments": false,
-            "symbol": ";"
+            "symbol": "("
         },
         "duplicates": {
-            "commands": false,
+            "commands": true,
             "parameters": false
         },
         "formatting": {
@@ -134,17 +134,17 @@
             "include_date": true,
             "include_description": true,
             "include_document_name": true,
-            "include_fixture_list": true,
+            "include_fixture_list": false,
             "include_machine_name": true,
             "include_project_file": true,
-            "include_tool_list": true,
+            "include_tool_list": false,
             "include_units": true,
             "output_header": true
         },
         "output_tool_length_offset": false,
         "precision": {
             "axis": 3,
-            "feed": 1,
+            "feed": 0,
             "spindle": 0
         },
         "remote_post": false,
@@ -156,12 +156,12 @@
             "allow_zero_rpm": false,
             "drill_cycles_to_translate": "",
             "file_extension": "gcode",
-            "home_before_start": false,
-            "mos_version": "%%MOS_VERSION%%",
+            "home_before_start": true,
+            "mos_version": "v0.5.0",
             "output_job_setup": true,
             "output_tools": true,
             "postamble": "M9\nG27",
-            "preamble": "G90\nG21\nG94",
+            "preamble": "G90\nG94",
             "probe_mode": "ON_CHANGE",
             "safetyblock": "",
             "supports_tool_radius_compensation": false,
@@ -173,7 +173,8 @@
     },
     "processing": {
         "early_tool_prep": false,
-        "filter_inefficient_moves": true,
+        "f_for_rapid_moves": false,
+        "filter_inefficient_moves": false,
         "split_arcs": false,
         "tool_change": true,
         "translate_drill_cycles": false,

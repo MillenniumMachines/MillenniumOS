@@ -21,9 +21,11 @@
 # Those are driven by the `output` and `processing` sections of the .fcm file.
 
 from typing import Any, Dict, List
+import inspect
 import re
 
 from Path.Post.Processor import PostProcessor
+import Constants
 import Path
 import FreeCAD
 
@@ -146,7 +148,9 @@ class MillenniumOSMachine(PostProcessor):
                 # Movement configuration only. Everything else that the legacy
                 # post emitted up front is built in _expand_prefix() because it
                 # depends on the job (tool table, used WCSs).
-                prop["default"] = "G90\nG21\nG94"
+                # G21 is emitted separately by _collect_unit_command() from
+                # output.units, so including it here would duplicate it.
+                prop["default"] = "G90\nG94"
             elif name == "postamble":
                 # Park first: G27 lifts Z clear before stopping the spindle.
                 prop["default"] = "M9\nG27"
@@ -288,20 +292,28 @@ class MillenniumOSMachine(PostProcessor):
         super().init_values(values)
         values["POSTPROCESSOR_FILE_NAME"] = __name__
 
-        # The legacy post iterated Path.Command.Parameters directly, which
-        # FreeCAD stores alphabetically. Verified against legacy output:
-        #   G3 F1096 I-8.839 J8.839 X141.5 Y-51 Z-0.6
-        #   G83 F99 Q4.05 R3 Z-43.468
-        # The base class default is X,Y,Z,A,B,C,F,I,J,K,R,Q,P,S,T which would
-        # reorder every motion line. Match the legacy ordering instead.
-        values["PARAMETER_ORDER"] = [
-            "A", "B", "C", "F", "H", "I", "J", "K", "L",
-            "P", "Q", "R", "S", "T", "X", "Y", "Z",
-        ]
 
     # ------------------------------------------------------------------
     # Number formatting
     # ------------------------------------------------------------------
+
+    #: Cached arity check for the base format_parameter(). The command_name
+    #: argument was added partway through the 26.x CAM rework, so builds differ.
+    _parent_takes_command_name = None
+
+    @classmethod
+    def _parent_format_accepts_command_name(cls):
+        if cls._parent_takes_command_name is None:
+            try:
+                params = inspect.signature(
+                    super(MillenniumOSMachine, cls).format_parameter
+                ).parameters
+                cls._parent_takes_command_name = "command_name" in params or any(
+                    p.kind in (p.VAR_POSITIONAL, p.VAR_KEYWORD) for p in params.values()
+                )
+            except (TypeError, ValueError):
+                cls._parent_takes_command_name = False
+        return cls._parent_takes_command_name
 
     def format_parameter(self, param_name, value, command_name=None):
         """Strip trailing zeros and normalise negative zero.
@@ -311,7 +323,10 @@ class MillenniumOSMachine(PostProcessor):
         "-0" to "0", giving X141.5 / F1096 / X0. Reproduce that so output is
         diffable against the legacy post and stays readable on the DWC console.
         """
-        formatted = super().format_parameter(param_name, value, command_name)
+        if self._parent_format_accepts_command_name():
+            formatted = super().format_parameter(param_name, value, command_name)
+        else:
+            formatted = super().format_parameter(param_name, value)
 
         if not isinstance(formatted, str):
             return formatted
@@ -383,6 +398,18 @@ class MillenniumOSMachine(PostProcessor):
         We build the job-dependent MOS block (version check, tool table, setup
         probing, VSSC) and prepend it to PREAMBLE so ordering is preserved.
         """
+        # The legacy post iterated Path.Command.Parameters directly, which
+        # FreeCAD stores alphabetically. Verified against legacy output:
+        #   G3 F1096 I-8.839 J8.839 X141.5 Y-51 Z-0.6
+        #   G83 F99 Q4.05 R3 Z-43.468
+        # The base default is X,Y,Z,A,B,C,F,I,J,K,R,Q,P,S,T, which reorders
+        # every motion line. Set here rather than in init_values() because
+        # apply_configuration_bundle() resets self.values wholesale in Stage 0.
+        self.values["PARAMETER_ORDER"] = [
+            "A", "B", "C", "F", "H", "I", "J", "K", "L",
+            "P", "Q", "R", "S", "T", "X", "Y", "Z",
+        ]
+
         self._used_wcs = self._collect_used_wcs(postables)
 
         lines: List[str] = []
@@ -392,7 +419,14 @@ class MillenniumOSMachine(PostProcessor):
         lines.append("(G-code assumes exist. DO NOT run on a machine without them.)")
 
         if self.values.get("VERSION_CHECK"):
-            version = rrf_safe_string(str(self.values.get("MOS_VERSION", RELEASE.VERSION)))
+            version = str(self.values.get("MOS_VERSION", RELEASE.VERSION))
+            if "%%" in version:
+                raise ValueError(
+                    "mos_version is still the build placeholder "
+                    f"({version!r}). Set it in the machine definition to the "
+                    "MillenniumOS version installed in firmware."
+                )
+            version = rrf_safe_string(version)
             lines.append("(Check MillenniumOS version matches post-processor version)")
             lines.append(f'{MCODES.VERSION_CHECK} V"{version}"')
 
@@ -400,10 +434,11 @@ class MillenniumOSMachine(PostProcessor):
             tools = self._collect_tools(postables)
             if tools:
                 lines.append("(Pass tool details to firmware)")
-                for number, tool in sorted(tools.items()):
+                for number, tool in tools.items():
                     name = rrf_safe_string(tool["name"][:32])
+                    radius = f'{tool["radius"]:.3f}'.rstrip("0").rstrip(".")
                     lines.append(
-                        f'{MCODES.ADD_TOOL} P{int(number)} R{tool["radius"]:.3f} S"{name}"'
+                        f'{MCODES.ADD_TOOL} P{int(number)} R{radius} S"{name}"'
                     )
 
         if self.values.get("OUTPUT_JOB_SETUP"):
@@ -456,6 +491,103 @@ class MillenniumOSMachine(PostProcessor):
     # Command conversion hooks
     # ------------------------------------------------------------------
 
+    #: Sentinel emitted at operation / tool-change / fixture boundaries and
+    #: consumed by _optimize_gcode(). Never reaches the output file.
+    MODAL_BARRIER_MARKER = "(MOS-MODAL-BARRIER)"
+
+    def _convert_item_commands(self, item, gcode_lines) -> None:
+        """Mark operation, tool-change and fixture boundaries for _optimize_gcode()."""
+        if getattr(item, "item_type", None) in ("operation", "tool_controller", "fixture"):
+            gcode_lines.append(self.MODAL_BARRIER_MARKER)
+
+        return super()._convert_item_commands(item, gcode_lines)
+
+    def _optimize_gcode(self, gcode_lines):
+        """Suppress redundant axis words per operation rather than across the whole job.
+
+        GcodeProcessingUtils.suppress_redundant_axes_words() tracks position
+        across the entire body and resets only on an M6 line. This post
+        suppresses M6 (MillenniumOS services tool changes in firmware from a
+        bare T word), so the reset never fires. Position is then tracked across
+        a park and tool change, and a retract such as "G0 Z5" at the start of an
+        operation is dropped as redundant, leaving a bare "G0" -- no retract
+        before the following XY rapid. The legacy post avoids this by calling
+        _forceAll() in onoperation(), ontoolchange() and onfixture().
+
+        Here the body is split at the boundary markers emitted by
+        _convert_item_commands(), each segment is suppressed independently, and
+        the base is then called with suppression disabled so it is not redone
+        across the whole body.
+        """
+        marker = self.MODAL_BARRIER_MARKER
+
+        def strip_markers(lines):
+            return [ln for ln in lines if ln.strip() != marker]
+
+        if not gcode_lines:
+            return super()._optimize_gcode(gcode_lines)
+
+        # Suppression already off: markers just need removing.
+        if self.values.get("OUTPUT_DOUBLES"):
+            return super()._optimize_gcode(strip_markers(gcode_lines))
+
+        from Path.Post.GcodeProcessingUtils import suppress_redundant_axes_words
+
+        split_at = self._optimize_start or 0
+        header = strip_markers(gcode_lines[:split_at])
+        body = gcode_lines[split_at:]
+
+        suppressed = []
+        segment = []
+        for line in body:
+            if line.strip() == marker:
+                suppressed.extend(suppress_redundant_axes_words(segment))
+                segment = []
+            else:
+                segment.append(line)
+        suppressed.extend(suppress_redundant_axes_words(segment))
+
+        # Base would otherwise run the same suppression across the whole body.
+        saved = self.values["OUTPUT_DOUBLES"]
+        self.values["OUTPUT_DOUBLES"] = True
+        try:
+            return super()._optimize_gcode(header + suppressed)
+        finally:
+            self.values["OUTPUT_DOUBLES"] = saved
+
+    def _reset_modal_state(self):
+        """Force every tracked modal to re-emit on the next command.
+
+        _convert_move() suppresses a parameter when machine_state.previous[p]
+        equals it, and addCommand() repopulates `previous` from the live state
+        before each conversion. So the only way to defeat the suppression is to
+        null the live state; setting `previous` directly is overwritten.
+
+        Nulls the attributes directly rather than calling setState(None) so
+        this does not depend on that method existing. Logs loudly if it cannot
+        reset -- a silent no-op here looks exactly like the feature working.
+        """
+        state = getattr(self, "machine_state", None)
+        if state is None:
+            Path.Log.error(
+                "MillenniumOS: machine_state unavailable, cannot reset modals. "
+                "Retracts may be suppressed as duplicates."
+            )
+            return
+
+        tracked = getattr(state, "Tracked", None)
+        if not tracked:
+            Path.Log.error(
+                "MillenniumOS: machine_state has no Tracked list, cannot reset modals."
+            )
+            return
+
+        for key in tracked:
+            try:
+                setattr(state, key, None)
+            except Exception as exc:  # noqa: BLE001 - diagnostic only
+                Path.Log.error(f"MillenniumOS: could not null modal {key}: {exc}")
+
     def _convert_tool_change(self, command: Path.Command) -> str:
         """Emit a bare T word; MillenniumOS services the change in firmware.
 
@@ -466,7 +598,7 @@ class MillenniumOSMachine(PostProcessor):
             return super()._convert_tool_change(command)
 
         # Reset modal state so the following M3 S... is not deduplicated away.
-        self.machine_state.setState(None)
+        self._reset_modal_state()
         return f"T{int(tool)}"
 
     def _convert_spindle_command(self, command: Path.Command) -> str:
@@ -485,6 +617,42 @@ class MillenniumOSMachine(PostProcessor):
             return f"M5{SPINDLE_WAIT_SUFFIX}"
 
         return super()._convert_spindle_command(command)
+
+    def _convert_rapid_move(self, command: Path.Command) -> str:
+        """Drop F from G0. Rapids run at machine limits under MillenniumOS.
+
+        The base class checks F_FOR_RAPID_MOVES inside the `elif` of the
+        duplicate-parameter test, so with output.duplicates.parameters = false
+        that branch never runs and "G0 Z5 F0" leaks through.
+        """
+        if "F" in command.Parameters:
+            trimmed = {k: v for k, v in command.Parameters.items() if k != "F"}
+            command = Path.Command(command.Name, trimmed)
+
+        gcode = super()._convert_rapid_move(command)
+
+        # Drop a rapid whose axis words were all removed as unchanged. The base
+        # class has this guard for GCODE_MOVE_LINE/ARC/DWELL but not for rapids,
+        # so a bare "G0" no-op leaks through.
+        if isinstance(gcode, str) and len(gcode.split()) == 1:
+            return None
+
+        return gcode
+
+    def _convert_arc_move(self, command: Path.Command) -> str:
+        """Drop zero-valued I/J/K from arcs.
+
+        The legacy post marked the arc offsets Control.NONZERO, so a zero
+        offset was omitted entirely -- "G3 J-12.5 X-12.5 Y0" with no I. The
+        base class emits every parameter present, producing a spurious K0 on
+        every G17-plane arc.
+        """
+        zeros = [k for k in ("I", "J", "K") if command.Parameters.get(k) == 0]
+        if zeros:
+            kept = {k: v for k, v in command.Parameters.items() if k not in zeros}
+            command = Path.Command(command.Name, kept)
+
+        return super()._convert_arc_move(command)
 
     def _convert_coolant_command(self, command: Path.Command) -> str:
         """Prefix coolant M-codes with the legacy post's descriptive comment.
@@ -529,7 +697,7 @@ class MillenniumOSMachine(PostProcessor):
         lines.append(MCODES.ENABLE_ROTATION_COMPENSATION)
 
         # Modal state is meaningless across a park/probe cycle.
-        self.machine_state.setState(None)
+        self._reset_modal_state()
 
         return "\n".join(lines)
 
@@ -584,3 +752,11 @@ class MillenniumOSMachine(PostProcessor):
     @property
     def units(self):
         return self._units
+
+
+# PostProcessorFactory.get_post_processor() resolves the class as
+# postname.title(), where postname is the filename minus "_post.py".
+# So "millennium_os_machine" -> "Millennium_Os_Machine". The name must match
+# exactly or the factory raises AttributeError, silently falls back to
+# WrapperPost, and fails with "The script does not have an 'export' function".
+Millennium_Os_Machine = MillenniumOSMachine
