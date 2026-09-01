@@ -94,6 +94,11 @@ SPINDLE_START = ("M3", "M03", "M4", "M04")
 SPINDLE_STOP = ("M5", "M05")
 SPINDLE_WAIT_SUFFIX = ".9"
 
+# Canned-cycle mode commands MillenniumOS does not implement. The legacy post
+# drops G98/G99 via _UNSUPPORTED, and G80 never appears in its output because
+# RepRapFirmware has no modal canned-cycle state to cancel -- G83 is one-shot.
+UNSUPPORTED_MODAL = ("G80", "G98", "G99")
+
 # MillenniumOS custom codes must appear in supported_commands or
 # convert_command_to_gcode() raises CAMValueError.
 MOS_EXTRA_COMMANDS = [
@@ -653,6 +658,21 @@ class MillenniumOSMachine(PostProcessor):
             command = Path.Command(command.Name, kept)
 
         return super()._convert_arc_move(command)
+
+    def _convert_modal_command(self, command: Path.Command) -> str:
+        """Drop canned-cycle mode commands MillenniumOS does not implement.
+
+        FreeCAD brackets each drill cycle with G98 (return to initial Z) and
+        G80 (cancel cycle). RRF treats G83 as one-shot with an explicit R, so
+        there is no modal state to set or cancel, and MillenniumOS lists G98
+        and G99 as unsupported outright. Legacy output contains none of the
+        three; without this the machine post emitted 84 of each on a
+        drilling-heavy job.
+        """
+        if command.Name in UNSUPPORTED_MODAL:
+            return None
+
+        return super()._convert_modal_command(command)
 
     def _convert_coolant_command(self, command: Path.Command) -> str:
         """Prefix coolant M-codes with the legacy post's descriptive comment.
