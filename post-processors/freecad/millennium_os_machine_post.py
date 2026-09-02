@@ -99,6 +99,12 @@ SPINDLE_WAIT_SUFFIX = ".9"
 # RepRapFirmware has no modal canned-cycle state to cancel -- G83 is one-shot.
 UNSUPPORTED_MODAL = ("G80", "G98", "G99")
 
+# Commands treated as motion when reordering the approach at operation start.
+MOVE_COMMANDS = (
+    "G0", "G00", "G1", "G01", "G2", "G02", "G3", "G03",
+    "G73", "G81", "G82", "G83",
+)
+
 # MillenniumOS custom codes must appear in supported_commands or
 # convert_command_to_gcode() raises CAMValueError.
 MOS_EXTRA_COMMANDS = [
@@ -500,10 +506,70 @@ class MillenniumOSMachine(PostProcessor):
     #: consumed by _optimize_gcode(). Never reaches the output file.
     MODAL_BARRIER_MARKER = "(MOS-MODAL-BARRIER)"
 
+    @staticmethod
+    def _delay_leading_z(commands):
+        """Defer a leading Z-only move until after the first XY move.
+
+        FreeCAD emits the approach as "G0 Z5" then "G0 X.. Y..". After a tool
+        change MillenniumOS has parked, so the machine sits high and over the
+        toolsetter. Descending to clearance *before* traversing means the
+        descent happens at the park position and the traverse then happens at
+        clearance height -- straight through whatever is between, the toolsetter
+        included.
+
+        Reordering to XY first keeps the traverse at the (high, safe) park
+        height and descends only once above the target. This is the legacy
+        post's delayed_z / xy_seen behaviour, reset per operation.
+
+        Only pure-Z moves are deferred; anything carrying X or Y is left alone.
+        The legacy version deferred any move whose Z changed, which would also
+        swallow a combined XYZ move. Any move still held at the end of the item
+        is flushed rather than dropped.
+        """
+        result = []
+        held = []
+        xy_seen = False
+
+        for command in commands:
+            if command.Name not in MOVE_COMMANDS:
+                result.append(command)
+                continue
+
+            params = command.Parameters
+            has_xy = "X" in params or "Y" in params
+            has_z = "Z" in params
+
+            if not xy_seen:
+                if has_xy:
+                    xy_seen = True
+                    result.append(command)
+                elif has_z:
+                    held.append(command)
+                else:
+                    result.append(command)
+                continue
+
+            # Flush before the next move, not immediately after the XY, so any
+            # coolant-on between them still precedes the descent.
+            if held:
+                result.extend(held)
+                held = []
+            result.append(command)
+
+        result.extend(held)
+        return result
+
     def _convert_item_commands(self, item, gcode_lines) -> None:
-        """Mark operation, tool-change and fixture boundaries for _optimize_gcode()."""
-        if getattr(item, "item_type", None) in ("operation", "tool_controller", "fixture"):
+        """Reorder the approach, and mark boundaries for _optimize_gcode()."""
+        item_type = getattr(item, "item_type", None)
+
+        if item_type in ("operation", "tool_controller", "fixture"):
             gcode_lines.append(self.MODAL_BARRIER_MARKER)
+
+        if item_type == "operation" and item.path and item.path.Commands:
+            reordered = self._delay_leading_z(list(item.path.Commands))
+            if reordered != list(item.path.Commands):
+                item.path = Path.Path(reordered)
 
         return super()._convert_item_commands(item, gcode_lines)
 
