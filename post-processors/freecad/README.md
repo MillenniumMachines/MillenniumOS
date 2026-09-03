@@ -41,7 +41,7 @@ The legacy post is kept, renamed, and still works. Both can be installed at the 
    P.classifyPostProcessor("millennium_os_legacy")    # -> 'legacy'
    ```
 
-   If the machine post reports `unknown`, the module raised on import and the classifier swallowed the tracebackSHoul. The 26.3 machine post path is a rapidly moving target, so entirely possible this breaks due to FreeCAD changes during the development cycle.
+   If the machine post reports `unknown`, the module raised on import and the classifier swallowed the traceback. The 26.3 machine post path is a rapidly moving target, so entirely possible this breaks due to FreeCAD changes during the development cycle.
 
 5. **In the CAM Job**, set Machine to `Milo V1.5`, `Miley V2.0` or `Milo V2.0`. The postprocessor comes from the machine definition, not the job.
 
