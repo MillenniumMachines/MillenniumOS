@@ -19,7 +19,7 @@
                     "max": 340,
                     "min": 0
                 },
-                "max_velocity": 4000,
+                "max_velocity": 2000,
                 "parent": "Y",
                 "role": "table_linear",
                 "sequence": 1,
@@ -42,7 +42,7 @@
                     "max": 160,
                     "min": 0
                 },
-                "max_velocity": 4000,
+                "max_velocity": 2000,
                 "parent": null,
                 "role": "table_linear",
                 "sequence": 0,
@@ -65,14 +65,14 @@
                     "max": 0,
                     "min": -120
                 },
-                "max_velocity": 2000,
+                "max_velocity": 1000,
                 "parent": null,
                 "role": "head_linear",
                 "sequence": 0,
                 "type": "linear"
             }
         },
-        "description": "Milo V1.5 desktop mill, moving table in X and Y, Duet + RepRapFirmware with MillenniumOS",
+        "description": "Milo V1.5 desktop mill, moving table in X and Y, 2.2 kW spindle, Duet + RepRapFirmware with MillenniumOS",
         "kinematics": {
             "base_frame": {
                 "orientation_quaternion": [
@@ -92,7 +92,7 @@
             "tcp_supported": false
         },
         "manufacturer": "Millennium Machines",
-        "name": "Milo V1.5",
+        "name": "Milo V1.5 (2.2 kW)",
         "toolheads": [
             {
                 "coolant_delay": 0.0,

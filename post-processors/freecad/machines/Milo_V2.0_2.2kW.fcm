@@ -72,7 +72,7 @@
                 "type": "linear"
             }
         },
-        "description": "Milo V2.0 desktop mill, moving table in X and Y, Duet + RepRapFirmware with MillenniumOS",
+        "description": "Milo V2.0 desktop mill, moving table in X and Y, 2.2 kW spindle, Duet + RepRapFirmware with MillenniumOS",
         "kinematics": {
             "base_frame": {
                 "orientation_quaternion": [
@@ -92,7 +92,7 @@
             "tcp_supported": false
         },
         "manufacturer": "Millennium Machines",
-        "name": "Milo V2.0",
+        "name": "Milo V2.0 (2.2 kW)",
         "toolheads": [
             {
                 "coolant_delay": 0.0,
