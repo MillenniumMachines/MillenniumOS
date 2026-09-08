@@ -82,7 +82,7 @@ Compatibility and correctness fixes, each traced to a specific base-class behavi
 - **`_convert_rapid_move`** — strips `F` from `G0`, and drops a rapid whose axis words were all removed as unchanged. The base's `F_FOR_RAPID_MOVES` check sits in the `elif` of the duplicate-parameter test, so it is unreachable when `output.duplicates.parameters` is false.
 - **`_convert_arc_move`** — drops zero-valued `I`/`J`/`K`. The legacy post marked arc offsets `Control.NONZERO`; without this every G17-plane arc carries `K0`.
 - **`_convert_modal_command`** — drops `G80`, `G98`, `G99`. See below.
-- **`_convert_item_commands` / `_optimize_gcode`** — per-operation axis-word suppression. See below.
+- **`_convert_item_commands` / `_optimize_gcode`** — defers the leading Z-only approach move until after the first XY move, and applies per-operation axis-word suppression. The deferral matters most after a tool change: MillenniumOS has parked, so the machine sits high and over the toolsetter, and descending to clearance *before* traversing would put the traverse at clearance height straight through whatever is between — the toolsetter included. See below.
 
 ---
 
@@ -167,7 +167,7 @@ All benign, verified across three jobs (5-tool profiling, a 107k-line adaptive j
 - **Feed placement.** The machine post may emit `G1 F920` on its own line where legacy folds the feed into the following move. Both legal.
 - **Modal axis words.** The machine post omits an axis word whose value has not changed (`G3 I-1 X29.626`); legacy re-asserts it via `_forceArcParams` / `_forceLinearParams`. Verified equivalent — same motion.
 - **One extra `M9`** before `G27`. Legacy's pre-park coolant-off is conditional on coolant being on; this one is unconditional. A no-op when coolant is already off. Remove `M9` from `postprocessor.properties.postamble` for an exact match.
-- **Approach ordering.** Legacy defers the Z move (`G0 X.. Y..` then `G0 Z5`); the machine post keeps FreeCAD's order (`G0 Z5` then `G0 X.. Y..`). Same endpoint; retracting before traversing is the safer order.
+- **Approach ordering.** No longer a difference. `_delay_leading_z()` defers a leading Z-only move until after the first XY move, matching legacy (`G0 X.. Y..` then `G0 Z5`). One refinement over legacy: only *pure*-Z moves are deferred, so a combined XYZ move is left alone, where legacy deferred any move whose Z changed.
 
 ### Not yet covered
 
