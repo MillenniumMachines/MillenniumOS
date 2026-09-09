@@ -16,10 +16,10 @@
                     ]
                 ],
                 "limits": {
-                    "max": 305,
+                    "max": 308,
                     "min": 0
                 },
-                "max_velocity": 4000,
+                "max_velocity": 2000,
                 "parent": "Y",
                 "role": "table_linear",
                 "sequence": 1,
@@ -39,10 +39,10 @@
                     ]
                 ],
                 "limits": {
-                    "max": 200,
+                    "max": 210,
                     "min": 0
                 },
-                "max_velocity": 4000,
+                "max_velocity": 2000,
                 "parent": null,
                 "role": "table_linear",
                 "sequence": 0,
@@ -65,14 +65,14 @@
                     "max": 0,
                     "min": -120
                 },
-                "max_velocity": 2000,
+                "max_velocity": 1000,
                 "parent": null,
                 "role": "head_linear",
                 "sequence": 0,
                 "type": "linear"
             }
         },
-        "description": "Miley V2.0 desktop mill, stationary X axis, 1.5 kW spindle, Duet + RepRapFirmware with MillenniumOS",
+        "description": "Miley V2.0 desktop mill, stationary X axis, Duet + RepRapFirmware with MillenniumOS",
         "kinematics": {
             "base_frame": {
                 "orientation_quaternion": [
@@ -88,11 +88,11 @@
                 ]
             },
             "dwo_supported": false,
-            "notes": "3-axis Miley. Limits match RRF M208 soft limits, not nominal travel.",
+            "notes": "3-axis. NOMINAL published figures, not measured. Replace axis limits from your RRF M208 and max_velocity from M203, and set the spindle min_rpm/max_rpm and max_power_kw to match your spindle.",
             "tcp_supported": false
         },
         "manufacturer": "Millennium Machines",
-        "name": "Miley V2.0 (1.5 kW)",
+        "name": "Miley V2.0",
         "toolheads": [
             {
                 "coolant_delay": 0.0,

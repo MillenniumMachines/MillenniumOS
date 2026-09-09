@@ -72,7 +72,7 @@
                 "type": "linear"
             }
         },
-        "description": "Milo V1.5 desktop mill, moving table in X and Y, 1.5 kW spindle, Duet + RepRapFirmware with MillenniumOS",
+        "description": "Milo V1.5 desktop mill, moving table in X and Y, Duet + RepRapFirmware with MillenniumOS",
         "kinematics": {
             "base_frame": {
                 "orientation_quaternion": [
@@ -88,11 +88,11 @@
                 ]
             },
             "dwo_supported": false,
-            "notes": "3-axis Milo. X and Y are both table motion, X carried on Y. Limits are nominal travel -- replace with your RRF M208 values.",
+            "notes": "3-axis. NOMINAL published figures, not measured. Replace axis limits from your RRF M208 and max_velocity from M203, and set the spindle min_rpm/max_rpm and max_power_kw to match your spindle.",
             "tcp_supported": false
         },
         "manufacturer": "Millennium Machines",
-        "name": "Milo V1.5 (1.5 kW)",
+        "name": "Milo V1.5",
         "toolheads": [
             {
                 "coolant_delay": 0.0,

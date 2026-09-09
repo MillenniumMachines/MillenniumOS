@@ -72,7 +72,7 @@
                 "type": "linear"
             }
         },
-        "description": "Milo V1.6 BETA desktop mill, moving table in X and Y, 1.5 kW spindle, Duet + RepRapFirmware with MillenniumOS",
+        "description": "Milo V1.6 BETA desktop mill, moving table in X and Y, Duet + RepRapFirmware with MillenniumOS",
         "kinematics": {
             "base_frame": {
                 "orientation_quaternion": [
@@ -88,11 +88,11 @@
                 ]
             },
             "dwo_supported": false,
-            "notes": "3-axis Milo V1.6 (beta). Travels and feedrates inherited from V1.5: the beta retains the V1.5 frame extrusions, linear rails, leadscrews and motors. The XY and Z plates and the anti-backlash block are new, so VERIFY limits against your own RRF M208/M203 before use.",
+            "notes": "3-axis Milo V1.6 (beta). Travels and rapids inherited from V1.5: the beta retains the V1.5 frame extrusions, rails, leadscrews and motors, but the XY and Z plates are new. NOMINAL published figures, not measured. Replace axis limits from your RRF M208 and max_velocity from M203, and set the spindle min_rpm/max_rpm and max_power_kw to match your spindle.",
             "tcp_supported": false
         },
         "manufacturer": "Millennium Machines",
-        "name": "Milo V1.6 (1.5 kW) [beta]",
+        "name": "Milo V1.6 (beta)",
         "toolheads": [
             {
                 "coolant_delay": 0.0,
