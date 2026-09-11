@@ -16,7 +16,7 @@
                     ]
                 ],
                 "limits": {
-                    "max": 340,
+                    "max": 300,
                     "min": 0
                 },
                 "max_velocity": 2000,
