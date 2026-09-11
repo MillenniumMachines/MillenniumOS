@@ -1,8 +1,8 @@
-# MillenniumOS FreeCAD 26.3 post — machine-based flow
+# MillenniumOS FreeCAD 26.3 Post — Machine-based Post-processor Workflow
 
 A port of the MillenniumOS FreeCAD post processor onto the CAM machine-post API in FreeCAD 26.3, alongside machine definitions for Milo V1.5, V1.6 beta and V2.0 and for Miley V2.0.
 
-The legacy post is kept, renamed, and still works. Both can be installed at the same time so their output can be compared on the same job. If you need to use a version of FreeCAD earlier than 26.3 (ie 1.0 or 1.1), use the legacy post.
+The legacy post is kept, renamed, and still fully works. Both can also be installed at the same time so their output can be compared on the same job. If you need to use a version of FreeCAD earlier than 26.3 (ie 1.0 or 1.1) however, you must use the legacy post.
 
 ## Files
 
@@ -18,21 +18,21 @@ The legacy post is kept, renamed, and still works. Both can be installed at the 
 | File | Machine name | Travels (X/Y/Z) | Rapids (X/Y/Z) |
 |---|---|---|---|
 | `machines/Milo_V1.5.fcm` | Milo V1.5 | 340 / 160 / 120 | 2000 / 2000 / 1000 |
-| `machines/Milo_V1.6.fcm` | Milo V1.6 (beta) | 340 / 160 / 120 | 2000 / 2000 / 1000 |
+| `machines/Milo_V1.6.fcm` | Milo V1.6 (beta) | 300 / 160 / 120 | 2000 / 2000 / 1000 |
 | `machines/Milo_V2.0.fcm` | Milo V2.0 | 348 / 210 / 120 | 2000 / 2000 / 1000 |
 | `machines/Miley_V2.0.fcm` | Miley V2.0 | 308 / 210 / 120 | 2000 / 2000 / 1000 |
 
-**Every number in these files is a nominal starting point, not a measurement.** Travels are the published figures, quoted minus endstop; your `M208` soft limits will sit a few mm inside them. Rapids are the published V1.5 figures, used for all four because no rapid speed is published for V2 — yours depend on motors, drive voltage and whether you fitted leadscrews or ballscrews. The spindle is described as 1.5 kW running 7200–24000 rpm, which is one common configuration among many.
+**Every number in these files is a nominal starting point, not a measurement.** Travels are the published figures, quoted minus endstop; your `M208` soft limits will sit a few mm inside them and hard limits may vary based on your build. Rapids are the published V1.5 figures, used for all four because no rapid speed is published for V2 — yours will depend on motors, drive voltage and whether you fitted leadscrews or ballscrews. The stock LDO spindle is described as 1.5 kW running 7200–24000 rpm, but this is just one common configuration among many. You will need to adjust these for your machine!
 
-There is deliberately **one definition per machine rather than one per spindle**. Power, rpm range, cooling, motors and drive voltage all vary between builds, and no useful number of shipped variants would cover that. Copy the definition matching your machine and edit it — see the next section.
+There is deliberately **one definition per machine rather than one per possible configuration**. Power, rpm range, cooling, motors and drive voltage all vary between builds, and no useful number of shipped variants would cover that. Copy the definition matching your machine and edit it to fit — see the next section.
 
-**V1.6 is beta.** Its travels and rapids are inherited from V1.5, on the basis that the beta retains the V1.5 frame extrusions, linear rails, leadscrews and motors. The XY and Z plates and the anti-backlash block are new, so verify the limits against your own `M208` before use.
+**V1.6 is beta.** Its travels and rapids are inherited from V1.5, on the basis that the beta retains the V1.5 frame extrusions, linear rails, leadscrews and motors. The XY and Z plates and the anti-backlash block are new and result in some workarea changes, so verify the limits against your own `M208` on a working maching before use.
 
 ---
 
 ## Check these against your machine
 
-A `.fcm` is plain JSON and can be edited in a text editor or through the CAM Machine editor. Either way FreeCAD re-reads the file on every post, so changes take effect on the next job with no restart.
+A `.fcm` is plain JSON and can be edited in a text editor or through the CAM Machine editor in FreeCAD (under Preferences->CAM->Assets). Either way FreeCAD re-reads the file on every post, so changes take effect on the next job with no restart. There is also a new validator in the machine editor that will check for common errors.
 
 ### These change the G-code
 
@@ -44,36 +44,39 @@ Get these right before cutting.
 | `machine.toolheads[0].max_rpm` | as above | speeds above it are clamped down, again rescaling feeds |
 | `postprocessor.properties.mos_version` | the MillenniumOS version in firmware | `M4005` fails and the job will not run |
 
-The shipped floor of 7200 rpm assumes an **air-cooled** spindle, where the shaft fan gives least airflow exactly when torque demand is highest. A water-cooled spindle has no such constraint and can usually take a considerably lower floor — 6000 or below. If you have changed spindle, this is the first field to revisit.
+The shipped floor of 7200 rpm assumes an **air-cooled** spindle, where the shaft fan gives least airflow exactly when torque demand is highest. A water-cooled spindle has no such constraint and can usually take a considerably lower floor — 6000 or below. If you have changed spindle, this is the first field to revisit. **Always check your values here, these are generic common limits in the provided files, but your mileage may vary and getting this wrong can cause damage to your spindle!**
 
 ### These should be accurate but do not affect output today
 
-Nothing outside the machine model and the Machine editor reads these on a 3-axis machine (see "Things that are not what they look like"). Set them correctly anyway: they are what a human reads, and a future FreeCAD release may start enforcing them.
+Nothing outside the machine model, the Machine editor and the validator reads these on a 3-axis machine (see "Things that are not what they look like"). They do not change posted G-code, but they are not ignored either: FreeCAD's `Machine/models/validate.py` errors on any linear or rotary axis whose `min_limit >= max_limit`, and warns about keys in the file the loader does not read. The Machine editor runs it on load. So set them correctly — a future release may go further.
 
 | Field | Where it comes from |
 |---|---|
 | `machine.axes.X/Y/Z.limits.min` and `.max` | RRF `M208` — your configured soft limits, usually a few mm inside nominal travel |
 | `machine.axes.X/Y/Z.max_velocity` | RRF `M203` — varies with motors, drive voltage and leadscrew versus ballscrew, so two nominally identical machines can differ |
-| `machine.toolheads[0].max_power_kw` | spindle nameplate |
-| `machine.toolheads[0].coolant_mist` / `coolant_flood` | whether you run air blast, mist or flood |
+| `machine.toolheads[0].max_power_kw` | spindle manufacturer's docs |
+| `machine.toolheads[0].coolant_mist` / `coolant_flood` | whether you run air blast, mist or flood (note: air as distinct cooling mode not currently supported in FreeCAD machine posts)|
 
-To read the firmware values, send `M208` and `M203` with no parameters in the DWC console. `M203` takes and reports mm/min, which is what the `.fcm` wants — but the object model (`M409 K"move.axes[0]"`) reports `speed` in mm/s, so multiply by 60 if you read it that way. Also check whether your `config.g` pulls in sub-files with `M98 P"..."`; the values you want may not be in the main file.
+>**Note**: `limits.min` must be strictly less than `limits.max` or the definition fails validation.
+
+To read the firmware values, send `M208` and `M203` with no parameters in the MOS console. `M203` takes and reports mm/min, which is what the `.fcm` wants — but the object model (`M409 K"move.axes[0]"`) reports `speed` in mm/s, so multiply by 60 if you read it that way. Also check whether your `config.g` pulls in sub-files with `M98 P"..."`; the values you want may not be in the main file.
 
 ### Workflow preferences, not machine facts
 
-These sit in `postprocessor.properties` and are yours to set: `probe_mode` (`AT_START`, `ON_CHANGE`, `NONE`), `home_before_start`, `vssc` with `vssc_period` and `vssc_variance`, `output_tools`, `output_job_setup`, and `allow_zero_rpm`. The shipped values are `ON_CHANGE` probing, homing on, VSSC on at 4000 ms / 200 rpm.
+These sit in `postprocessor.properties` and are yours to set: `probe_mode` (`AT_START`, `ON_CHANGE`, `NONE`), `home_before_start`, `vssc` with `vssc_period` and `vssc_variance`, `output_tools`, `output_job_setup`, and `allow_zero_rpm`. The shipped values are `ON_CHANGE` probing, homing on, VSSC on at 4000 ms / 200 rpm. Change these to match your needs!
 
-One field is deliberately zero and worth understanding before changing: `toolheads[0].toolhead_wait` is `0.0` because this post emits `M3.9`, which already blocks until the spindle reaches speed. Setting it non-zero adds a `G4` dwell on top, so you would wait twice. Raise it only if your spindle genuinely does not reach speed by the time `M3.9` returns.
+One field is deliberately zero and worth understanding before changing: `toolheads[0].toolhead_wait` is `0.0` because this post emits `M3.9`, which already blocks until the spindle reaches speed. Setting it non-zero adds a `G4` dwell on top, so you would wait twice. Raise it only if your spindle genuinely does not reach speed by the time `M3.9` returns (if you've run the MOS config wizard, this should not be the case).
 
 ### Leave these alone unless you know why
 
-Everything in the "Machine definition settings" table below was arrived at by diffing output against the legacy post, and several break the G-code if reverted — `filter_inefficient_moves` deletes rapids, `duplicates.commands` strips the command word off `M4000` lines. That section gives the reason for each.
+Everything in the "Machine definition settings" table below was arrived at by diffing output against the legacy post, and several break the G-code if reverted — `filter_inefficient_moves` deletes rapids, `duplicates.commands` strips the command word off `M4000` lines. That section (below) gives the reason for each.
 
 ---
 
 ## Installing in FreeCAD
 
-1. **Post processors** → copy both `.py` files into a directory on FreeCAD's post search path. The macro directory is the usual choice: `~/.local/share/FreeCAD/v<version>/Macro/`.
+1. **Post processors** → copy both `.py` files into a directory on FreeCAD's post search path. The macro directory is the usual choice: on Linux here `~/.local/share/FreeCAD/v<version>/Macro/`. You can also find this by opening the FreeCAD Macros dialog (in the menu Macro->Macros). The path is shown in the User Macros Location at the bottom of the dialog (see below for example):
+![FreeCAD Execute Macro dialog](/post-processors/freecad/media/image.png)
 
    The search order is FreeCAD's `defaultFilePath()`, then `macroFilePath()`, then addon post directories, then FreeCAD's own `Path/Post/scripts/`. **NOTE: The first match wins**, so an older copy in the CAM default file path may silently shadow the one you just installed. If there is reason to have concerns here, to check which file is actually loaded run the code below in FreeCAD's Python console :
 
@@ -83,11 +86,13 @@ Everything in the "Machine definition settings" table below was arrived at by di
                    + os.path.join(p, "millennium_os_machine_post.py") for p in PP.searchPathsPost()))
    ```
 
-2. **Substitute the version.** Both posts contain `%%MOS_VERSION%%`, a build-time placeholder that gets replaced when a release is done on GitHub. Replace it in the *installed* copies with the MillenniumOS version in firmware, e.g. `v0.5.0`. The machine post raises an error rather than emitting a bad `M4005` if you forget. Failing to do this step may result in a CAM job that cannot be executed as MOS checks this when running a job. One note, the machine-based post-processing path will use the `mos_version` in the machine definition first if found.
+2. **Substitute the version.** Both posts contain `%%MOS_VERSION%%`, a build-time placeholder that gets replaced when a release is done for MOS on GitHub. Replace it in the *installed* copies on your computer with the MillenniumOS version in firmware, e.g. `v0.5.0` unless a release is done in the future with this post (in that case, grab from the releases). The machine post raises an error rather than emitting a bad `M4005` if you forget. Failing to do this step may result in a CAM job that cannot be executed as MOS checks this when running a job. One note, the machine-based post-processing path will use the `mos_version` in the machine definition first if this value is found (which nicely circumvents this pain).
 
-3. **Machine definitions** → copy the `.fcm` files into `<CAM asset path>/Machines/`. Check the values against your own machine first — see "Check these against your machine". The default asset path is `FreeCAD.getUserAppDataDir()/CamAssets`; check yours with `Path.Preferences.getAssetPath()`.
+3. **Machine definitions** → copy the `.fcm` files into `<CAM asset path>/Machines/`. Check the values against your own machine first — see "Check these against your machine". The default asset path is `FreeCAD.getUserAppDataDir()/CamAssets`; check yours with `Path.Preferences.getAssetPath()`. 
 
-4. **Restart FreeCAD**. You can confirm classification of post-type (in the FreeCAD Python console):
+> **Note**: This path can also be configured, I'd recommend creating a repo for your CAM assets and configuring accordingly if you have the ability to do this. This way you can version control not just the machine assets but also your FreeCAD bits you've set up. Especially worth doing if you work on multiple computers.
+
+4. **Restart FreeCAD**. Optionally, you can confirm classification of post-type (in the FreeCAD Python console):
 
    ```python
    import Path.Preferences as P
@@ -95,15 +100,16 @@ Everything in the "Machine definition settings" table below was arrived at by di
    P.classifyPostProcessor("millennium_os_legacy")    # -> 'legacy'
    ```
 
-   If the machine post reports `unknown`, the module raised on import and the classifier swallowed the traceback. The 26.3 machine post path is a rapidly moving target, so entirely possible this breaks due to FreeCAD changes during the development cycle.
+   If the machine post reports `unknown`, the module raised an exception on import and FreeCAD may have swallowed the traceback. The 26.3 machine post path is a rapidly moving target, so entirely possible this breaks due to FreeCAD changes during the development cycle.
 
-5. **In the CAM Job**, set Machine to the entry matching your machine, e.g. `Miley V2.0`. The postprocessor comes from the machine definition, not the job.
+5. **In the CAM Job**, set Machine to the entry matching your machine, e.g. `Miley V2.0`. The postprocessor comes from the machine definition, not the job. This can be set in the Job settings panel in the General tab or in the job properties view.
+   
 
-6. **Set `mos_version`** in the machine definition to match your firmware. The machine post reads it from there, not from `RELEASE.VERSION`, so it must be correct or `M4005` will check the wrong version. The machine definitions included here default to v0.5.0.
+6. **Make sure that `mos_version` is correct** in the machine definition to match your firmware. The machine post reads it from there, not from `RELEASE.VERSION`, so it must be correct or `M4005` will check the wrong version. The machine definitions included here default to v0.5.0.
 
 ---
 
-## What the base class does now
+## What the post-processor base class does now
 
 Removed from the port because the base `PostProcessor` handles it, driven by the machine definition:
 
@@ -143,15 +149,16 @@ Compatibility and correctness fixes, each traced to a specific base-class behavi
 
 ## The approach move after a tool change
 
-FreeCAD emits the approach as `G0 Z5` then `G0 X.. Y..`. After a tool change MillenniumOS has parked, so the machine sits high and over the toolsetter. Descending to clearance *before* traversing means the descent happens at the park position and the traverse then happens at clearance height — straight through whatever is between, the toolsetter included.
+FreeCAD emits the approach as `G0 Z5` then `G0 X.. Y..`. After a tool change MillenniumOS has parked, so the machine sits high and over the toolsetter. Descending to clearance *before* traversing means the descent happens at the park position and the traverse then happens at clearance height — straight through whatever is between, the toolsetter included (ask me how I know).
 
 `_delay_leading_z()` reorders this to XY first, so the traverse stays at the high park height and the descent happens only once above the target. This is the legacy post's `delayed_z` / `xy_seen` behaviour, reset per operation. The held move is flushed before the next *move*, not immediately after the XY, so a coolant-on between them still precedes the descent.
 
-Two deliberate differences from legacy, both safer: only pure-Z moves are deferred, where legacy deferred any move whose Z changed and so would swallow a combined XYZ move; and anything still held at the end of an operation is flushed rather than dropped, where legacy resets `delayed_z = None` and silently discards it.
+Two deliberate differences from the legacy post: only pure-Z moves are deferred, where legacy deferred any move whose Z changed and so would swallow a combined XYZ move; and anything still held at the end of an operation is flushed rather than dropped, where legacy resets `delayed_z = None` and silently discards it.
 
 ---
 
 ## Two upstream FreeCAD issues worth being aware of
+>**Note**: FreeCAD 26.3 is in active development and is very much a moving target, so possible these will change with future builds.
 
 ### 1. Suppressing M6 disables the only modal reset
 
@@ -164,9 +171,9 @@ if any(stripped.startswith(cmd) for cmd in ["M6", "M06"]):
 
 This post suppresses `M6` because MillenniumOS services tool changes in firmware from a bare `T` word. So the reset never fires, position is tracked straight through a park and tool change, and a retract such as `G0 Z5` at the start of an operation is dropped as redundant — leaving a bare `G0` and **no retract before the following XY rapid**. It affects any post that delegates tool changes to firmware, and it is invisible in the output.
 
-Worked around here by emitting a sentinel comment at each operation, tool-change and fixture boundary, splitting the body on it, suppressing each segment independently, then calling the base with suppression disabled. A proper upstream fix would reset on a bare `T` word too, or expose an overridable reset hook.
+Worked around here by emitting a sentinel comment at each operation, tool-change and fixture boundary, splitting the body on it, suppressing each segment independently, and then calling the base with suppression disabled. A proper upstream fix would reset on a bare `T` word too, or expose an overridable reset hook.
 
-Note the legacy post avoids this entirely by calling `_forceAll()` in `onoperation()`, `ontoolchange()` and `onfixture()`.
+Note the MOS legacy post avoids this entirely by calling `_forceAll()` in `onoperation()`, `ontoolchange()` and `onfixture()`.
 
 ### 2. Coolant M-codes are hardcoded
 
@@ -191,6 +198,7 @@ Worth knowing before changing anything here.
 - **The spindle `min_rpm`/`max_rpm` are not descriptive.** `Path/Tool/FeedsSpeeds/resolver.py` clamps the calculated speed into that range and scales feeds by the same ratio to hold chipload constant. Raising `min_rpm` therefore raises feeds for anything that lands on the floor.
 - **`_make_postable(label, [])` is not a dedup barrier.** It builds an item with a non-`None` but empty `Path`, so `_edit_command_list()` takes the `if item.path` branch, iterates zero commands and never calls `edit_fn`.
 - **`supported_commands` is substring-matched.** `convert_command_to_gcode()` does `command.Name not in supported` where `supported` is a newline-joined *string*, so `M3` matches inside `M30`.
+- **There is now a `.fcm` validator.** The Machine editor has a **Validate** button for it, and it also runs on load. It checks axis limit ordering, the kinematic chain, that the referenced postprocessor resolves and that its property keys are known, and it reports keys in the file that the loader silently ignored. Worth running after hand-editing a definition.
 - **`_optimize_duplicates_doubles()` may not exist.** Duplicate suppression moved between the postable stage and the G-code-string stage during the 26.x cycle. This port targets the string stage, via `_optimize_gcode()`. If an override here appears to do nothing, check the method actually exists in your build before assuming the logic is wrong.
 
 ---
@@ -236,10 +244,10 @@ All benign, verified across three jobs (5-tool profiling, a 107k-line adaptive j
 
 ### Not yet covered
 
-No test job has exercised **multiple fixtures/WCSs** or **probing operations**. `_convert_fixture()`'s park-before-change branch and its multiline return have never run. Treat those as untested.
+No test job has exercised **multiple fixtures/WCSs** or **probing operations**. `_convert_fixture()`'s park-before-change branch and its multiline return have never run. Treat those as untested. Same with 4th axis support (also a moving target in FreeCAD but support for it is baked in to the machine definitions)
 
 ---
 
 ## Before you cut
 
-Dry-run the first real job above the work.
+This post has been tested over a dozen jobs but I cannot test every combination of action and config. **Dry-run the first real job you do above the workpiece to make sure you don't break anything!**
