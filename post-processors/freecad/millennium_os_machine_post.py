@@ -499,12 +499,8 @@ class MillenniumOSMachine(PostProcessor):
         super()._expand_prefix(postables)
 
     # ------------------------------------------------------------------
-    # Command conversion hooks
+    # Expansion-stage hooks
     # ------------------------------------------------------------------
-
-    #: Sentinel emitted at operation / tool-change / fixture boundaries and
-    #: consumed by _optimize_gcode(). Never reaches the output file.
-    MODAL_BARRIER_MARKER = "(MOS-MODAL-BARRIER)"
 
     @staticmethod
     def _delay_leading_z(commands):
@@ -559,72 +555,31 @@ class MillenniumOSMachine(PostProcessor):
         result.extend(held)
         return result
 
-    def _convert_item_commands(self, item, gcode_lines) -> None:
-        """Reorder the approach, and mark boundaries for _optimize_gcode()."""
-        item_type = getattr(item, "item_type", None)
+    def _expand_xy_before_z(self, postables):
+        """Reorder each operation's approach so the Z descent follows the XY move.
 
-        if item_type in ("operation", "tool_controller", "fixture"):
-            gcode_lines.append(self.MODAL_BARRIER_MARKER)
+        Runs in the expansion stage, before _optimize_duplicates_doubles(), so
+        the axis-word deduplication that follows sees the final command order.
 
-        if item_type == "operation" and item.path and item.path.Commands:
-            reordered = self._delay_leading_z(list(item.path.Commands))
-            if reordered != list(item.path.Commands):
-                item.path = Path.Path(reordered)
-
-        return super()._convert_item_commands(item, gcode_lines)
-
-    def _optimize_gcode(self, gcode_lines):
-        """Suppress redundant axis words per operation rather than across the whole job.
-
-        GcodeProcessingUtils.suppress_redundant_axes_words() tracks position
-        across the entire body and resets only on an M6 line. This post
-        suppresses M6 (MillenniumOS services tool changes in firmware from a
-        bare T word), so the reset never fires. Position is then tracked across
-        a park and tool change, and a retract such as "G0 Z5" at the start of an
-        operation is dropped as redundant, leaving a bare "G0" -- no retract
-        before the following XY rapid. The legacy post avoids this by calling
-        _forceAll() in onoperation(), ontoolchange() and onfixture().
-
-        Here the body is split at the boundary markers emitted by
-        _convert_item_commands(), each segment is suppressed independently, and
-        the base is then called with suppression disabled so it is not redone
-        across the whole body.
+        The base implementation only decomposes a *combined* XYZ move into XY
+        then Z, and only for the first move after a tool change. FreeCAD emits
+        the approach as two separate moves ("G0 Z5" then "G0 X.. Y.."), which
+        that pass leaves untouched, so the deferral here is still needed. It is
+        also applied whether or not xy_before_z_after_tool_change is set: the
+        base method is gated on that flag internally, this is not.
         """
-        marker = self.MODAL_BARRIER_MARKER
+        super()._expand_xy_before_z(postables)
 
-        def strip_markers(lines):
-            return [ln for ln in lines if ln.strip() != marker]
-
-        if not gcode_lines:
-            return super()._optimize_gcode(gcode_lines)
-
-        # Suppression already off: markers just need removing.
-        if self.values.get("OUTPUT_DOUBLES"):
-            return super()._optimize_gcode(strip_markers(gcode_lines))
-
-        from Path.Post.GcodeProcessingUtils import suppress_redundant_axes_words
-
-        split_at = self._optimize_start or 0
-        header = strip_markers(gcode_lines[:split_at])
-        body = gcode_lines[split_at:]
-
-        suppressed = []
-        segment = []
-        for line in body:
-            if line.strip() == marker:
-                suppressed.extend(suppress_redundant_axes_words(segment))
-                segment = []
-            else:
-                segment.append(line)
-        suppressed.extend(suppress_redundant_axes_words(segment))
-
-        # Base would otherwise run the same suppression across the whole body.
-        saved = self.values["OUTPUT_DOUBLES"]
-        self.values["OUTPUT_DOUBLES"] = True
-        try:
-            return super()._optimize_gcode(header + suppressed)
-        finally:
-            self.values["OUTPUT_DOUBLES"] = saved
+        for _, sublist in postables:
+            for item in sublist:
+                if getattr(item, "item_type", None) != "operation":
+                    continue
+                if not item.path or not item.path.Commands:
+                    continue
+                commands = list(item.path.Commands)
+                reordered = self._delay_leading_z(commands)
+                if reordered != commands:
+                    item.path = Path.Path(reordered)
 
     def _reset_modal_state(self):
         """Force every tracked modal to re-emit on the next command.
