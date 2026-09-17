@@ -92,7 +92,7 @@
             "tcp_supported": false
         },
         "manufacturer": "Millennium Machines",
-        "name": "Milo V1.6 (beta)",
+        "name": "Milo V1.6 beta",
         "toolheads": [
             {
                 "coolant_delay": 0.0,

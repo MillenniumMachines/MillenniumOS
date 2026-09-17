@@ -20,13 +20,14 @@ The legacy post is kept, renamed, and still fully works. Both can also be instal
 | `millennium_os_machine_post.py` | `millennium_os_machine` | machine-flow port |
 | `machines/*.fcm` | — | machine definitions, see below |
 | `tools/compare_gcode.py` | — | semantic diff between the two posts' output |
+| `tools/post_cli.py` | — | post a job to G-code headlessly, without the GUI |
 
 ### Included machine definitions
 
 | File | Machine name | Travels (X/Y/Z) | Rapids (X/Y/Z) |
 |---|---|---|---|
 | `machines/Milo_V1.5.fcm` | Milo V1.5 | 340 / 160 / 120 | 2000 / 2000 / 1000 |
-| `machines/Milo_V1.6.fcm` | Milo V1.6 (beta) | 300 / 160 / 120 | 2000 / 2000 / 1000 |
+| `machines/Milo_V1.6.fcm` | Milo V1.6 beta | 300 / 160 / 120 | 2000 / 2000 / 1000 |
 | `machines/Milo_V2.0.fcm` | Milo V2.0 | 348 / 210 / 120 | 2000 / 2000 / 1000 |
 | `machines/Miley_V2.0.fcm` | Miley V2.0 | 308 / 210 / 120 | 2000 / 2000 / 1000 |
 
@@ -247,11 +248,89 @@ The settings above are post behaviour and apply to every machine. The per-machin
 
 ---
 
+## Posting from the command line
+
+`tools/post_cli.py` posts a job without opening the GUI, so test G-code can be
+regenerated in a loop or from CI. Run it with plain `python3`; it finds a
+FreeCAD console binary and re-execs itself under it.
+
+```sh
+# what is in the file
+tools/post_cli.py --list job.FCStd
+
+# post using the working tree: this repo's post module and this repo's .fcm
+tools/post_cli.py job.FCStd -M machines/Milo_V1.6.fcm -o out.gcode
+
+# post using a machine already installed in the CAM asset store
+tools/post_cli.py job.FCStd -m "Milo V1.6 beta (MOS)" -o out.gcode
+
+# the legacy post, for comparison runs
+tools/post_cli.py job.FCStd -p millennium_os_legacy -o legacy.gcode
+```
+
+### Choosing which job to post
+
+A document with several jobs posts all of them unless told otherwise. `-j`
+takes the job **label** — what the CAM tree shows — and is repeatable:
+
+```sh
+# both jobs -> bookmark_Top.gcode and bookmark_Bottom.gcode
+tools/post_cli.py bookmark.FCStd -M machines/Milo_V1.6.fcm -o bookmark.gcode
+
+# just one, written to exactly the name given
+tools/post_cli.py bookmark.FCStd -j Top -M machines/Milo_V1.6.fcm -o top.gcode
+
+# a subset
+tools/post_cli.py bookmark.FCStd -j Top -j Bottom -M machines/Milo_V1.6.fcm -o out.gcode
+```
+
+The output name is only decorated when one run produces more than one file, so
+a single `-j` gives you exactly the `-o` path. When several files are written
+the job label is appended, sanitised for the filesystem.
+
+The internal object name (`Job`, `Job001`) is also accepted, which is how you
+disambiguate if two jobs somehow share a label. An unmatched `-j` lists the
+labels that do exist and exits non-zero, as does any other failure — so a CI
+step will fail rather than quietly producing nothing.
+
+Two things make this useful for testing rather than just convenient:
+
+- **`--post-dir`** is prepended to FreeCAD's post search path, and defaults to
+  this repo. `searchPathsPost()` normally puts the user Macro directory first,
+  so without this a run would silently exercise whatever was last synced there
+  instead of the working tree.
+- **`-M/--machine-file`** loads a `.fcm` straight off disk and injects it into
+  the processor, bypassing the asset store. Together with `--post-dir` a run
+  touches no installed copy of either half of the post.
+
+Jobs are recomputed before posting, so toolpaths are regenerated rather than
+read from whatever was cached in the document.
+
+FreeCAD is located in this order: `$FREECADCMD`, then the newest
+`~/Downloads/FreeCAD_weekly-*.AppImage`, then `freecadcmd` on `PATH`. Note that
+the machine flow needs a weekly from 2026.09.02 onward, as above — a 1.1 stable
+`freecadcmd` on `PATH` will not have the `Machine` module.
+
+```sh
+FREECADCMD=~/Downloads/FreeCAD_weekly-2026.09.16-Linux-x86_64.AppImage \
+    tools/post_cli.py job.FCStd -M machines/Milo_V1.6.fcm -o out.gcode
+```
+
+---
+
 ## Verifying against the legacy post
 
 Post the same job through both, then:
 
 ```sh
+tools/compare_gcode.py legacy.gcode machine.gcode
+```
+
+Both can be generated headlessly:
+
+```sh
+tools/post_cli.py job.FCStd -p millennium_os_legacy      -o legacy.gcode
+tools/post_cli.py job.FCStd -M machines/Milo_V1.6.fcm    -o machine.gcode
 tools/compare_gcode.py legacy.gcode machine.gcode
 ```
 

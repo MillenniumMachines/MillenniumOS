@@ -351,6 +351,45 @@ class MillenniumOSMachine(PostProcessor):
         return formatted
 
     # ------------------------------------------------------------------
+    # Header sanitisation
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def _sanitize_comment_text(cls, value):
+        """Replace round brackets so text cannot break out of a G-code comment.
+
+        Recurses into the lists and tuples the header builder stores (tools are
+        (number, label) pairs, fixtures and notes are plain lists).
+        """
+        if isinstance(value, str):
+            return value.replace("(", "[").replace(")", "]")
+        if isinstance(value, list):
+            return [cls._sanitize_comment_text(v) for v in value]
+        if isinstance(value, tuple):
+            return tuple(cls._sanitize_comment_text(v) for v in value)
+        return value
+
+    def _build_header(self, postables):
+        """Strip round brackets out of every header value before it is emitted.
+
+        Upstream builds each header line as Path.Command(f"(Machine: {name})"),
+        and Path.Command drops a nested "(" while keeping its ")". A machine
+        named "Milo V1.6 (beta)" therefore lands in the file as
+        "(Machine: Milo V1.6 beta])" -- the name is mangled and the comment is
+        briefly unbalanced. The same applies to any user-supplied text that
+        reaches the header: tool labels, document names and the project file
+        path, none of which we control.
+
+        Sanitising the populated builder rather than reimplementing
+        _build_header means new upstream header fields are covered too, since
+        this walks whatever the builder ended up holding.
+        """
+        header = super()._build_header(postables)
+        for name, value in vars(header).items():
+            setattr(header, name, self._sanitize_comment_text(value))
+        return header
+
+    # ------------------------------------------------------------------
     # Preamble construction
     # ------------------------------------------------------------------
 
