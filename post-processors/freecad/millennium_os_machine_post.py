@@ -786,7 +786,15 @@ class MillenniumOSMachine(PostProcessor):
     # ------------------------------------------------------------------
 
     def get_sanity_checks(self, job):
-        """Warn about configurations MillenniumOS cannot service safely."""
+        """Warn about configurations MillenniumOS cannot service safely.
+
+        Squawks must be dicts in CAMSanity format, built with _create_squawk().
+        Sanity.get_all_squawks() filters the returned list with s["squawkType"],
+        so a plain string raises TypeError there -- and DlgPostProcess catches
+        that exception and falls back to an empty list, which means one
+        malformed squawk silently suppresses *every* warning for the job,
+        upstream's included, and the dialog reports "No issues found".
+        """
         issues = super().get_sanity_checks(job)
 
         machine = self._machine
@@ -795,24 +803,36 @@ class MillenniumOSMachine(PostProcessor):
 
         if len(machine.rotary_axes) > 0:
             issues.append(
-                translate(
-                    "CAM",
-                    "MillenniumOS supports 3 axes only; rotary axes in the machine "
-                    "definition will be ignored.",
+                self._create_squawk(
+                    "WARNING",
+                    translate(
+                        "CAM",
+                        "MillenniumOS supports 3 axes only; rotary axes in the machine "
+                        "definition will be ignored.",
+                    ),
                 )
             )
 
         if len(machine.toolheads) > 1:
             issues.append(
-                translate("CAM", "MillenniumOS supports a single spindle only.")
+                self._create_squawk(
+                    "WARNING",
+                    translate("CAM", "MillenniumOS supports a single spindle only."),
+                )
             )
 
         if not self.values.get("VERSION_CHECK"):
+            # NOTE rather than WARNING: this is an explicit opt-out and does not
+            # make the G-code wrong, so it should not colour the tab red on
+            # every post for someone who turned it off deliberately.
             issues.append(
-                translate(
-                    "CAM",
-                    "Version checking is disabled. G-code may not match the "
-                    "MillenniumOS version installed in firmware.",
+                self._create_squawk(
+                    "NOTE",
+                    translate(
+                        "CAM",
+                        "Version checking is disabled. G-code may not match the "
+                        "MillenniumOS version installed in firmware.",
+                    ),
                 )
             )
 
