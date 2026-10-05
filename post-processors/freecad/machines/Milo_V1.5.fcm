@@ -89,6 +89,7 @@
             },
             "dwo_supported": false,
             "notes": "3-axis. NOMINAL published figures, not measured. Replace axis limits from your RRF M208 and max_velocity from M203, and set the spindle min_rpm/max_rpm and max_power_kw to match your spindle.",
+            "rotation_strategy": "none",
             "tcp_supported": false
         },
         "manufacturer": "Millennium Machines",

@@ -30,10 +30,54 @@ The legacy post is kept, renamed, and still fully works. Both can also be instal
 | `machines/Milo_V1.6.fcm` | Milo V1.6 beta | 300 / 160 / 120 | 2000 / 2000 / 1000 |
 | `machines/Milo_V2.0.fcm` | Milo V2.0 | 348 / 210 / 120 | 2000 / 2000 / 1000 |
 | `machines/Miley_V2.0.fcm` | Miley V2.0 | 308 / 210 / 120 | 2000 / 2000 / 1000 |
+| `machines/Milo_V1.5_Rotary.fcm` | Milo V1.5 + Rotary | 340 / 160 / 120 | 2000 / 2000 / 1000 |
+| `machines/Milo_V1.6_Rotary.fcm` | Milo V1.6 beta + Rotary | 300 / 160 / 120 | 2000 / 2000 / 1000 |
+| `machines/Milo_V2.0_Rotary.fcm` | Milo V2.0 + Rotary | 348 / 210 / 120 | 2000 / 2000 / 1000 |
 
 **Every number in these files is a nominal starting point, not a measurement.** Travels are the published figures, quoted minus endstop; your `M208` soft limits will sit a few mm inside them and hard limits may vary based on your build. Rapids are the published V1.5 figures, used for all four because no rapid speed is published for V2 — yours will depend on motors, drive voltage and whether you fitted leadscrews or ballscrews. The stock LDO spindle is described as 1.5 kW running 7200–24000 rpm, but this is just one common configuration among many. You will need to adjust these for your machine!
 
 There is deliberately **one definition per machine rather than one per possible configuration**. Power, rpm range, cooling, motors and drive voltage all vary between builds, and no useful number of shipped variants would cover that. Copy the definition matching your machine and edit it to fit — see the next section.
+
+### The rotary (4th axis) definitions
+
+The `_Rotary` variants add an **A axis about X** for the Spit Roast 4th axis. They are
+separate files rather than an option on the existing ones, because the base class emits a
+rotary positioning move for every pose change as soon as a rotary axis exists — adding A
+to the shipped definitions would change the G-code every existing 3-axis user gets.
+
+A-axis figures come from the MosFourthAxis plugin's `rotary-plugin-config.g` and are
+nominal in the same way as everything else here:
+
+| | Value | From |
+|---|---|---|
+| Limits | ±3600° | `M208 A-3600 / A3600` |
+| Max velocity | 45000 °/min | `M203 A45000` |
+| Acceleration | 300 °/s² | `M201 A300` (not carried into the `.fcm`) |
+| Steps/degree | 177.7919 | `M92 A177.7919` |
+
+`kinematics.rotation_strategy` is `dwo`. That is the only strategy the base class can
+actually emit for a control with no tilted-work-plane command, and what it emits is a
+plain `G0 A<angle>` with the path already rotated into the machine frame — exactly what
+the Fusion post does. RRF has no `G68.2`, so `twp` is not an option, and `post_transform`
+is declared upstream but unimplemented. (Note RRF's `G68` is a 2D rotation about Z, used
+for tramming compensation — not a tilted work plane.)
+
+`pre_rotary_move` is `G53 G0 Z0`, so Z retracts to machine zero before any rotation. **No
+X retract is set.** The Fusion post defaults its X retract to disabled too, and a safe X
+is a per-setup value you have to verify against your own fixture; its reference figure is
+X=54 on a V1.5. Add it to `pre_rotary_move` if you want it.
+
+**Three limitations worth knowing before you cut:**
+
+- **Indexed (3+1) only.** Continuous 4-axis needs inverse-time feed (`G93`). RRF has
+  supported `G93` since 3.5, and FreeCAD has a continuous op (`Path/Op/RotarySurface.py`),
+  but FreeCAD's post pipeline never emits `G93` — `GCODE_FEED_INVERSE_TIME` exists only in
+  its modal-command lists. A continuous path would come out with a units-per-minute feed
+  on a move that is mostly rotation.
+- **Work zero must sit on the rotary centreline.** Nothing applies a pivot offset, so
+  rotation only leaves the WCS valid if the origin is on the axis of rotation. Probe it
+  with `M4910`.
+- **Untested on hardware.** No posted rotary job has been cut. Dry-run above the work.
 
 **V1.6 is beta.** Its travels and rapids are inherited from V1.5, on the basis that the beta retains the V1.5 frame extrusions, linear rails, leadscrews and motors. The XY and Z plates and the anti-backlash block are new and result in some workarea changes, so verify the limits against your own `M208` on a working maching before use.
 

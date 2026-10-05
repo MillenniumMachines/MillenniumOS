@@ -521,6 +521,17 @@ class MillenniumOSMachine(PostProcessor):
         # Trailing block, appended after the configured postamble so the order
         # matches the legacy post: coolant off, park, VSSC off, coolant off, spindle off.
         tail: List[str] = []
+
+        # Bring the rotary back to zero once the configured postamble has parked
+        # (G27 raises Z away from the work first), so the next program starts from
+        # a known pose. This mirrors the Fusion post, which also resets the rotary
+        # only after the park. Nothing else in this post moves a rotary axis: the
+        # base class emits the positioning moves from the machine's solved angles.
+        rotary = sorted(getattr(self._machine, "rotary_axes", {}) or {}) if self._machine else []
+        if rotary:
+            tail.append("(Reset rotary axes to zero)")
+            tail.append("G0 " + " ".join(f"{axis}0" for axis in rotary))
+
         if self.values.get("VSSC"):
             tail.append("(Disable Variable Spindle Speed Control)")
             tail.append(MCODES.VSSC_DISABLE)
@@ -801,14 +812,31 @@ class MillenniumOSMachine(PostProcessor):
         if machine is None:
             return issues
 
-        if len(machine.rotary_axes) > 0:
+        if machine.rotary_axes:
+            # Compared by value rather than importing RotationStrategy, which only
+            # exists on builds from 2026.10.01 onward.
+            strategy = getattr(machine.kinematics, "rotation_strategy", None)
+            if getattr(strategy, "value", "none") == "none":
+                issues.append(
+                    self._create_squawk(
+                        "WARNING",
+                        translate(
+                            "CAM",
+                            "The machine has rotary axes but declares no rotation "
+                            "strategy, so an operation on a tilted work plane cannot "
+                            "be posted. Set it to DWO in the Machine Editor.",
+                        ),
+                    )
+                )
             issues.append(
                 self._create_squawk(
-                    "WARNING",
+                    "NOTE",
                     translate(
                         "CAM",
-                        "MillenniumOS supports 3 axes only; rotary axes in the machine "
-                        "definition will be ignored.",
+                        "Rotary support is indexed (3+1) only. Continuous 4-axis "
+                        "needs inverse-time feed (G93), which FreeCAD does not emit. "
+                        "Work zero must sit on the rotary centreline: nothing applies "
+                        "a pivot offset.",
                     ),
                 )
             )
