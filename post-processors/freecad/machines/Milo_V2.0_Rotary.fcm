@@ -25,7 +25,8 @@
                 "sequence": 2,
                 "solution_preference": "shortest",
                 "type": "rotary",
-                "wrap_strategy": "unwound"
+                "wrap_strategy": "unwound",
+                "allow_flip": false
             },
             "X": {
                 "joint": [
