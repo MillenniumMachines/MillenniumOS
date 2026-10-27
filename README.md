@@ -2,6 +2,8 @@
 
 ## ⚠️ ⚠️ ⚠️ Please download MillenniumOS from the [Releases](https://github.com/MillenniumMachines/MillenniumOS/releases) page only
 
+>**Note:** Active development has more or less ceased on this repo as of Oct 2026, development is now focused on [MOS-nxt](https://github.com/MillenniumMachines/MOS-nxt). This is still the current release until MOS-nxt gets out of beta, but keep an eye on that repo and the Discord channel for updates on it's status going forward.
+
 ## Introduction
 
 Cheap and easy manual and automatic work-piece probing, toolchanges, toolsetting and more!

@@ -375,6 +375,9 @@ class PostProcessor:
     name      = "FreeCAD Post-Processor"
     vendor    = "Unknown"
     version   = FreeCAD.Version()
+    revision = FreeCAD.ConfigGet("BuildRevision")
+    if isinstance(revision, str):
+        revision = re.sub(r'[()]', '', revision)
 
 
     def __init__(self, name=None, vendor=None, args={}):
@@ -399,7 +402,7 @@ class PostProcessor:
 
         # Switch to PRE section
         with self.Section(Section.PRE):
-            self.comment(f'Exported by FreeCAD v{self.version[0]}.{self.version[1]}.{self.version[2]}')
+            self.comment(f'Exported by FreeCAD v{self.version[0]}.{self.version[1]}.{self.version[2]}.{self.revision}')
             self.comment('Post Processor: {} by {}'.format(self.name, self.vendor))
             self.comment('Output Time: {}'.format(datetime.now(timezone.utc)))
             self.brk()
