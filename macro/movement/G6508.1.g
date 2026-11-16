@@ -99,6 +99,13 @@ var surfaceClearance = { ((!exists(param.T) || param.T == null) ? global.mosCL :
 ; distance, but allow it to be overridden if necessary.
 var cornerClearance = { (!exists(param.C) || param.C == null) ? ((!exists(param.T) || param.T == null) ? global.mosCL : param.T) : param.C }
 
+; The operator jogs over the corner before probing, so sX/sY
+; are already offset into the workpiece by an unknown amount.
+; We assume this positional error is roughly equal to the
+; corner clearance, and subtract it from the far-end probe
+; points (P2) to avoid probing off the edge of the workpiece.
+var positionalError = { var.cornerClearance }
+
 ; Apply tool radius to overtravel. We want to allow
 ; less movement past the expected point of contact
 ; with the surface based on the tool radius.
@@ -110,14 +117,14 @@ var overtravel = { (exists(param.O) ? param.O : global.mosOT) - ((state.currentT
 ; Check that the clearance distance isn't
 ; higher than the width or height of the block if
 ; in full mode.
-; Since we use the clearance distance to choose
-; how far along each surface we should probe from
-; the expected corners, a clearance higher than
-; the width or height would mean we would try to
-; probe off the edge of the block.
+; P1 needs cornerClearance from the near end,
+; P2 needs cornerClearance + positionalError from the far end.
+; If these together exceed the surface length, the points overlap.
 if { var.pFull }
-    if { (var.cornerClearance >= (var.fX/2) || var.cornerClearance >= (var.fY/2)) }
-        abort { "Corner clearance distance is more than half of the length of one or more surfaces forming the corner! Cannot probe." }
+    if { 2 * var.cornerClearance + var.positionalError >= var.fX }
+        abort { "Corner clearance distance is too high for the X surface length! Cannot probe." }
+    if { 2 * var.cornerClearance + var.positionalError >= var.fY }
+        abort { "Corner clearance distance is too high for the Y surface length! Cannot probe." }
 
 ; The overtravel distance does not have the same
 ; requirement, as it is only used to adjust the
@@ -158,7 +165,7 @@ set var.surface1[0][1][1] = { var.startY }
 ; Surface 1, Point 2
 ; Only probe the second X point if we're in full mode
 if { var.pFull }
-    set var.startY = { var.sY + var.dirY * (var.fY - var.cornerClearance) }
+    set var.startY = { var.sY + var.dirY * (var.fY - var.positionalError - var.cornerClearance) }
     set var.surface1[1][0][0] = { var.startX }
     set var.surface1[1][1][0] = { var.targetX }
     set var.surface1[1][0][1] = { var.startY }
@@ -183,7 +190,7 @@ set var.surface2[0][1][1] = { var.targetY }
 ; Surface 2, Point 2
 ; Only probe the second Y point if we're in full mode
 if { var.pFull }
-    set var.startX = { var.sX + var.dirX * (var.fX - var.cornerClearance) }
+    set var.startX = { var.sX + var.dirX * (var.fX - var.positionalError - var.cornerClearance) }
     set var.surface2[1][0][0] = { var.startX }
     set var.surface2[1][1][0] = { var.startX }
     set var.surface2[1][0][1] = { var.startY }
