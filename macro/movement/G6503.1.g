@@ -38,9 +38,14 @@ var workOffset = { (exists(param.W) && param.W != null) ? param.W : move.workpla
 ; the number of the work co-ordinate system, so is 1-indexed.
 var wcsNumber = { var.workOffset + 1 }
 
-; Increment the probe surface and point totals for status reporting
+; Probe mode defaults to (0=Full)
+var pFull = { exists(param.Q) ? param.Q == 0 : true }
+
+; Increment the probe surface and point totals for status reporting.
+; Full mode probes 2 points per surface (8 total), quick mode probes
+; 1 point per surface (4 total).
 set global.mosPRST = { global.mosPRST + 4 }
-set global.mosPRPT = { global.mosPRPT + 8 }
+set global.mosPRPT = { global.mosPRPT + (var.pFull ? 8 : 4) }
 
 var pID = { global.mosFeatTouchProbe ? global.mosTPID : null }
 
@@ -92,7 +97,9 @@ var surfaceClearance = { ((!exists(param.T) || param.T == null) ? global.mosCL :
 
 ; Default corner clearance to the normal clearance
 ; distance, but allow it to be overridden if necessary.
-var cornerClearance = { (!exists(param.C) || param.C == null) ? ((!exists(param.T) || param.T == null) ? global.mosCL : param.T) : param.C }
+; Only used in full mode; quick mode probes at the centre
+; of each surface and ignores corner clearance.
+var cornerClearance = { var.pFull ? ((!exists(param.C) || param.C == null) ? ((!exists(param.T) || param.T == null) ? global.mosCL : param.T) : param.C) : 0 }
 
 ; Apply tool radius to overtravel. We want to allow
 ; less movement past the expected point of contact
@@ -109,7 +116,8 @@ var overtravel = { (exists(param.O) ? param.O : global.mosOT) - ((state.currentT
 ; the expected corners, a clearance higher than
 ; the width or height would mean we would try to
 ; probe off the edge of the block.
-if { var.cornerClearance >= var.hW || var.cornerClearance >= var.hL }
+; Only relevant in full mode.
+if { var.pFull && (var.cornerClearance >= var.hW || var.cornerClearance >= var.hL) }
     abort { "Corner clearance distance is more than half of the width or height of the block! Cannot probe." }
 
 ; The overtravel distance does not have the same
@@ -117,14 +125,11 @@ if { var.cornerClearance >= var.hW || var.cornerClearance >= var.hL }
 ; probe target towards or away from the target
 ; surface rather.
 
-; We can calculate the squareness of the block by probing inwards
-; from each edge and calculating an angle.
-; Our start position is then inwards by the clearance distance from
-; both ends of the face.
-; We need 8 probes to calculate the squareness of the block (2 for each edge).
-
-; Quick mode not implemented yet
-var pFull = { true }
+; In full mode we calculate squareness of the block by probing inwards
+; from each edge and calculating an angle. The probe positions are
+; then offset inwards by the corner clearance from each end of the face.
+; In quick mode we probe a single point at the centre of each surface
+; and trust the operator that the block is aligned with the axes.
 
 ; Calculate the probe positions for the surfaces
 var points = { vector(2 - (var.pFull ? 0 : 1), {{null, null, param.Z}, {null, null, param.Z}}) }
@@ -132,29 +137,32 @@ var points = { vector(2 - (var.pFull ? 0 : 1), {{null, null, param.Z}, {null, nu
 var surface1 = { var.points }
 var surface2 = { var.points }
 
-; Surface 1, Point 1
+; ---- X surfaces ----
+
+; Surface 1, Point 1 (left surface)
 set var.surface1[0][0][0] = { var.sX - var.hW - var.surfaceClearance }
 set var.surface1[0][1][0] = { var.sX - var.hW + var.overtravel }
-set var.surface1[0][0][1] = { var.sY - var.hL + var.cornerClearance }
-set var.surface1[0][1][1] = { var.sY - var.hL + var.cornerClearance }
+set var.surface1[0][0][1] = { var.pFull ? var.sY - var.hL + var.cornerClearance : var.sY }
+set var.surface1[0][1][1] = { var.pFull ? var.sY - var.hL + var.cornerClearance : var.sY }
 
-; Surface 1, Point 2
-set var.surface1[1][0][0] = { var.sX - var.hW - var.surfaceClearance }
-set var.surface1[1][1][0] = { var.sX - var.hW + var.overtravel }
-set var.surface1[1][0][1] = { var.sY + var.hL - var.cornerClearance }
-set var.surface1[1][1][1] = { var.sY + var.hL - var.cornerClearance }
-
-; Surface 2, Point 1
+; Surface 2, Point 1 (right surface)
 set var.surface2[0][0][0] = { var.sX + var.hW + var.surfaceClearance }
 set var.surface2[0][1][0] = { var.sX + var.hW - var.overtravel }
-set var.surface2[0][0][1] = { var.sY + var.hL - var.cornerClearance }
-set var.surface2[0][1][1] = { var.sY + var.hL - var.cornerClearance }
+set var.surface2[0][0][1] = { var.pFull ? var.sY + var.hL - var.cornerClearance : var.sY }
+set var.surface2[0][1][1] = { var.pFull ? var.sY + var.hL - var.cornerClearance : var.sY }
 
-; Surface 2, Point 2
-set var.surface2[1][0][0] = { var.sX + var.hW + var.surfaceClearance }
-set var.surface2[1][1][0] = { var.sX + var.hW - var.overtravel }
-set var.surface2[1][0][1] = { var.sY - var.hL + var.cornerClearance }
-set var.surface2[1][1][1] = { var.sY - var.hL + var.cornerClearance }
+if { var.pFull }
+    ; Surface 1, Point 2
+    set var.surface1[1][0][0] = { var.sX - var.hW - var.surfaceClearance }
+    set var.surface1[1][1][0] = { var.sX - var.hW + var.overtravel }
+    set var.surface1[1][0][1] = { var.sY + var.hL - var.cornerClearance }
+    set var.surface1[1][1][1] = { var.sY + var.hL - var.cornerClearance }
+
+    ; Surface 2, Point 2
+    set var.surface2[1][0][0] = { var.sX + var.hW + var.surfaceClearance }
+    set var.surface2[1][1][0] = { var.sX + var.hW - var.overtravel }
+    set var.surface2[1][0][1] = { var.sY - var.hL + var.cornerClearance }
+    set var.surface2[1][1][1] = { var.sY - var.hL + var.cornerClearance }
 
 ; Probe the 2 X surfaces
 ; Retract between each surface but
@@ -163,119 +171,107 @@ G6513 I{var.pID} D1 H0 P{var.surface1, var.surface2} S{var.safeZ}
 
 var pSfcX = { global.mosMI }
 
-; Surface angles
-var dXAngleDiff = { degrees(abs(mod(var.pSfcX[0][2] - var.pSfcX[1][2], pi))) }
+; In full mode, validate that the X surfaces are parallel.
+if { var.pFull }
+    ; Surface angles
+    var dXAngleDiff = { degrees(abs(mod(var.pSfcX[0][2] - var.pSfcX[1][2], pi))) }
 
-; Normalise the angle difference to be between 0 and 90 degrees
-if { var.dXAngleDiff > pi/2 }
-    set var.dXAngleDiff = { pi - var.dXAngleDiff }
+    ; Normalise the angle difference to be between 0 and 90 degrees
+    if { var.dXAngleDiff > pi/2 }
+        set var.dXAngleDiff = { pi - var.dXAngleDiff }
 
-; Make sure X surfaces are suitably parallel
-if { var.dXAngleDiff > global.mosAngleTol }
-    abort { "Rectangular block surfaces on X axis are not parallel (" ^ var.dXAngleDiff ^ " > " ^ global.mosAngleTol ^ ") - this block does not appear to be square." }
+    ; Make sure X surfaces are suitably parallel
+    if { var.dXAngleDiff > global.mosAngleTol }
+        abort { "Rectangular block surfaces on X axis are not parallel (" ^ var.dXAngleDiff ^ " > " ^ global.mosAngleTol ^ ") - this block does not appear to be square." }
 
-; Now we have validated that the block is square in X, we need to calculate
-; the real center position of the block so we can probe the Y surfaces.
-
-; Calculate left surface midpoint
-var leftMidpoint = { (var.pSfcX[0][0][0][0] + var.pSfcX[0][0][1][0]) / 2 }
-
-; Calculate right surface midpoint
-var rightMidpoint = { (var.pSfcX[1][0][0][0] + var.pSfcX[1][0][1][0]) / 2 }
+; Calculate the real centre of the block in X so we can probe the Y
+; surfaces. In full mode we use the midpoint of the two probed points
+; on each surface; in quick mode we use the single probed point.
+var leftMidpoint  = { var.pFull ? (var.pSfcX[0][0][0][0] + var.pSfcX[0][0][1][0]) / 2 : var.pSfcX[0][0][0][0] }
+var rightMidpoint = { var.pFull ? (var.pSfcX[1][0][0][0] + var.pSfcX[1][0][1][0]) / 2 : var.pSfcX[1][0][0][0] }
 
 ; Calculate the average of the left and right surface midpoints
 set var.sX = { (var.leftMidpoint + var.rightMidpoint) / 2 }
 
+; ---- Y surfaces ----
 ; Use the recalculated center of the block to probe Y surfaces.
 
-; Surface 1, Point 1
-set var.surface1[0][0][0] = { var.sX + var.hW - var.cornerClearance }
-set var.surface1[0][1][0] = { var.sX + var.hW - var.cornerClearance }
+; Surface 1, Point 1 (bottom surface)
+set var.surface1[0][0][0] = { var.pFull ? var.sX + var.hW - var.cornerClearance : var.sX }
+set var.surface1[0][1][0] = { var.pFull ? var.sX + var.hW - var.cornerClearance : var.sX }
 set var.surface1[0][0][1] = { var.sY - var.hL - var.surfaceClearance }
 set var.surface1[0][1][1] = { var.sY - var.hL + var.overtravel }
 
-; Surface 1, Point 2
-set var.surface1[1][0][0] = { var.sX - var.hW + var.cornerClearance }
-set var.surface1[1][1][0] = { var.sX - var.hW + var.cornerClearance }
-set var.surface1[1][0][1] = { var.sY - var.hL - var.surfaceClearance }
-set var.surface1[1][1][1] = { var.sY - var.hL + var.overtravel }
-
-; Surface 2, Point 1
-set var.surface2[0][0][0] = { var.sX - var.hW + var.cornerClearance }
-set var.surface2[0][1][0] = { var.sX - var.hW + var.cornerClearance }
+; Surface 2, Point 1 (top surface)
+set var.surface2[0][0][0] = { var.pFull ? var.sX - var.hW + var.cornerClearance : var.sX }
+set var.surface2[0][1][0] = { var.pFull ? var.sX - var.hW + var.cornerClearance : var.sX }
 set var.surface2[0][0][1] = { var.sY + var.hL + var.surfaceClearance }
 set var.surface2[0][1][1] = { var.sY + var.hL - var.overtravel }
 
-; Surface 2, Point 2
-set var.surface2[1][0][0] = { var.sX + var.hW - var.cornerClearance }
-set var.surface2[1][1][0] = { var.sX + var.hW - var.cornerClearance }
-set var.surface2[1][0][1] = { var.sY + var.hL + var.surfaceClearance }
-set var.surface2[1][1][1] = { var.sY + var.hL - var.overtravel }
+if { var.pFull }
+    ; Surface 1, Point 2
+    set var.surface1[1][0][0] = { var.sX - var.hW + var.cornerClearance }
+    set var.surface1[1][1][0] = { var.sX - var.hW + var.cornerClearance }
+    set var.surface1[1][0][1] = { var.sY - var.hL - var.surfaceClearance }
+    set var.surface1[1][1][1] = { var.sY - var.hL + var.overtravel }
+
+    ; Surface 2, Point 2
+    set var.surface2[1][0][0] = { var.sX + var.hW - var.cornerClearance }
+    set var.surface2[1][1][0] = { var.sX + var.hW - var.cornerClearance }
+    set var.surface2[1][0][1] = { var.sY + var.hL + var.surfaceClearance }
+    set var.surface2[1][1][1] = { var.sY + var.hL - var.overtravel }
 
 ; Probe the 2 Y surfaces
 G6513 I{var.pID} D1 H0 P{var.surface1, var.surface2} S{var.safeZ}
 
 var pSfcY = { global.mosMI }
 
-; Surface angles
-var dYAngleDiff = { degrees(abs(mod(var.pSfcY[0][2] - var.pSfcY[1][2], pi))) }
+; In full mode, validate parallelism and corner perpendicularity, and
+; record the corner angle. In quick mode, assume a perfectly square
+; corner.
+if { var.pFull }
+    ; Surface angles
+    var dYAngleDiff = { degrees(abs(mod(var.pSfcY[0][2] - var.pSfcY[1][2], pi))) }
 
-; Normalise the angle difference to be between 0 and 90 degrees
-if { var.dYAngleDiff > pi/2 }
-    set var.dYAngleDiff = { pi - var.dYAngleDiff }
+    ; Normalise the angle difference to be between 0 and 90 degrees
+    if { var.dYAngleDiff > pi/2 }
+        set var.dYAngleDiff = { pi - var.dYAngleDiff }
 
-; Make sure X surfaces are suitably parallel
-if { var.dYAngleDiff > global.mosAngleTol }
-    abort { "Rectangular block surfaces on Y axis are not parallel (" ^ var.dYAngleDiff ^ " > " ^ global.mosAngleTol ^ ") - this block does not appear to be square." }
+    ; Make sure Y surfaces are suitably parallel
+    if { var.dYAngleDiff > global.mosAngleTol }
+        abort { "Rectangular block surfaces on Y axis are not parallel (" ^ var.dYAngleDiff ^ " > " ^ global.mosAngleTol ^ ") - this block does not appear to be square." }
 
-; Okay, we have now validated that the block surfaces are square in both X and Y.
-; But this does not mean they are square to each other, so we need to calculate
-; the angle of one corner between 2 lines and check it meets our threshold.
-; If one of the corners is square, then the other corners must also be square -
-; because the probed surfaces are sufficiently parallel.
+    ; Calculate the angle of the corner between X line 1 and Y line 1.
+    ; This is the angle of the front-left corner of the block.
+    ; The angles are between the line and their respective axis, so
+    ; a perfect 90 degree corner with completely squared machine axes
+    ; would report an error of 0 degrees.
+    var cornerAngleError = { abs(90 - degrees(abs(mod(var.pSfcX[0][2] - var.pSfcY[0][2], pi)))) }
 
-; Calculate the angle of the corner between X line 1 and Y line 1.
-; This is the angle of the front-left corner of the block.
-; The angles are between the line and their respective axis, so
-; a perfect 90 degree corner with completely squared machine axes
-; would report an error of 0 degrees.
+    ; Make sure the corner angle is suitably perpendicular
+    if { var.cornerAngleError > global.mosAngleTol }
+        abort { "Rectangular block corner angle is not perpendicular (" ^ var.cornerAngleError ^ " > " ^ global.mosAngleTol ^ ") - this block does not appear to be square." }
 
-var cornerAngleError = { abs(90 - degrees(abs(mod(var.pSfcX[0][2] - var.pSfcY[0][2], pi)))) }
+    ; We report the corner angle around 90 degrees
+    set global.mosWPCnrDeg[var.workOffset] = { 90 + var.cornerAngleError }
+else
+    ; Assume a square corner in quick mode.
+    set global.mosWPCnrDeg[var.workOffset] = { 90 }
 
-; Make sure the corner angle is suitably perpendicular
-if { var.cornerAngleError > global.mosAngleTol }
-    abort { "Rectangular block corner angle is not perpendicular (" ^ var.cornerAngleError ^ " > " ^ global.mosAngleTol ^ ") - this block does not appear to be square." }
-
-; We report the corner angle around 90 degrees
-set global.mosWPCnrDeg[var.workOffset] = { 90 + var.cornerAngleError }
-
-; Abort if the corner angle is greater than a certain threshold.
-if { (var.cornerAngleError > global.mosAngleTol) }
-    abort { "Rectangular block corner angle is not perpendicular (" ^ var.cornerAngleError ^ " > " ^ global.mosAngleTol ^ ") - this block does not appear to be square." }
-
-; Calculate bottom surface midpoint
-var bottomMidpoint = { (var.pSfcY[0][0][0][1] + var.pSfcY[0][0][1][1]) / 2 }
-
-; Calculate top surface midpoint
-var topMidpoint = { (var.pSfcY[1][0][0][1] + var.pSfcY[1][0][1][1]) / 2 }
+; Calculate the centre Y from the probed Y surfaces.
+var bottomMidpoint = { var.pFull ? (var.pSfcY[0][0][0][1] + var.pSfcY[0][0][1][1]) / 2 : var.pSfcY[0][0][0][1] }
+var topMidpoint    = { var.pFull ? (var.pSfcY[1][0][0][1] + var.pSfcY[1][0][1][1]) / 2 : var.pSfcY[1][0][0][1] }
 
 ; Calculate center Y as midpoint between bottom and top surfaces
 set var.sY = { (var.bottomMidpoint + var.topMidpoint) / 2 }
 
-; TODO: These are the center points between the locations we probed, but
-; that doesn't mean they're the center of the block, as our probe
-; points are not necessarily centred on the block.
-; We need to calculate a block corner and then find the center point
-; from that.
-
 ; Set the centre of the block
 set global.mosWPCtrPos[var.workOffset] = { var.sX, var.sY }
 
-; We can now calculate the actual dimensions of the block.
-; The dimensions are the difference between the average of each
-; pair of points of each line.
-set global.mosWPDims[var.workOffset][0] = { abs(((var.pSfcX[0][0][0][0] + var.pSfcX[0][0][1][0]) / 2) - ((var.pSfcX[1][0][0][0] + var.pSfcX[1][0][1][0]) / 2)) }
-set global.mosWPDims[var.workOffset][1] = { abs(((var.pSfcY[0][0][0][1] + var.pSfcY[0][0][1][1]) / 2) - ((var.pSfcY[1][0][0][1] + var.pSfcY[1][0][1][1]) / 2)) }
+; Calculate the actual dimensions of the block from the probed
+; surface midpoints.
+set global.mosWPDims[var.workOffset][0] = { abs(var.leftMidpoint - var.rightMidpoint) }
+set global.mosWPDims[var.workOffset][1] = { abs(var.bottomMidpoint - var.topMidpoint) }
 
 ; Set the global error in dimensions
 ; This can be used by other macros to configure the touch probe deflection.
@@ -287,24 +283,25 @@ G6550 I{var.pID} Z{var.safeZ}
 ; Move to the calculated center of the block
 G6550 I{var.pID} X{var.sX} Y{var.sY}
 
-; Calculate the rotation of the block against the X axis.
-; After the checks above, we know the block is rectangular,
-; within our threshold for squareness, but it might still be
-; rotated in relation to our axes. At this point, the angle
-; of the entire block's rotation can be assumed to be the angle
+; Calculate the rotation of the block against the X axis (full mode only).
+; After the checks above, we know the block is rectangular, within our
+; threshold for squareness, but it might still be rotated in relation to
+; our axes. The angle of the entire block can be assumed to be the angle
 ; of the first surface on the longest edge of the block.
-; We need to normalise the rotation to be within +- 45 degrees
+; We need to normalise the rotation to be within +- 45 degrees.
+; Quick mode skips this and leaves the stored rotation at its default,
+; so M5011 will not prompt for rotation compensation.
+if { var.pFull }
+    var aR = { var.pSfcX[0][2] }
 
-var aR = { var.pSfcX[0][2] }
+    ; Reduce the angle to below +/- 45 degrees (pi/4 radians)
+    while { var.aR > pi/4 || var.aR < -pi/4 }
+        if { var.aR > pi/4 }
+            set var.aR = { var.aR - pi/2 }
+        elif { var.aR < -pi/4 }
+            set var.aR = { var.aR + pi/2 }
 
-; Reduce the angle to below +/- 45 degrees (pi/4 radians)
-while { var.aR > pi/4 || var.aR < -pi/4 }
-    if { var.aR > pi/4 }
-        set var.aR = { var.aR - pi/2 }
-    elif { var.aR < -pi/4 }
-        set var.aR = { var.aR + pi/2 }
-
-set global.mosWPDeg[var.workOffset] = { degrees(var.aR) }
+    set global.mosWPDeg[var.workOffset] = { degrees(var.aR) }
 
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }

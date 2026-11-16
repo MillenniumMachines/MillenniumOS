@@ -363,6 +363,7 @@ export default {
         description: 'Finds the center of a rectangular block (positive feature or workpiece) by probing its outer surfaces.',
         code: 6503.1,
         settings: {
+            [DS_QUICK]: { ...valueSettings[DS_QUICK], value: false },
             'width': {
                 type: 'number',
                 label: 'Width (on X axis)',
