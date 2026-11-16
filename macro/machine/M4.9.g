@@ -114,6 +114,15 @@ if { result != 0 }
 ; is defined, for speed changes or stopping.
 var alreadyWaited = false
 
+if { exists(global.arborctlLdd) && global.arborctlLdd }
+    if { !global.mosEM }
+        if { var.sStopping }
+            echo { "MillenniumOS: Waiting for ArborCtl to report spindle #" ^ var.sID ^ " has stopped" }
+        else
+            echo { "MillenniumOS: Waiting for ArborCtl to report spindle #" ^ var.sID ^ " has reached target speed" }
+    G4.9 S{var.sID}
+    set var.alreadyWaited = true
+
 if { global.mosFeatSpindleFeedback }
     if { var.sStopping && global.mosSFSID != null }
         if { !global.mosEM }
@@ -133,8 +142,7 @@ if { global.mosFeatSpindleFeedback }
         M8004 K{global.mosSFCID} D100 W30
         set var.alreadyWaited = true
 
-if { !var.alreadyWaited }
-    if { var.dwellTime > 0 }
-        if { !global.mosEM }
-            echo { "MillenniumOS: Waiting " ^ var.dwellTime ^ " seconds for spindle #" ^ var.sID ^ " to reach the target speed" }
-        G4 S{var.dwellTime}
+if { !var.alreadyWaited && var.dwellTime > 0 }
+    if { !global.mosEM }
+        echo { "MillenniumOS: Waiting " ^ var.dwellTime ^ " seconds for spindle #" ^ var.sID ^ " to reach the target speed" }
+    G4 S{var.dwellTime}
