@@ -694,6 +694,21 @@ class MillenniumOSMachine(PostProcessor):
 
         return super()._convert_spindle_command(command)
 
+    def _convert_dwell(self, command: Path.Command) -> str:
+        """Emit a dwell as G4 S, in seconds.
+
+        FreeCAD's G4 P is in seconds, as in LinuxCNC. Translated G82 cycles and
+        the toolhead_wait and coolant_delay pauses all use it. RRF reads G4 P as
+        whole milliseconds, so "G4 P0.5" doesn't dwell at all. RRF rounds G4 S
+        down to whole milliseconds, so 3 decimals is enough.
+        """
+        seconds = command.Parameters.get("P")
+        if seconds is None:
+            return super()._convert_dwell(command)
+
+        value = f"{seconds:.3f}".rstrip("0").rstrip(".")
+        return f"G4 S{value}"
+
     def _convert_rapid_move(self, command: Path.Command) -> str:
         """Drop F from G0. Rapids run at machine limits under MillenniumOS.
 

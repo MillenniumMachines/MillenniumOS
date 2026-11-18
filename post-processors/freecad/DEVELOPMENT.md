@@ -21,6 +21,7 @@ The FreeCAD `PostProcessor` base class handles these features through the machin
 - `_expand_prefix` builds the job-specific M4005 version check, M4000 tool table, G6511 reference probe, G6600 WCS probing, and M7000 VSSC. It also appends the legacy closing sequence: `M9`, `G27`, `M7001`, `M9`, `M5.9`.
 - `_convert_tool_change` emits a bare `T` word because firmware services tool changes; `M6` is suppressed.
 - `_convert_spindle_command` adds the `.9` wait suffix so RRF blocks until the spindle reaches speed.
+- `_convert_dwell` emits `G4 P` as `G4 S`. FreeCAD's `P` is in seconds, but RRF reads `G4 P` as milliseconds. This matters for translated `G82` cycles and for a non-zero `toolhead_wait` or `coolant_delay`.
 - `_convert_fixture` parks before a WCS change, then optionally probes and emits M5011.
 - `_convert_coolant_command` labels coolant commands inserted by FreeCAD.
 - `_delay_leading_z`, called from `_expand_xy_before_z`, moves a leading Z-only approach after the first XY move.
